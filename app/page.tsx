@@ -83,7 +83,7 @@ export default function Page() {
 
   const [playerCount, setPlayerCount] = useState(4)
 
-  const [players, setPlayers] = useState<(typeof roles)[number] | null[]>(
+  const [players, setPlayers] = useState<((typeof roles)[number] | null)[]>(
     Array.from({ length: 4 }, () => null)
   )
 
