@@ -26,7 +26,7 @@ function RoleCard({ role }: { role: { id: string; name: string; img: string } })
 
   const style: React.CSSProperties = {
     transform: transform
-      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+      ? `translate(${transform.x}px, ${transform.y}px)`
       : undefined,
     border: "1px solid gray",
     padding: 10,
@@ -35,20 +35,11 @@ function RoleCard({ role }: { role: { id: string; name: string; img: string } })
     textAlign: "center",
     background: "#fff",
     cursor: "grab",
-    touchAction: "none",
-    userSelect: "none",
-    WebkitUserSelect: "none",
   }
 
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      <img
-        src={role.img}
-        width="70"
-        alt={role.name}
-        draggable={false}
-        style={{ pointerEvents: "none" }}
-      />
+      <img src={role.img} width="70" alt={role.name} />
       <div>{role.name}</div>
     </div>
   )
@@ -92,19 +83,10 @@ function PlayerSlot({
 export default function Page() {
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 150,
-        tolerance: 8,
-      },
-    })
+    useSensor(PointerSensor),
+    useSensor(TouchSensor)
   )
-  
+
   const [timeLeft, setTimeLeft] = useState(180)
   const [timerRunning, setTimerRunning] = useState(false)
 
