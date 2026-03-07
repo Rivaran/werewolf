@@ -1,7 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core"
+import { 
+  DndContext,
+  useDraggable,
+  useDroppable,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors
+ } from "@dnd-kit/core"
 
 const roles = [
   { id: "villager", name: "村人", img: "/image/村人.png" },
@@ -73,6 +81,11 @@ function PlayerSlot({
 }
 
 export default function Page() {
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor)
+  )
 
   const [timeLeft, setTimeLeft] = useState(180)
   const [timerRunning, setTimerRunning] = useState(false)
@@ -356,8 +369,8 @@ export default function Page() {
         </select>
       </div>
 
-      <DndContext onDragEnd={handleDragEnd}>
-        <h2>プレイヤー</h2>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <h2>プレイヤー</h2>
         <div style={{ display: "flex", flexWrap: "wrap" }}>
           {players.map((role, i) => (
             <PlayerSlot key={i} id={i + 1} role={role as (typeof roles)[number] | null} />
