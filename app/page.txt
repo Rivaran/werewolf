@@ -11,6 +11,9 @@ import {
   useSensors
  } from "@dnd-kit/core"
 
+const [executedPlayer, setExecutedPlayer] = useState<number | null>(null)
+const [showLastWords, setShowLastWords] = useState(false)
+
 const roles = [
   { id: "villager", name: "村人", img: "/image/村人.png" },
   { id: "werewolf", name: "人狼", img: "/image/人狼.png" },
@@ -26,7 +29,7 @@ function RoleCard({ role }: { role: { id: string; name: string; img: string } })
 
   const style: React.CSSProperties = {
     transform: transform
-      ? `translate(${transform.x}px, ${transform.y}px)`
+      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
       : undefined,
     border: "1px solid gray",
     padding: 10,
@@ -35,11 +38,20 @@ function RoleCard({ role }: { role: { id: string; name: string; img: string } })
     textAlign: "center",
     background: "#fff",
     cursor: "grab",
+    touchAction: "none",
+    userSelect: "none",
+    WebkitUserSelect: "none",
   }
 
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      <img src={role.img} width="70" alt={role.name} />
+      <img
+        src={role.img}
+        width="70"
+        alt={role.name}
+        draggable={false}
+        style={{ pointerEvents: "none" }}
+      />
       <div>{role.name}</div>
     </div>
   )
@@ -83,10 +95,19 @@ function PlayerSlot({
 export default function Page() {
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor)
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 8,
+      },
+    })
   )
-
+  
   const [timeLeft, setTimeLeft] = useState(180)
   const [timerRunning, setTimerRunning] = useState(false)
 
@@ -100,7 +121,19 @@ export default function Page() {
     Array.from({ length: 4 }, () => null)
   )
 
+  function executePlayer(num: number) {
+
+    setExecutedPlayer(num)
+    setPhase("execute")
+
+    const audio = new Audio(`/audio/[07-${num}]${num}番のプレイヤーは追放されます。遺言をどうぞ.wav`)
+    audio.play()
+
+  }
+
   function endDiscussion() {
+
+    setTimeLeft(0)
 
     setTimerRunning(false)
 
@@ -231,6 +264,41 @@ export default function Page() {
     playAudio(`/audio/[03-${next - 1}]${next - 1}番のプレイヤーが役職確認を終えました。続いて${next}番のプレイヤーのみ、目を開け、役職を確認してください.wav`)
   }
 
+  if (phase === "execute") {
+
+    return (
+
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20
+        }}
+      >
+
+        <h1>プレイヤー {executedPlayer}</h1>
+
+        <h2>遺言タイム</h2>
+
+        <button
+          onClick={() => setPhase("night")}
+          style={{
+            fontSize: 20,
+            padding: 15
+          }}
+        >
+          遺言終了
+        </button>
+
+      </div>
+
+    )
+
+  }
+
   if (phase === "morning") {
 
     return (
@@ -347,6 +415,46 @@ export default function Page() {
     )
   }
 
+  if (phase === "vote") {
+
+    return (
+
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20
+        }}
+      >
+
+        <h1>追放されたプレイヤーを選択</h1>
+
+        {players.map((_, i) => (
+
+          <button
+            key={i}
+            onClick={() => executePlayer(i + 1)}
+            style={{
+              fontSize: 24,
+              padding: 20,
+              width: 200
+            }}
+          >
+            プレイヤー {i + 1}
+
+          </button>
+
+        ))}
+
+      </div>
+
+    )
+
+  }
+  
   return (
 
     <div style={{ padding: 20 }}>

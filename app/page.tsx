@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
+
 import { 
   DndContext,
   useDraggable,
@@ -77,7 +78,7 @@ function PlayerSlot({
         textAlign: "center",
       }}
     >
-      <div>Player {id}</div>
+      <div>配役 {id}</div>
 
       {role && (
         <>
@@ -90,6 +91,11 @@ function PlayerSlot({
 }
 
 export default function Page() {
+
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const [executedPlayer, setExecutedPlayer] = useState<number | null>(null)
+  const [showLastWords, setShowLastWords] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -118,9 +124,22 @@ export default function Page() {
     Array.from({ length: 4 }, () => null)
   )
 
+  function executePlayer(num: number) {
+
+    setExecutedPlayer(num)
+    setPhase("execute")
+
+    const audio = new Audio(`/audio/[07-${num}]${num}番のプレイヤーは追放されます。遺言をどうぞ.wav`)
+    audio.play()
+
+  }
+
   function endDiscussion() {
 
-    setTimerRunning(false)
+    clearInterval(timerRef.current!)
+    setTimeLeft(0)
+
+    setPhase("voteStart")
 
     const audio1 = new Audio("/audio/[05]議論終了の時間となりました。投票に移ります.wav")
 
@@ -156,28 +175,19 @@ export default function Page() {
 
   }
 
-  function startTimer() {
-
-    if (timerRunning) return
-
+function startTimer() {
+  if (timerRunning) return
     setTimerRunning(true)
-
-    const interval = setInterval(() => {
-
+    timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
-
-      if (t <= 1) {
-        clearInterval(interval)
-        endDiscussion()
-        return 0
-      }
-
+        if (t <= 1) {
+          clearInterval(timerRef.current!)
+          endDiscussion()
+          return 0
+        }
         return t - 1
-
       })
-
     }, 1000)
-
   }
 
   function handleDragEnd(event: any) {
@@ -201,19 +211,16 @@ export default function Page() {
   }
 
   function startGame() {
-
     const selectedRoles = players.filter(p => p !== null)
-
     const shuffled = shuffle(selectedRoles)
 
+    clearInterval(timerRef.current!)
+    setTimeLeft(180)
+    setTimerRunning(false)
     setPlayers(shuffled)
-
     setPhase("roleCheck")
-
     setCurrentPlayer(1)
-
     setShowRole(false)
-
     playAudio("/audio/[00]これから人狼ゲームを開始します.wav")
 
     setTimeout(() => {
@@ -249,6 +256,74 @@ export default function Page() {
     playAudio(`/audio/[03-${next - 1}]${next - 1}番のプレイヤーが役職確認を終えました。続いて${next}番のプレイヤーのみ、目を開け、役職を確認してください.wav`)
   }
 
+  if (phase === "execute") {
+
+    return (
+
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20
+        }}
+      >
+
+        <h1>プレイヤー {executedPlayer}</h1>
+
+        <h2>遺言タイム</h2>
+
+        <button
+          onClick={() => setPhase("night")}
+          style={{
+            fontSize: 20,
+            padding: 15
+          }}
+        >
+          遺言終了
+        </button>
+
+      </div>
+
+    )
+
+  }
+
+  if (phase === "voteStart") {
+
+    return (
+
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20
+        }}
+      >
+
+        <h1>投票タイム</h1>
+
+        <button
+          onClick={() => setPhase("vote")}
+          style={{
+            fontSize: 24,
+            padding: 20
+          }}
+        >
+          追放者選択画面へ
+        </button>
+
+      </div>
+
+    )
+
+  }
+
   if (phase === "morning") {
 
     return (
@@ -266,7 +341,9 @@ export default function Page() {
         }}
       >
 
-        <h1>朝になりました</h1>
+        <h1>
+          {timerRunning ? "議論中" : "朝になりました"}
+        </h1>
 
         <h2>議論時間</h2>
 
@@ -365,6 +442,46 @@ export default function Page() {
     )
   }
 
+  if (phase === "vote") {
+
+    return (
+
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20
+        }}
+      >
+
+        <h1>追放されたプレイヤーを選択</h1>
+
+        {players.map((_, i) => (
+
+          <button
+            key={i}
+            onClick={() => executePlayer(i + 1)}
+            style={{
+              fontSize: 24,
+              padding: 20,
+              width: 200
+            }}
+          >
+            プレイヤー {i + 1}
+
+          </button>
+
+        ))}
+
+      </div>
+
+    )
+
+  }
+  
   return (
 
     <div style={{ padding: 20 }}>
