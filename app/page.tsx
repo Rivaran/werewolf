@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 
 import { 
   DndContext,
@@ -92,10 +92,129 @@ function PlayerSlot({
 
 export default function Page() {
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const [winner, setWinner] = useState<"villagers" | "werewolves" | null>(null)
+  const [wolfTarget, setWolfTarget] = useState<number | null>(null)
+  const [villagerDelay, setVillagerDelay] = useState(0)
+  const [guardTarget, setGuardTarget] = useState<number | null>(null)
+  const [seerResult, setSeerResult] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+  const [firstSeerWhite, setFirstSeerWhite] = useState<number | null>(null)
+  const [morningDeath, setMorningDeath] = useState<number | null>(null)
+  const [day, setDay] = useState(0)
+  const [theme, setTheme] = useState("mama")
+
+  const roles = [
+  { id: "villager", name: "村人" },
+  { id: "werewolf", name: "人狼" },
+  { id: "seer", name: "占い師" },
+  { id: "knight", name: "騎士" },
+  { id: "madman", name: "狂人" },
+].map(role => ({
+  ...role,
+  img: `/image/${theme}/${role.name}.png`
+}))
+
+  type Player = {
+    role: (typeof roles)[number]
+    alive: boolean
+  }
+
+  function resolveNight() {
+
+    if (wolfTarget === null) {
+      setMorningDeath(null)
+      return
+    }
+
+    const updatedPlayers = players.map((p, i) => {
+
+      if (!p) return p
+
+      if (wolfTarget !== guardTarget && i + 1 === wolfTarget) {
+        return { ...p, alive: false }
+      }
+
+      return p
+    })
+
+    setPlayers(updatedPlayers)
+
+    if (wolfTarget === guardTarget) {
+      setMorningDeath(null)
+    } else {
+      setMorningDeath(wolfTarget)
+    }
+
+    const survivors = updatedPlayers.filter(
+      (p): p is Player => p !== null && p.alive
+    )
+
+    const werewolfCount = survivors.filter(p => p.role.id === "werewolf").length
+    const villagerCount = survivors.filter(p => p.role.id !== "werewolf").length
+
+    if (werewolfCount === 0) {
+      setWinner("villagers")
+      setPhase("result")
+      return true
+    }
+
+    if (werewolfCount >= villagerCount) {
+      setWinner("werewolves")
+      setPhase("result")
+      return true
+    }
+
+    return false
+  }
+  
+  function judgeAfterExecution(executedNum: number) {
+    const updatedPlayers = players.map((p, i) =>
+      i === executedNum - 1 && p ? { ...p, alive: false } : p
+    )
+
+    setPlayers(updatedPlayers)
+
+    const survivors = updatedPlayers.filter(
+      (p): p is Player => p !== null && p.alive
+    )
+
+    const werewolfCount = survivors.filter((p) => p.role.id === "werewolf").length
+    const nonWerewolfCount = survivors.filter((p) => p.role.id !== "werewolf").length
+    const hasKnight = survivors.some((p) => p.role.id === "knight")
+
+    if (werewolfCount === 0) {
+      setWinner("villagers")
+      setPhase("result")
+      return
+    }
+
+    if (werewolfCount >= nonWerewolfCount) {
+      setWinner("werewolves")
+      setPhase("result")
+      return
+    }
+
+    if (nonWerewolfCount === werewolfCount + 1 && !hasKnight) {
+      setWinner("werewolves")
+      setPhase("result")
+      return
+    }
+
+    const firstAliveIndex = updatedPlayers.findIndex((p) => p && p.alive)
+
+    setNightPlayer(firstAliveIndex + 1)
+    setNightActionReady(false)
+    setPhase("night")
+  }
+  
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const [executedPlayer, setExecutedPlayer] = useState<number | null>(null)
-  const [showLastWords, setShowLastWords] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -110,27 +229,32 @@ export default function Page() {
       },
     })
   )
-  
+
   const [timeLeft, setTimeLeft] = useState(180)
   const [timerRunning, setTimerRunning] = useState(false)
 
   const [phase, setPhase] = useState("setup")
   const [currentPlayer, setCurrentPlayer] = useState(1)
   const [showRole, setShowRole] = useState(false)
+  const [nightPlayer, setNightPlayer] = useState(1)
+  const [nightActionReady, setNightActionReady] = useState(false)
+  const [showNextButton, setShowNextButton] = useState(false)
 
   const [playerCount, setPlayerCount] = useState(4)
 
-  const [players, setPlayers] = useState<((typeof roles)[number] | null)[]>(
+  const [players, setPlayers] = useState<(Player | null)[]>(
     Array.from({ length: 4 }, () => null)
   )
+
+  function randomDelay(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1)) + min
+  }
 
   function executePlayer(num: number) {
 
     setExecutedPlayer(num)
     setPhase("execute")
-
-    const audio = new Audio(`/audio/[07-${num}]${num}番のプレイヤーは追放されます。遺言をどうぞ.wav`)
-    audio.play()
+    playAudio(`/audio/[07-${num}]${num}番のプレイヤーは追放されます。遺言をどうぞ.wav`)
 
   }
 
@@ -141,17 +265,17 @@ export default function Page() {
 
     setPhase("voteStart")
 
-    const audio1 = new Audio("/audio/[05]議論終了の時間となりました。投票に移ります.wav")
-
-    audio1.play()
-
-    audio1.onended = () => {
-      const audio2 = new Audio("/audio/[06]10からカウントダウン.wav")
-      audio2.play()
-      audio2.onended = () => {
-        setPhase("vote")
+    playAudio(
+      "/audio/[05]議論終了の時間となりました。投票に移ります.wav",
+      () => {
+        playAudio(
+          "/audio/[06]10からカウントダウン.wav",
+          () => {
+            setPhase("vote")
+          }
+        )
       }
-    }
+    )
 
   }
 
@@ -201,23 +325,64 @@ function startTimer() {
     if (!role) return
 
     const newPlayers = [...players]
-    newPlayers[slotIndex] = role
+
+    newPlayers[slotIndex] = {
+      role,
+      alive: true
+    }
+
     setPlayers(newPlayers)
   }
 
-  function playAudio(src: string) {
-    const audio = new Audio(src)
+  function playAudio(src: string, onEnd?: () => void) {
+
+    if (!audioRef.current) {
+      audioRef.current = new Audio(src)
+    }
+
+    const audio = audioRef.current
+
+    audio.pause()
+    audio.src = src
+    audio.currentTime = 0
+
+    if (onEnd) {
+      audio.onended = onEnd
+    } else {
+      audio.onended = null
+    }
+
     audio.play()
   }
-
+  
   function startGame() {
-    const selectedRoles = players.filter(p => p !== null)
+
+    setDay(0)
+    
+    const selectedRoles = players
+      .filter(p => p !== null)
+      .map(p => p!.role)
+      
     const shuffled = shuffle(selectedRoles)
+    const shuffledPlayers = shuffled.map(role => ({
+      role,
+      alive: true
+    }))
 
     clearInterval(timerRef.current!)
     setTimeLeft(180)
     setTimerRunning(false)
-    setPlayers(shuffled)
+    setPlayers(shuffledPlayers)
+
+    const whiteCandidates = shuffled
+    .map((role, i) => ({ role, num: i + 1 }))
+    .filter((x) => x.role.id !== "werewolf" && x.role.id !== "seer")
+
+    const randomIndex = Math.floor(Math.random() * whiteCandidates.length)
+    const whitePlayerNum = whiteCandidates[randomIndex].num
+
+    setFirstSeerWhite(whitePlayerNum)
+
     setPhase("roleCheck")
     setCurrentPlayer(1)
     setShowRole(false)
@@ -242,6 +407,7 @@ function startTimer() {
     const next = currentPlayer + 1
 
     if (next > playerCount) {
+
       setPhase("morning")
       setTimeout(() => {
         playAudio("/audio/[04]朝になりました。皆さん目を開けて議論を開始してください.wav")
@@ -255,6 +421,8 @@ function startTimer() {
 
     playAudio(`/audio/[03-${next - 1}]${next - 1}番のプレイヤーが役職確認を終えました。続いて${next}番のプレイヤーのみ、目を開け、役職を確認してください.wav`)
   }
+
+  if (!mounted) return null
 
   if (phase === "execute") {
 
@@ -273,10 +441,8 @@ function startTimer() {
 
         <h1>プレイヤー {executedPlayer}</h1>
 
-        <h2>遺言タイム</h2>
-
         <button
-          onClick={() => setPhase("night")}
+          onClick={() => judgeAfterExecution(executedPlayer!)}
           style={{
             fontSize: 20,
             padding: 15
@@ -324,6 +490,282 @@ function startTimer() {
 
   }
 
+  if (phase === "result") {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20
+        }}
+      >
+        <h1>{winner === "villagers" ? "村人陣営の勝利" : "人狼陣営の勝利"}</h1>
+
+        <button
+          onClick={() => {
+            setPhase("setup")
+            setTimeLeft(180)
+            setTimerRunning(false)
+            setExecutedPlayer(null)
+            setWinner(null)
+            setCurrentPlayer(1)
+            setShowRole(false)
+            setFirstSeerWhite(null)
+            setSeerResult(null)
+            setWolfTarget(null)
+            setGuardTarget(null)
+          }}
+          style={{
+            fontSize: 20,
+            padding: 15
+          }}
+        >
+          トップに戻る
+        </button>
+      </div>
+    )
+  }
+
+  if (phase === "night") {
+
+    setGuardTarget(null)
+    setWolfTarget(null)
+    setSeerResult(null)
+
+    const role = players[nightPlayer - 1]?.role
+
+    return (
+
+      <div
+        style={{
+          background: "#000",
+          color: "white",
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20
+        }}
+      >
+
+        <h1>夜フェーズ</h1>
+
+        <h2>プレイヤー {nightPlayer}</h2>
+
+        {!nightActionReady && (
+
+          <button
+            onClick={() => {
+
+              const role = players[nightPlayer - 1]
+
+              setNightActionReady(true)
+              setShowNextButton(false)
+
+              if (role?.role.id === "villager") {
+                const delay = randomDelay(3000, 5000)
+                setVillagerDelay(delay)
+                setTimeout(() => {
+                  setShowNextButton(true)
+                }, delay)
+
+              } else if(role?.role.id !== "werewolf" && role?.role.id !== "knight" && role?.role.id !== "seer") {
+                setShowNextButton(true)
+              }
+                            
+            }}
+          >
+          画面タップ
+          </button>
+
+        )}
+
+        {nightActionReady && role && (
+
+          <div style={{ textAlign: "center" }}>
+
+            <img src={role.img} width="200" />
+
+            <h2>{role.name}</h2>
+
+            {role?.id === "seer" && seerResult === null && (
+              <div>
+                <h3>占うプレイヤーを選択</h3>
+
+                {players.map((p, i) => {
+
+                  const num = i + 1
+
+                  if (num === nightPlayer) return null
+                  if (num === executedPlayer) return null
+
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => {
+
+                        const target = players[i]?.role
+
+                        if (target?.id === "werewolf") {
+                          setSeerResult("人狼です")
+                        } else {
+                          setSeerResult("人狼ではありません")
+                        }
+
+                        setShowNextButton(true)
+                      }}
+                      style={{
+                        fontSize: 20,
+                        padding: 10,
+                        margin: 5
+                      }}
+                    >
+                      プレイヤー {num}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {role?.id === "seer" && seerResult && (
+              <div>
+                <h3>占い結果</h3>
+                <p style={{fontSize:24}}>{seerResult}</p>
+              </div>
+            )}
+
+            {role?.id === "knight" && guardTarget === null && (
+              <div>
+                <h3>護衛するプレイヤーを選択</h3>
+
+                {players.map((p, i) => {
+
+                  const num = i + 1
+
+                  if (num === nightPlayer) return null
+                  if (num === executedPlayer) return null
+
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setGuardTarget(num)
+                        setShowNextButton(true)
+                      }}
+                      style={{
+                        fontSize: 20,
+                        padding: 10,
+                        margin: 5
+                      }}
+                    >
+                      プレイヤー {num}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {role?.id === "werewolf" && wolfTarget === null && (
+              <div>
+                <h3>襲撃するプレイヤーを選択</h3>
+
+                {players.map((p, i) => {
+
+                  const num = i + 1
+
+                  if (num === nightPlayer) return null
+                  if (num === executedPlayer) return null
+
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setWolfTarget(num)
+                        setShowNextButton(true)
+                      }}
+                      style={{
+                        fontSize: 20,
+                        padding: 10,
+                        margin: 5
+                      }}
+                    >
+                      プレイヤー {num}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {role?.id === "villager" && !showNextButton && (
+              <p>次のプレイヤーへ進むまでお待ちください...</p>
+            )}
+
+            {showNextButton && 
+            (
+              (role.id !== "werewolf" || wolfTarget !== null) &&
+              (role.id !== "knight" || guardTarget !== null) &&
+              (role.id !== "seer" || seerResult !== null)
+            ) && (
+              <button
+                onClick={() => {
+
+                  let next = nightPlayer + 1
+
+                  while (next <= playerCount) {
+                    const p = players[next - 1]
+                    if (p && p.alive) break
+                    next++
+                  }
+
+                  setNightPlayer(next)
+                  setNightActionReady(false)
+
+                  if (next > playerCount) {
+
+                    const finished = resolveNight()
+
+                    if (!finished) {
+                      setDay(d => d + 1)
+                      setPhase("morning")
+                    }
+                    
+                    setTimeLeft(120)
+                    setTimerRunning(false)
+
+                    setNightActionReady(false)
+                    setNightPlayer(1)
+
+                    setTimeout(() => {
+                      playAudio("/audio/[04]朝になりました。皆さん目を開けて議論を開始してください.wav")
+                    }, 1000)
+
+                    return
+                  }
+
+                }}
+                style={{
+                  fontSize: 20,
+                  padding: 15
+                }}
+                >
+                  次のプレイヤー
+              </button>
+            )}
+
+          </div>
+
+        )}
+
+      </div>
+
+    )
+
+  }
+
   if (phase === "morning") {
 
     return (
@@ -344,6 +786,16 @@ function startTimer() {
         <h1>
           {timerRunning ? "議論中" : "朝になりました"}
         </h1>
+
+        {day === 0 ? null : (
+          timerRunning === true ? null : (
+            morningDeath === null ? (
+              <p>昨夜は誰も死にませんでした</p>
+            ) : (
+              <p>プレイヤー {morningDeath} が死亡しました</p>
+            )
+          )
+        )}
 
         <h2>議論時間</h2>
 
@@ -423,9 +875,15 @@ function startTimer() {
 
           <div style={{ textAlign: "center" }}>
 
-            <img src={role.img} width="200" />
+            <img src={role.role.img} width="200" />
 
-            <h2>{role.name}</h2>
+            <h2>{role.role.name}</h2>
+
+            {role.role.id === "seer" && firstSeerWhite !== null && (
+              <p style={{ marginTop: 12, fontSize: 20 }}>
+                プレイヤー {firstSeerWhite} は人狼ではありません
+              </p>
+            )}
 
             <button
               onClick={nextPlayer}
@@ -459,23 +917,19 @@ function startTimer() {
 
         <h1>追放されたプレイヤーを選択</h1>
 
-        {players.map((_, i) => (
+        {players.map((p, i) => {
 
-          <button
-            key={i}
-            onClick={() => executePlayer(i + 1)}
-            style={{
-              fontSize: 24,
-              padding: 20,
-              width: 200
-            }}
-          >
-            プレイヤー {i + 1}
+          if (!p?.alive) return null
 
-          </button>
-
-        ))}
-
+          return (
+            <button
+              key={i}
+              onClick={() => executePlayer(i + 1)}
+            >
+              プレイヤー {i + 1}
+            </button>
+          )
+        })}
       </div>
 
     )
@@ -486,6 +940,9 @@ function startTimer() {
 
     <div style={{ padding: 20 }}>
       <h1>人狼ゲーム 配役</h1>
+
+      <button onClick={() => setTheme("mama")}>イラスト１</button>
+      <button onClick={() => setTheme("ai")}>イラスト２</button>
 
       <div>
         人数　
@@ -508,7 +965,11 @@ function startTimer() {
           <h2>プレイヤー</h2>
         <div style={{ display: "flex", flexWrap: "wrap" }}>
           {players.map((role, i) => (
-            <PlayerSlot key={i} id={i + 1} role={role as (typeof roles)[number] | null} />
+            <PlayerSlot
+              key={i}
+              id={i + 1}
+              role={role?.role ?? null}
+            />
           ))}
         </div>
 
