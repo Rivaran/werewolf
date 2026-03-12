@@ -385,7 +385,7 @@ function startTimer() {
 
     const whiteCandidates = shuffled
       .map((role, i) => ({ role, num: i + 1 }))
-      .filter((x) => x.role.id !== "werewolf" && x.role.id !== "seer")
+      .filter((x) => x.role.id !== "werewolf")
 
     if (whiteCandidates.length > 0) {
       const randomIndex = Math.floor(Math.random() * whiteCandidates.length)

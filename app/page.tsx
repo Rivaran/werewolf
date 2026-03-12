@@ -106,6 +106,7 @@ export default function Page() {
   const [morningDeath, setMorningDeath] = useState<number | null>(null)
   const [day, setDay] = useState(0)
   const [theme, setTheme] = useState("mama")
+  const [voteTarget, setVoteTarget] = useState<number | null>(null)
 
   const roles = [
   { id: "villager", name: "村人" },
@@ -255,11 +256,19 @@ export default function Page() {
       }
   }, [phase])
 
+  useEffect(() => {
+    if (phase === "vote") {
+      setVoteTarget(null)
+    }
+  }, [phase])
+
   function randomDelay(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min
   }
 
   function executePlayer(num: number) {
+
+    setVoteTarget(null)
 
     setExecutedPlayer(num)
     setPhase("execute")
@@ -278,7 +287,7 @@ export default function Page() {
       "/audio/[05]議論終了の時間となりました。投票に移ります.wav",
       () => {
         playAudio(
-          "/audio/[06]10からカウントダウン.wav",
+          "/audio/[06]5からカウントダウン",
           () => {
             setPhase("vote")
           }
@@ -903,19 +912,23 @@ function startTimer() {
 
             <h2>{role.role.name}</h2>
 
-            {role.role.id === "werewolf" && (
-              <p style={{ marginTop: 12 }}>
-                仲間：
-                {players
-                  .map((p, i) =>
-                    p?.role.id === "werewolf" && i !== currentPlayer - 1
-                      ? ` ${i + 1}`
-                      : null
-                  )
-                  .filter(Boolean)
-                  .join(" , ")}
-              </p>
-            )}
+            {role.role.id === "werewolf" && (() => {
+              const wolfMates = players
+                .map((p, i) =>
+                  p?.role.id === "werewolf" && i !== currentPlayer - 1
+                    ? i + 1
+                    : null
+                )
+                .filter(Boolean)
+
+              if (wolfMates.length === 0) return null
+
+              return (
+                <p style={{ marginTop: 12 }}>
+                  仲間：{wolfMates.join(" , ")}
+                </p>
+              )
+            })()}
 
             {role.role.id === "seer" && firstSeerWhite !== null && (
               <p style={{ marginTop: 12, fontSize: 20 }}>
@@ -962,12 +975,32 @@ function startTimer() {
           return (
             <button
               key={i}
-              onClick={() => executePlayer(i + 1)}
+              onClick={() => setVoteTarget(i + 1)}
             >
               プレイヤー {i + 1}
             </button>
           )
         })}
+
+        {voteTarget !== null && (
+          <div style={{ marginTop: 20 }}>
+            <p>プレイヤー {voteTarget} を追放しますか？</p>
+
+            <button
+              onClick={() => executePlayer(voteTarget)}
+              style={{ marginRight: 10 }}
+            >
+              決定
+            </button>
+
+            <button
+              onClick={() => setVoteTarget(null)}
+            >
+              戻る
+            </button>
+          </div>
+        )}
+
       </div>
 
     )
@@ -977,10 +1010,19 @@ function startTimer() {
   return (
 
     <div style={{ padding: 20 }}>
-      <h1>人狼ゲーム 配役</h1>
-
+      
       <button onClick={() => setTheme("mama")}>イラスト１</button>
       <button onClick={() => setTheme("ai")}>イラスト２</button>
+
+      <img
+        src={`/image/${theme}/title.png`}
+        style={{
+          width: "90%",
+          maxWidth: 400,
+          maxHeight: 120,
+          marginBottom: 20
+        }}
+      />
 
       <div>
         人数　
