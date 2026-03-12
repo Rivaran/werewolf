@@ -99,8 +99,8 @@ export default function Page() {
   const [winner, setWinner] = useState<"villagers" | "werewolves" | null>(null)
   const [wolfTarget, setWolfTarget] = useState<number | null>(null)
   const [villagerDelay, setVillagerDelay] = useState(0)
-  const [guardTarget, setGuardTarget] = useState<number | null>(null)
-  const [seerResult, setSeerResult] = useState<string | null>(null)
+  const [guardTargets, setGuardTargets] = useState<Record<number, number>>({})
+  const [seerResults, setSeerResults] = useState<Record<number, string>>({})
   const [mounted, setMounted] = useState(false)
   const [firstSeerWhite, setFirstSeerWhite] = useState<number | null>(null)
   const [morningDeath, setMorningDeath] = useState<number | null>(null)
@@ -130,11 +130,12 @@ export default function Page() {
       return
     }
 
-    const updatedPlayers = players.map((p, i) => {
+    const guarded = Object.values(guardTargets).includes(wolfTarget)
 
+    const updatedPlayers = players.map((p, i) => {
       if (!p) return p
 
-      if (wolfTarget !== guardTarget && i + 1 === wolfTarget) {
+      if (!guarded && i + 1 === wolfTarget) {
         return { ...p, alive: false }
       }
 
@@ -143,7 +144,7 @@ export default function Page() {
 
     setPlayers(updatedPlayers)
 
-    if (wolfTarget === guardTarget) {
+    if (guarded) {
       setMorningDeath(null)
     } else {
       setMorningDeath(wolfTarget)
@@ -245,6 +246,14 @@ export default function Page() {
   const [players, setPlayers] = useState<(Player | null)[]>(
     Array.from({ length: 4 }, () => null)
   )
+
+  useEffect(() => {
+    if (phase === "night") {
+        setGuardTargets({})
+        setWolfTarget(null)
+        setSeerResults({})
+      }
+  }, [phase])
 
   function randomDelay(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min
@@ -375,13 +384,15 @@ function startTimer() {
     setPlayers(shuffledPlayers)
 
     const whiteCandidates = shuffled
-    .map((role, i) => ({ role, num: i + 1 }))
-    .filter((x) => x.role.id !== "werewolf" && x.role.id !== "seer")
+      .map((role, i) => ({ role, num: i + 1 }))
+      .filter((x) => x.role.id !== "werewolf")
 
-    const randomIndex = Math.floor(Math.random() * whiteCandidates.length)
-    const whitePlayerNum = whiteCandidates[randomIndex].num
-
-    setFirstSeerWhite(whitePlayerNum)
+    if (whiteCandidates.length > 0) {
+      const randomIndex = Math.floor(Math.random() * whiteCandidates.length)
+      setFirstSeerWhite(whiteCandidates[randomIndex].num)
+    } else {
+      setFirstSeerWhite(null)
+    }
 
     setPhase("roleCheck")
     setCurrentPlayer(1)
@@ -514,9 +525,9 @@ function startTimer() {
             setCurrentPlayer(1)
             setShowRole(false)
             setFirstSeerWhite(null)
-            setSeerResult(null)
+            setSeerResults({})
             setWolfTarget(null)
-            setGuardTarget(null)
+            setGuardTargets({})
           }}
           style={{
             fontSize: 20,
@@ -529,11 +540,8 @@ function startTimer() {
     )
   }
 
-  if (phase === "night") {
 
-    setGuardTarget(null)
-    setWolfTarget(null)
-    setSeerResult(null)
+  if (phase === "night") {
 
     const role = players[nightPlayer - 1]?.role
 
@@ -575,6 +583,8 @@ function startTimer() {
 
               } else if(role?.role.id !== "werewolf" && role?.role.id !== "knight" && role?.role.id !== "seer") {
                 setShowNextButton(true)
+              } else if (role?.role.id === "werewolf" && wolfTarget !== null) {
+                setShowNextButton(true)
               }
                             
             }}
@@ -592,7 +602,7 @@ function startTimer() {
 
             <h2>{role.name}</h2>
 
-            {role?.id === "seer" && seerResult === null && (
+            {role?.id === "seer" && !seerResults[nightPlayer] && (
               <div>
                 <h3>占うプレイヤーを選択</h3>
 
@@ -610,11 +620,12 @@ function startTimer() {
 
                         const target = players[i]?.role
 
-                        if (target?.id === "werewolf") {
-                          setSeerResult("人狼です")
-                        } else {
-                          setSeerResult("人狼ではありません")
-                        }
+                        setSeerResults(prev => ({
+                          ...prev,
+                          [nightPlayer]: target?.id === "werewolf"
+                            ? "人狼です"
+                            : "人狼ではありません"
+                        }))
 
                         setShowNextButton(true)
                       }}
@@ -631,14 +642,16 @@ function startTimer() {
               </div>
             )}
 
-            {role?.id === "seer" && seerResult && (
+            {role?.id === "seer" && seerResults[nightPlayer] && (
               <div>
                 <h3>占い結果</h3>
-                <p style={{fontSize:24}}>{seerResult}</p>
+                  <p style={{fontSize:24}}>
+                    {seerResults[nightPlayer]}
+                  </p>
               </div>
             )}
 
-            {role?.id === "knight" && guardTarget === null && (
+            {role?.id === "knight" && !guardTargets[nightPlayer] && (
               <div>
                 <h3>護衛するプレイヤーを選択</h3>
 
@@ -653,7 +666,10 @@ function startTimer() {
                     <button
                       key={i}
                       onClick={() => {
-                        setGuardTarget(num)
+                        setGuardTargets(prev => ({
+                        ...prev,
+                        [nightPlayer]: num
+                      }))
                         setShowNextButton(true)
                       }}
                       style={{
@@ -700,6 +716,14 @@ function startTimer() {
               </div>
             )}
 
+            {role?.id === "werewolf" && wolfTarget !== null && (
+              <div>
+                <h3>襲撃先</h3>
+                <p style={{ fontSize: 24 }}>プレイヤー {wolfTarget}</p>
+                <p>仲間の人狼がこのプレイヤーを襲撃します</p>
+              </div>
+            )}
+
             {role?.id === "villager" && !showNextButton && (
               <p>次のプレイヤーへ進むまでお待ちください...</p>
             )}
@@ -707,8 +731,8 @@ function startTimer() {
             {showNextButton && 
             (
               (role.id !== "werewolf" || wolfTarget !== null) &&
-              (role.id !== "knight" || guardTarget !== null) &&
-              (role.id !== "seer" || seerResult !== null)
+              (role.id !== "knight" || !!guardTargets[nightPlayer]) &&
+              (role.id !== "seer" || !!seerResults[nightPlayer])
             ) && (
               <button
                 onClick={() => {
@@ -878,6 +902,20 @@ function startTimer() {
             <img src={role.role.img} width="200" />
 
             <h2>{role.role.name}</h2>
+
+            {role.role.id === "werewolf" && (
+              <p style={{ marginTop: 12 }}>
+                仲間：
+                {players
+                  .map((p, i) =>
+                    p?.role.id === "werewolf" && i !== currentPlayer - 1
+                      ? ` ${i + 1}`
+                      : null
+                  )
+                  .filter(Boolean)
+                  .join(" , ")}
+              </p>
+            )}
 
             {role.role.id === "seer" && firstSeerWhite !== null && (
               <p style={{ marginTop: 12, fontSize: 20 }}>
