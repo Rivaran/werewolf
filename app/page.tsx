@@ -1068,7 +1068,7 @@ function startTimer() {
         }}
       />
 
-      <div>
+      <div style={{ marginBottom: 10 }}>
         人数　
         <select
           value={playerCount}
@@ -1086,13 +1086,14 @@ function startTimer() {
       </div>
 
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <h2>レギュレーション</h2>
+          <h2>配役選択</h2>
         <div
           style={{
             display: "flex",
             flexWrap: "wrap",
             justifyContent: "center",
-            gap: 10
+            gap: 10,
+            marginBottom: 10
           }}
         >
           {players.map((role, i) => (
