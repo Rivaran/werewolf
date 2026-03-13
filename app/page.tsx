@@ -1072,7 +1072,7 @@ function startTimer() {
           width: "90%",
           maxWidth: 400,
           maxHeight: 120,
-          marginBottom: 20
+          marginBottom: 10
         }}
       />
 
@@ -1102,15 +1102,31 @@ function startTimer() {
       </div>
 
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <h2>配役選択</h2>
+
+        <h2
+          style={{
+            marginTop: 8,
+            /*marginBottom: 10,*/
+            fontSize: 20,
+            fontWeight: "bold",
+            letterSpacing: 1
+          }}
+        >
+          配役選択
+        </h2>
+        
         <div
           style={{
-            display: "grid",
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: 10,
+            /*marginBottom: 10*/
+            /*display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
             gap: 14,
             justifyItems: "center",
-            justifyContent: "center",
-            marginBottom: 20,
+            justifyContent: "center",*/
           }}
         >
           {players.map((role, i) => (
@@ -1122,7 +1138,18 @@ function startTimer() {
           ))}
         </div>
 
-        <h2>役職</h2>
+        <h2
+          style={{
+            marginTop: 16,
+            /*marginBottom: 10,*/
+            fontSize: 20,
+            fontWeight: "bold",
+            letterSpacing: 1
+          }}
+        >
+          役職
+        </h2>
+
         <div style={{ display: "flex", flexWrap: "wrap" }}>
           {roles.map((r) => (
             <RoleCard key={r.id} role={r} />
