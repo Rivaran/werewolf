@@ -821,15 +821,10 @@ function startTimer() {
                   次のプレイヤー
               </button>
             )}
-
           </div>
-
         )}
-
       </div>
-
     )
-
   }
 
   if (phase === "morning") {
@@ -838,36 +833,80 @@ function startTimer() {
 
       <div
         style={{
-          background: "#fff",
+          background: timerRunning
+            ? `url(/image/${theme}/day-bg.png) center / cover no-repeat`
+            : `url(/image/${theme}/morning-bg.png) center / cover no-repeat`,
+
+          backgroundBlendMode: "darken",
+          color: "white",
+
+          backgroundColor: timerRunning
+           ? "rgba(0,0,0,0.18)"
+           : "",
+
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20,
+          position: "relative"
+          /*background: "#fff",
           color: "#000",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20
+          gap: 20*/
         }}
       >
 
-        <h1>
-          {timerRunning ? "議論中" : "朝になりました"}
+      <div
+        style={{
+          position: "absolute",
+          top: 60,
+          left: "50%",
+          transform: "translateX(-50%)",
+          textAlign: "center"
+        }}
+      >
+        <h1
+          style={{
+            fontSize: 42,
+            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 2
+          }}
+        >
+          {timerRunning
+            ? `${day + 1}日目の昼`
+            : `${day + 1}日目の朝`}
         </h1>
+      </div>
 
         {day === 0 ? null : (
           timerRunning === true ? null : (
             morningDeath === null ? (
               <p>昨夜は誰も死にませんでした</p>
             ) : (
-              <p>プレイヤー {morningDeath} が死亡しました</p>
+              <p>昨夜の犠牲者：プレイヤー {morningDeath}</p>
             )
           )
         )}
 
-        <h2>議論時間</h2>
+        <div
+          style={{
+            fontSize: 22,
+            opacity: 0.9,
+            letterSpacing: 2
+          }}
+        >
+          議論時間
+        </div>
 
         <div
           style={{
-            fontSize: 60,
+            fontSize: 72,
             fontWeight: "bold"
           }}
         >
@@ -876,15 +915,23 @@ function startTimer() {
 
         {!timerRunning && (
 
-          <button
-            onClick={startTimer}
-            style={{
-              fontSize: 24,
-              padding: 15
-            }}
-          >
-            議論開始
-          </button>
+        <button
+          onClick={startTimer}
+          style={{
+            marginTop: 10,
+            padding: "16px 40px",
+            fontSize: 22,
+            borderRadius: 14,
+            border: "none",
+            background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+            color: "white",
+            fontWeight: "bold",
+            boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+            cursor: "pointer"
+          }}
+        >
+          議論開始
+        </button>
 
         )}
 
@@ -892,18 +939,21 @@ function startTimer() {
           <button
             onClick={endDiscussion}
             style={{
-              fontSize: 18,
-              padding: 10
+              marginTop: 10,
+              padding: "8px 18px",
+              fontSize: 14,
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.3)",
+              borderRadius: 10,
+              color: "white",
+              cursor: "pointer"
             }}
           >
-          議論スキップ
+            議論スキップ
           </button>
         )}
-
       </div>
-
     )
-
   }
 
   if (phase === "roleCheck") {
