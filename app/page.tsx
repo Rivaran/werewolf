@@ -515,36 +515,26 @@ function startTimer() {
           const result = judgeAfterExecution(executedPlayer!)
 
           if (result === "villagers") {
-            setWinner("villagers")
-            setPhase("result")
             playAudio(
               `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
               () => {
-                playAudio(
-                  "/audio/[09-2]村人陣営の勝利です.wav",
-                  () => {
-                    setPhase("vote")
-                  }
-                )
+                playAudio("/audio/[09-2]村人陣営の勝利です.wav")
               }
             )
+            setWinner("villagers")
+            setPhase("result")
             return
           }
 
           if (result === "werewolves") {
-            setWinner("werewolves")
-            setPhase("result")
             playAudio(
               `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
               () => {
-                playAudio(
-                  "/audio/[09-1]人狼陣営の勝利です.wav",
-                  () => {
-                    setPhase("vote")
-                  }
-                )
+                playAudio("/audio/[09-1]人狼陣営の勝利です.wav",)
               }
             )
+            setWinner("werewolves")
+            setPhase("result")
             return
           }
 
