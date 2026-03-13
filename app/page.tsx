@@ -932,8 +932,7 @@ function startTimer() {
           style={{
             fontSize: 22,
             opacity: 0.9,
-            letterSpacing: 2,
-            marginTop: 20
+            letterSpacing: 2
           }}
         >
           議論時間
@@ -942,7 +941,8 @@ function startTimer() {
         <div
           style={{
             fontSize: 72,
-            fontWeight: "bold"
+            fontWeight: "bold",
+            marginTop: 20
           }}
         >
           {formatTime(timeLeft)}
