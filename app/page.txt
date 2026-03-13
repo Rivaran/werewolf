@@ -20,6 +20,7 @@ const roles = [
   { id: "madman", name: "狂人", img: "/image/狂人.png" },
 ]
 
+
 function RoleCard({ role }: { role: { id: string; name: string; img: string } }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: role.id,
@@ -39,6 +40,9 @@ function RoleCard({ role }: { role: { id: string; name: string; img: string } })
     touchAction: "none",
     userSelect: "none",
     WebkitUserSelect: "none",
+    boxShadow: transform
+      ? "0 8px 16px rgba(0,0,0,0.3)"
+      : "0 3px 6px rgba(0,0,0,0.2)"
   }
 
   return (
@@ -75,7 +79,10 @@ function PlayerSlot({
         margin: 5,
         width: 120,
         height: 120,
-        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
       <div>配役 {id}</div>
@@ -375,6 +382,10 @@ function startTimer() {
   
   function startGame() {
 
+    if (players.some(p => p === null)) {
+      alert("配役をすべて選択してください")
+      return
+    }
     setDay(0)
     
     const selectedRoles = players
@@ -558,7 +569,9 @@ function startTimer() {
 
       <div
         style={{
-          background: "#000",
+          backgroundImage: `url(/image/${theme}/night-bg.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
           color: "white",
           height: "100vh",
           display: "flex",
@@ -1020,11 +1033,11 @@ function startTimer() {
 
       <div
         style={{
-          position: "absolute",
-          top: 20,
-          right: 20,
+          width: "100%",
           display: "flex",
-          gap: 10
+          justifyContent: "flex-end",
+          gap: 10,
+          marginBottom: 3
         }}
       >
 
@@ -1064,13 +1077,21 @@ function startTimer() {
           width: "90%",
           maxWidth: 400,
           maxHeight: 120,
-          marginBottom: 20
+          marginBottom: 3
         }}
       />
 
-      <div>
+      <div style={{ marginBottom: 3 }}>
         人数　
         <select
+          style={{
+            padding: "6px 10px",
+            borderRadius: 8,
+            border: "2px solid #888",
+            background: "#fff",
+            fontSize: 16,
+            cursor: "pointer"
+          }}
           value={playerCount}
           onChange={(e) => {
             const n = Number(e.target.value)
@@ -1086,13 +1107,31 @@ function startTimer() {
       </div>
 
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <h2>レギュレーション</h2>
+
+        <h2
+          style={{
+            marginTop: 8,
+            /*marginBottom: 10,*/
+            fontSize: 20,
+            fontWeight: "bold",
+            letterSpacing: 1
+          }}
+        >
+          配役選択
+        </h2>
+        
         <div
           style={{
             display: "flex",
             flexWrap: "wrap",
             justifyContent: "center",
-            gap: 10
+            gap: 10,
+            /*marginBottom: 10*/
+            /*display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 14,
+            justifyItems: "center",
+            justifyContent: "center",*/
           }}
         >
           {players.map((role, i) => (
@@ -1104,7 +1143,18 @@ function startTimer() {
           ))}
         </div>
 
-        <h2>役職</h2>
+        <h2
+          style={{
+            marginTop: 16,
+            /*marginBottom: 10,*/
+            fontSize: 20,
+            fontWeight: "bold",
+            letterSpacing: 1
+          }}
+        >
+          役職
+        </h2>
+
         <div style={{ display: "flex", flexWrap: "wrap" }}>
           {roles.map((r) => (
             <RoleCard key={r.id} role={r} />
@@ -1115,10 +1165,14 @@ function startTimer() {
       <button
         onClick={startGame}
         style={{
-          marginTop: 20,
-          padding: "10px 16px",
-          fontSize: 18,
-          cursor: "pointer",
+          marginTop: 30,
+          padding: "14px 40px",
+          fontSize: 22,
+          background: "#ff6b6b",
+          color: "#fff",
+          border: "none",
+          borderRadius: 12,
+          cursor: "pointer"
         }}
       >
         ゲーム開始

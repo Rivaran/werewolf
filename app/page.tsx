@@ -560,7 +560,6 @@ function startTimer() {
     )
   }
 
-
   if (phase === "night") {
 
     const role = players[nightPlayer - 1]?.role
@@ -569,14 +568,19 @@ function startTimer() {
 
       <div
         style={{
-          background: "#000",
+          background: `url(/image/${theme}/night-bg.png) center / cover no-repeat`,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          backgroundBlendMode: "darken",
+          color: "white",
+          minHeight: "100vh"
+          /*background: "#000",
           color: "white",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20
+          gap: 20*/
         }}
       >
 
@@ -892,13 +896,22 @@ function startTimer() {
 
       <div
         style={{
-          background: "#111",
+          background: `url(/image/${theme}/night-bg.png) center / cover no-repeat`,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          backgroundBlendMode: "darken",
+          height: "100vh",
+          display: "flex",
+          color: "white",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center"
+          /*background: "#111",
           color: "white",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center"
+          justifyContent: "center"*/
         }}
       >
 
