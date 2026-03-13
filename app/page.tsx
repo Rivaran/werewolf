@@ -613,7 +613,8 @@ function startTimer() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "flex-start",
+          /*justifyContent: "flex-start",*/
+          justifyContent: "center",
           gap: 20,
           position: "relative",
           paddingTop: "20vh",
@@ -622,7 +623,7 @@ function startTimer() {
 
         <div
           style={{
-            fontSize: 56,
+            fontSize: 51,
             letterSpacing: 4,
             fontWeight: "bold",
             textShadow: "0 4px 16px rgba(0,0,0,0.6)",
@@ -634,6 +635,19 @@ function startTimer() {
         </div>
 
         <button
+          onClick={() => {
+            setPhase("setup")
+            setTimeLeft(180)
+            setTimerRunning(false)
+            setExecutedPlayer(null)
+            setWinner(null)
+            setCurrentPlayer(1)
+            setShowRole(false)
+            setFirstSeerWhite(null)
+            setSeerResults({})
+            setWolfTarget(null)
+            setGuardTargets({})
+          }}
           style={{
             marginTop: 150,
             padding: "16px 40px",
