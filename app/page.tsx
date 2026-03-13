@@ -85,7 +85,7 @@ function PlayerSlot({
         alignItems: "center",
         justifyContent: "center"*/
         border: "2px dashed #999",
-        width: "100%",
+        width: "98%",
         aspectRatio: "1 / 1",
         display: "flex",
         flexDirection: "column",
