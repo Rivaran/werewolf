@@ -85,7 +85,7 @@ function PlayerSlot({
         alignItems: "center",
         justifyContent: "center"*/
         border: "2px dashed #999",
-        width: "98%",
+        width: "100%",
         aspectRatio: "1 / 1",
         display: "flex",
         flexDirection: "column",
@@ -98,7 +98,7 @@ function PlayerSlot({
 
       {role && (
         <>
-          <img src={role.img} width="70" alt={role.name} />
+          <img src={role.img} width="68" alt={role.name} />
           <div>{role.name}</div>
         </>
       )}
