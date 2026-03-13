@@ -77,13 +77,12 @@ function PlayerSlot({
       style={{
         border: "2px dashed #999",
         padding: 10,
-        margin: 5,
-        width: 120,
-        height: 120,
+        width: "100%",
+        aspectRatio: "1 / 1",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent: "center",
       }}
     >
       <div>配役 {id}</div>
