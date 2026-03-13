@@ -91,7 +91,7 @@ function PlayerSlot({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: role ? "flex-start" : "center",
-        padding: role ? 1 : 30
+        padding: role ? 0 : 30
       }}
     >
       <div>配役 {id}</div>
@@ -1467,7 +1467,7 @@ function startTimer() {
             gap: 10,*/
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 4,
+            gap: 3,
             justifyContent: "center"
           }}
         >
