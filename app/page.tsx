@@ -1392,7 +1392,7 @@ function startTimer() {
             gap: 10,*/
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 6,
+            gap: 3,
             justifyItems: "center",
             justifyContent: "center"
           }}
