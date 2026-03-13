@@ -572,7 +572,13 @@ function startTimer() {
           backgroundColor: "rgba(0,0,0,0.5)",
           backgroundBlendMode: "darken",
           color: "white",
-          minHeight: "100vh"
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20,
+          position: "relative"
           /*background: "#000",
           color: "white",
           height: "100vh",
@@ -584,7 +590,19 @@ function startTimer() {
         }}
       >
 
-        <h1>夜フェーズ</h1>
+        <div
+          style={{
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            textAlign: "center"
+          }}
+        >
+          <h1 style={{fontSize: 40}}>
+            夜フェーズ {day+1}日目の夜
+          </h1>
+        </div>
 
         <h2>プレイヤー {nightPlayer}</h2>
 
@@ -893,7 +911,7 @@ function startTimer() {
     const role = players[currentPlayer - 1]
 
     return (
-
+      
       <div
         style={{
           background: `url(/image/${theme}/night-bg.png) center / cover no-repeat`,
@@ -904,7 +922,9 @@ function startTimer() {
           color: "white",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center"
+          justifyContent: "center",
+          animation: "fadeIn 0.6s ease"
+
           /*background: "#111",
           color: "white",
           height: "100vh",
@@ -915,13 +935,50 @@ function startTimer() {
         }}
       >
 
-        <h1>プレイヤー {currentPlayer}</h1>
+        <div
+          style={{
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            textAlign: "center"
+          }}
+        >
+          <h1 style={{fontSize: 40}}>
+            役職確認フェーズ
+          </h1>
+        </div>
+
+        <div
+          style={{
+            fontSize: 20,
+            letterSpacing: 2,
+            padding: "6px 14px",
+            borderRadius: 20,
+            background: "rgba(0,0,0,0.35)",
+            backdropFilter: "blur(4px)",
+            marginBottom: 10
+          }}
+        >
+        プレイヤー {currentPlayer}
+        </div>
 
         {!showRole && (
 
           <button
             onClick={revealRole}
-            style={{ fontSize: 24, padding: 20 }}
+            style={{
+              marginTop: 20,
+              padding: "14px 28px",
+              fontSize: 20,
+              borderRadius: 12,
+              border: "none",
+              background: "linear-gradient(135deg,#ffd966,#ffb347)",
+              color: "#333",
+              fontWeight: "bold",
+              boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
+              cursor: "pointer"
+            }}
           >
             役職確認
           </button>
@@ -934,7 +991,16 @@ function startTimer() {
 
             <img src={role.role.img} width="200" />
 
-            <h2>{role.role.name}</h2>
+            <h2
+              style={{
+                fontSize: 42,
+                fontWeight: "bold",
+                marginTop: 10,
+                textShadow: "0 0 10px rgba(255,255,255,0.6)"
+              }}
+              >
+              {role.role.name}
+            </h2>
 
             {role.role.id === "werewolf" && (() => {
               const wolfMates = players
@@ -962,7 +1028,18 @@ function startTimer() {
 
             <button
               onClick={nextPlayer}
-              style={{ fontSize: 20, padding: 15 }}
+              style={{
+                marginTop: 20,
+                padding: "14px 36px",
+                fontSize: 20,
+                borderRadius: 12,
+                border: "none",
+                background: "linear-gradient(135deg,#66ccff,#3399ff)",
+                color: "white",
+                fontWeight: "bold",
+                boxShadow: "0 6px 14px rgba(0,0,0,0.4)",
+                cursor: "pointer"
+              }}
             >
               確認済
             </button>
