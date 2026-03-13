@@ -517,7 +517,7 @@ function startTimer() {
           top: 60,
           left: "50%",
           transform: "translateX(-50%)",
-          fontSize: 42,
+          fontSize: 36,
           textShadow: "0 3px 12px rgba(0,0,0,0.6)",
           letterSpacing: 2
         }}
@@ -900,7 +900,7 @@ function startTimer() {
       >
         <h1
           style={{
-            fontSize: 42,
+            fontSize: 36,
             textShadow: "0 3px 12px rgba(0,0,0,0.6)",
             letterSpacing: 2
           }}
@@ -1194,7 +1194,7 @@ function startTimer() {
             top: 60,
             left: "50%",
             transform: "translateX(-50%)",
-            fontSize: 42,
+            fontSize: 36,
             textShadow: "0 3px 12px rgba(0,0,0,0.6)",
             letterSpacing: 2
           }}
@@ -1220,9 +1220,9 @@ function startTimer() {
               <button
                 key={i}
                 style={{
-                  width: 220,
+                  width: 180,
                   padding: 12,
-                  margin: 6,
+                  margin: 4,
                   fontSize: 18,
                   borderRadius: 12,
                   border: "1px solid rgba(255,255,255,0.25)",
