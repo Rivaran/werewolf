@@ -599,7 +599,7 @@ function startTimer() {
             textAlign: "center"
           }}
         >
-          <h1 style={{fontSize: 40}}>
+          <h1 style={{fontSize: 35}}>
             夜フェーズ {day+1}日目の夜
           </h1>
         </div>
@@ -944,7 +944,7 @@ function startTimer() {
             textAlign: "center"
           }}
         >
-          <h1 style={{fontSize: 40}}>
+          <h1 style={{fontSize: 35}}>
             役職確認フェーズ
           </h1>
         </div>
