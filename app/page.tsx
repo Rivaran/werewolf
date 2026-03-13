@@ -40,6 +40,9 @@ function RoleCard({ role }: { role: { id: string; name: string; img: string } })
     touchAction: "none",
     userSelect: "none",
     WebkitUserSelect: "none",
+    boxShadow: transform
+      ? "0 8px 16px rgba(0,0,0,0.3)"
+      : "0 3px 6px rgba(0,0,0,0.2)"
   }
 
   return (
@@ -1032,7 +1035,7 @@ function startTimer() {
           display: "flex",
           justifyContent: "flex-end",
           gap: 10,
-          marginBottom: 10
+          marginBottom: 3
         }}
       >
 
@@ -1072,11 +1075,11 @@ function startTimer() {
           width: "90%",
           maxWidth: 400,
           maxHeight: 120,
-          marginBottom: 10
+          marginBottom: 3
         }}
       />
 
-      <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: 3 }}>
         人数　
         <select
           style={{
