@@ -83,14 +83,14 @@ function PlayerSlot({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "center"
       }}
     >
       <div>配役 {id}</div>
 
       {role && (
         <>
-          <img src={role.img} width="59" alt={role.name} />
+          <img src={role.img} width="60" alt={role.name} />
           <div>{role.name}</div>
         </>
       )}
