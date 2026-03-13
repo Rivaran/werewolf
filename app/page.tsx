@@ -20,6 +20,7 @@ const roles = [
   { id: "madman", name: "狂人", img: "/image/狂人.png" },
 ]
 
+
 function RoleCard({ role }: { role: { id: string; name: string; img: string } }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: role.id,
@@ -375,6 +376,11 @@ function startTimer() {
   
   function startGame() {
 
+    if (players.some(p => p === null)) {
+      alert("配役をすべて選択してください")
+      return
+    }
+    
     setDay(0)
     
     const selectedRoles = players
