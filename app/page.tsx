@@ -1071,6 +1071,14 @@ function startTimer() {
       <div style={{ marginBottom: 10 }}>
         人数　
         <select
+          style={{
+            padding: "6px 10px",
+            borderRadius: 8,
+            border: "2px solid #888",
+            background: "#fff",
+            fontSize: 16,
+            cursor: "pointer"
+          }}
           value={playerCount}
           onChange={(e) => {
             const n = Number(e.target.value)
@@ -1116,10 +1124,14 @@ function startTimer() {
       <button
         onClick={startGame}
         style={{
-          marginTop: 20,
-          padding: "10px 16px",
-          fontSize: 18,
-          cursor: "pointer",
+          marginTop: 30,
+          padding: "14px 40px",
+          fontSize: 22,
+          background: "#ff6b6b",
+          color: "#fff",
+          border: "none",
+          borderRadius: 12,
+          cursor: "pointer"
         }}
       >
         ゲーム開始
