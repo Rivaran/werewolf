@@ -1020,11 +1020,11 @@ function startTimer() {
 
       <div
         style={{
-          position: "absolute",
-          top: 20,
-          right: 20,
+          width: "100%",
           display: "flex",
-          gap: 10
+          justifyContent: "flex-end",
+          gap: 10,
+          marginBottom: 10
         }}
       >
 
