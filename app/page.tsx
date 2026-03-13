@@ -942,7 +942,7 @@ function startTimer() {
           style={{
             fontSize: 72,
             fontWeight: "bold",
-            marginTop: 20
+            marginTop: 80
           }}
         >
           {formatTime(timeLeft)}
