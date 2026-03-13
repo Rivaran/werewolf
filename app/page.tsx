@@ -494,7 +494,8 @@ function startTimer() {
             fontSize: 34,
             textShadow: "0 3px 12px rgba(0,0,0,0.6)",
             letterSpacing: 4,
-            opacity: 0.9
+            opacity: 0.9,
+            whiteSpace: "nowrap"
           }}
         >
           遺言の時間
