@@ -64,9 +64,11 @@ function RoleCard({ role }: { role: { id: string; name: string; img: string } })
 function PlayerSlot({
   id,
   role,
+  theme
 }: {
   id: number
   role: { id: string; name: string; img: string } | null
+  theme: string
 }) {
   const { setNodeRef } = useDroppable({
     id: "slot-" + id,
@@ -98,7 +100,7 @@ function PlayerSlot({
 
       {role && (
         <>
-          <img src={role.img} width="65" alt={role.name} />
+          <img src={role.img} width={theme === "ai" ? 56 : 70} alt={role.name} />
           <div>{role.name}</div>
         </>
       )}
@@ -1476,6 +1478,7 @@ function startTimer() {
               key={i}
               id={i + 1}
               role={role?.role ?? null}
+              theme={theme}
             />
           ))}
         </div>

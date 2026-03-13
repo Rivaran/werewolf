@@ -10,8 +10,10 @@ import {
   TouchSensor,
   useSensor,
   useSensors
- } from "@dnd-kit/core"
+} from "@dnd-kit/core"
 
+const winner = "werewolf"
+ 
 const roles = [
   { id: "villager", name: "村人", img: "/image/村人.png" },
   { id: "werewolf", name: "人狼", img: "/image/人狼.png" },
@@ -74,22 +76,29 @@ function PlayerSlot({
     <div
       ref={setNodeRef}
       style={{
-        border: "2px dashed #999",
-        padding: 10,
-        margin: 5,
-        width: 120,
-        height: 120,
+        /*border: "2px dashed #999",
+        padding: 8,
+        width: "100%",
+        aspectRatio: "1 / 1",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "center"*/
+        border: "2px dashed #999",
+        width: "100%",
+        aspectRatio: "1 / 1",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: role ? "flex-start" : "center",
+        padding: role ? 0 : 32
       }}
     >
       <div>配役 {id}</div>
 
       {role && (
         <>
-          <img src={role.img} width="60" alt={role.name} />
+          <img src={role.img} width="65" alt={role.name} />
           <div>{role.name}</div>
         </>
       )}
@@ -112,7 +121,7 @@ export default function Page() {
   const [firstSeerWhite, setFirstSeerWhite] = useState<number | null>(null)
   const [morningDeath, setMorningDeath] = useState<number | null>(null)
   const [day, setDay] = useState(0)
-  const [theme, setTheme] = useState("mama")
+  const [theme, setTheme] = useState("ai")
   const [voteTarget, setVoteTarget] = useState<number | null>(null)
 
   const roles = [
@@ -294,7 +303,7 @@ export default function Page() {
       "/audio/[05]議論終了の時間となりました。投票に移ります.wav",
       () => {
         playAudio(
-          "/audio/[06]5からカウントダウン",
+          "/audio/[06]5からカウントダウン.wav",
           () => {
             setPhase("vote")
           }
@@ -461,25 +470,62 @@ function startTimer() {
 
       <div
         style={{
+          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundBlendMode: "darken",
+          color: "white",
+          backgroundColor: "rgba(0,0,0,0.25)",
+
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20
+          gap: 20,
+          position: "relative"
+
         }}
       >
 
-        <h1>プレイヤー {executedPlayer}</h1>
+       <h1
+          style={{
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: 34,
+            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 4,
+            opacity: 0.9,
+            whiteSpace: "nowrap"
+          }}
+        >
+          遺言の時間
+        </h1>
+
+        <h1 style={{
+          fontSize: 26,
+          fontWeight: "bold",
+          letterSpacing: 2
+        }}>プレイヤー {executedPlayer} の遺言</h1>
+
+        <h1>ここで遺言を言ってください</h1>
 
         <button
           onClick={() => judgeAfterExecution(executedPlayer!)}
           style={{
+            marginTop: 40,
+            padding: "14px 36px",
             fontSize: 20,
-            padding: 15
+            borderRadius: 14,
+            border: "none",
+            background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+            color: "white",
+            fontWeight: "bold",
+            boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+            cursor: "pointer"
           }}
         >
-          遺言終了
+          夜時間へ
         </button>
 
       </div>
@@ -494,24 +540,50 @@ function startTimer() {
 
       <div
         style={{
+          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundBlendMode: "darken",
+          color: "white",
+          backgroundColor: "rgba(0,0,0,0.25)",
+
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20
+          gap: 20,
+          position: "relative"
+
         }}
       >
 
-        <h1>投票タイム</h1>
+      <h1
+        style={{
+          position: "absolute",
+          top: 60,
+          left: "50%",
+          transform: "translateX(-50%)",
+          fontSize: 34,
+          textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+          letterSpacing: 2
+        }}
+      >
+        投票タイム
+      </h1>
 
         <button
           onClick={() => setPhase("vote")}
           style={{
-            fontSize: 24,
-            padding: 20
+            marginTop: 30,
+            padding: "10px 22px",
+            fontSize: 16,
+            color: "white",
+            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.35)",
+            borderRadius: 12,
+            backdropFilter: "blur(4px)",
+            cursor: "pointer"
           }}
-        >
+          >
           追放者選択画面へ
         </button>
 
@@ -522,36 +594,55 @@ function startTimer() {
   }
 
   if (phase === "result") {
+
+    const bgImage =
+      winner === "villagers"
+        ? `url(/image/${theme}/village_win.png)`
+        : `url(/image/${theme}/wolf_win.png)`
+
     return (
       <div
         style={{
+          background: `${bgImage} center / cover no-repeat`,
+          /*backgroundBlendMode: "darken",
+          backgroundColor: "rgba(0,0,0,0.25)",*/
+          color: "white",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
-          gap: 20
+          justifyContent: "flex-start",
+          gap: 20,
+          position: "relative",
+          paddingTop: "20vh",
         }}
       >
-        <h1>{winner === "villagers" ? "村人陣営の勝利" : "人狼陣営の勝利"}</h1>
+
+        <div
+          style={{
+            fontSize: 56,
+            letterSpacing: 4,
+            fontWeight: "bold",
+            textShadow: "0 4px 16px rgba(0,0,0,0.6)",
+          }}
+        >
+          {winner === "villagers"
+            ? "村人陣営の勝利"
+            : "人狼陣営の勝利"}
+        </div>
 
         <button
-          onClick={() => {
-            setPhase("setup")
-            setTimeLeft(180)
-            setTimerRunning(false)
-            setExecutedPlayer(null)
-            setWinner(null)
-            setCurrentPlayer(1)
-            setShowRole(false)
-            setFirstSeerWhite(null)
-            setSeerResults({})
-            setWolfTarget(null)
-            setGuardTargets({})
-          }}
           style={{
-            fontSize: 20,
-            padding: 15
+            marginTop: 150,
+            padding: "16px 40px",
+            fontSize: 22,
+            borderRadius: 14,
+            border: "none",
+            background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+            color: "white",
+            fontWeight: "bold",
+            boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+            cursor: "pointer",
           }}
         >
           トップに戻る
@@ -599,7 +690,7 @@ function startTimer() {
             textAlign: "center"
           }}
         >
-          <h1 style={{fontSize: 35}}>
+          <h1 style={{fontSize: 34}}>
             夜 {day+1}日目の夜
           </h1>
         </div>
@@ -821,15 +912,10 @@ function startTimer() {
                   次のプレイヤー
               </button>
             )}
-
           </div>
-
         )}
-
       </div>
-
     )
-
   }
 
   if (phase === "morning") {
@@ -838,53 +924,115 @@ function startTimer() {
 
       <div
         style={{
-          background: "#fff",
+          background: timerRunning
+            ? `url(/image/${theme}/day-bg.png) center / cover no-repeat`
+            : `url(/image/${theme}/morning-bg.png) center / cover no-repeat`,
+
+          backgroundBlendMode: "darken",
+          color: "white",
+
+          backgroundColor: timerRunning
+           ? "rgba(0,0,0,0.25)"
+           : "",
+
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20,
+          position: "relative"
+          /*background: "#fff",
           color: "#000",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20
+          gap: 20*/
         }}
       >
 
-        <h1>
-          {timerRunning ? "議論中" : "朝になりました"}
+      <div
+        style={{
+          position: "absolute",
+          top: 60,
+          left: "50%",
+          transform: "translateX(-50%)",
+          textAlign: "center"
+        }}
+      >
+        <h1
+          style={{
+            fontSize: 34,
+            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 2
+          }}
+        >
+          {timerRunning
+            ? `${day + 1}日目の昼`
+            : `${day + 1}日目の朝`}
         </h1>
+      </div>
 
         {day === 0 ? null : (
           timerRunning === true ? null : (
             morningDeath === null ? (
               <p>昨夜は誰も死にませんでした</p>
             ) : (
-              <p>プレイヤー {morningDeath} が死亡しました</p>
+              <p>昨夜の犠牲者：プレイヤー {morningDeath}</p>
             )
           )
         )}
 
-        <h2>議論時間</h2>
-
         <div
           style={{
-            fontSize: 60,
-            fontWeight: "bold"
+            marginTop: 60,
+            textAlign: "center"
           }}
         >
-          {formatTime(timeLeft)}
+
+          <div
+            style={{
+              fontSize: 22,
+              opacity: 0.9,
+              letterSpacing: 2,
+              textShadow: "0 2px 8px rgba(0,0,0,0.5)"
+            }}
+          >
+            議論時間
+          </div>
+
+          <div
+            style={{
+              fontSize: 80,
+              fontWeight: "bold",
+            }}
+          >
+            {formatTime(timeLeft)}
+          </div>
+
         </div>
 
         {!timerRunning && (
 
-          <button
-            onClick={startTimer}
-            style={{
-              fontSize: 24,
-              padding: 15
-            }}
-          >
-            議論開始
-          </button>
+        <button
+          onClick={startTimer}
+          style={{
+            marginTop: 10,
+            padding: "16px 40px",
+            fontSize: 22,
+            borderRadius: 14,
+            border: "none",
+            background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+            color: "white",
+            fontWeight: "bold",
+            boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+            cursor: "pointer"
+          }}
+        >
+          議論開始
+        </button>
 
         )}
 
@@ -892,18 +1040,21 @@ function startTimer() {
           <button
             onClick={endDiscussion}
             style={{
-              fontSize: 18,
-              padding: 10
+              marginTop: 10,
+              padding: "8px 18px",
+              fontSize: 14,
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.3)",
+              borderRadius: 10,
+              color: "white",
+              cursor: "pointer"
             }}
           >
-          議論スキップ
+            議論スキップ
           </button>
         )}
-
       </div>
-
     )
-
   }
 
   if (phase === "roleCheck") {
@@ -1003,7 +1154,8 @@ function startTimer() {
                 style={{
                   maxWidth: "100%",
                   maxHeight: "100%",
-                  objectFit: "contain"
+                  objectFit: "contain",
+                  transform: role.role.id === "seer" ? "translateX(60px)" : "none"
                 }}
               />
             </div>
@@ -1012,6 +1164,7 @@ function startTimer() {
               style={{
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: 10,
                 marginTop: 10
               }}
@@ -1028,7 +1181,7 @@ function startTimer() {
 
               <span
                 style={{
-                  fontSize: 36,
+                  fontSize: 32,
                   fontWeight: "bold",
                   textShadow: "0 0 10px rgba(255,255,255,0.6)"
                 }}
@@ -1095,43 +1248,104 @@ function startTimer() {
 
       <div
         style={{
+          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundBlendMode: "darken",
+          color: "white",
+          backgroundColor: "rgba(0,0,0,0.25)",
+
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20
+          gap: 20,
+          position: "relative"
         }}
       >
+        <h1
+          style={{
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: 34,
+            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 2
+          }}
+        >
+          追放者決定
+        </h1>
 
-        <h1>追放されたプレイヤーを選択</h1>
+        <h1>追放するプレイヤーを選択</h1>
 
-        {players.map((p, i) => {
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 10,
+            marginTop: 20
+          }}
+        >
 
-          if (!p?.alive) return null
+          {players.map((_, i) => {
 
-          return (
-            <button
-              key={i}
-              onClick={() => setVoteTarget(i + 1)}
-            >
-              プレイヤー {i + 1}
-            </button>
-          )
-        })}
+            return (
+
+              <button
+                key={i}
+                style={{
+                  width: 160,
+                  padding: 12,
+                  margin: 4,
+                  fontSize: 18,
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  background: "rgba(255,255,255,0.6)",
+                  color: "white",
+                  cursor: "pointer",
+                  backdropFilter: "blur(6px)"
+                }}
+                onClick={() => setVoteTarget(i + 1)}
+              >
+                プレイヤー {i + 1}
+              </button>
+
+            )
+
+          })}
+
+        </div>
 
         {voteTarget !== null && (
-          <div style={{ marginTop: 20 }}>
+          <div style={{marginTop: 20 }}>
             <p>プレイヤー {voteTarget} を追放しますか？</p>
 
             <button
               onClick={() => executePlayer(voteTarget)}
-              style={{ marginRight: 10 }}
+              style={{ 
+                padding: "12px 26px",
+                fontSize: 18,
+                borderRadius: 12,
+                background: "#4fa3ff",
+                border: "none",
+                color: "white",
+                cursor: "pointer",
+                marginRight: 12
+              }}
             >
               決定
             </button>
 
             <button
+              style={{
+                padding: "10px 22px",
+                fontSize: 16,
+                borderRadius: 12,
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.35)",
+                color: "white",
+                cursor: "pointer"
+              }}
               onClick={() => setVoteTarget(null)}
             >
               戻る
@@ -1167,20 +1381,6 @@ function startTimer() {
       >
 
         <button
-          onClick={() => setTheme("mama")}
-          style={{
-            padding: "6px 14px",
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            cursor: "pointer",
-            background: theme === "mama" ? "#ffd966" : "#fff",
-            fontWeight: theme === "mama" ? "bold" : "normal"
-          }}
-        >
-          イラスト1
-        </button>
-
-        <button
           onClick={() => setTheme("ai")}
           style={{
             padding: "6px 14px",
@@ -1189,6 +1389,20 @@ function startTimer() {
             cursor: "pointer",
             background: theme === "ai" ? "#ffd966" : "#fff",
             fontWeight: theme === "ai" ? "bold" : "normal"
+          }}
+        >
+          イラスト1
+        </button>
+
+        <button
+          onClick={() => setTheme("mama")}
+          style={{
+            padding: "6px 14px",
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            cursor: "pointer",
+            background: theme === "mama" ? "#ffd966" : "#fff",
+            fontWeight: theme === "mama" ? "bold" : "normal"
           }}
         >
           イラスト2
@@ -1247,16 +1461,14 @@ function startTimer() {
         
         <div
           style={{
-            display: "flex",
+            /*display: "flex",
             flexWrap: "wrap",
             justifyContent: "center",
-            gap: 10,
-            /*marginBottom: 10*/
-            /*display: "grid",
+            gap: 10,*/
+            display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 14,
-            justifyItems: "center",
-            justifyContent: "center",*/
+            gap: 3,
+            justifyContent: "center"
           }}
         >
           {players.map((role, i) => (
@@ -1271,7 +1483,6 @@ function startTimer() {
         <h2
           style={{
             marginTop: 16,
-            /*marginBottom: 10,*/
             fontSize: 20,
             fontWeight: "bold",
             letterSpacing: 1
