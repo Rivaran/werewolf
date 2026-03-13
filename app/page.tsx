@@ -600,7 +600,7 @@ function startTimer() {
           }}
         >
           <h1 style={{fontSize: 35}}>
-            夜フェーズ {day+1}日目の夜
+            夜 {day+1}日目の夜
           </h1>
         </div>
 
@@ -944,8 +944,8 @@ function startTimer() {
             textAlign: "center"
           }}
         >
-          <h1 style={{fontSize: 35}}>
-            役職確認フェーズ
+          <h1 style={{fontSize: 40}}>
+            役職確認
           </h1>
         </div>
 
@@ -989,18 +989,57 @@ function startTimer() {
 
           <div style={{ textAlign: "center" }}>
 
-            <img src={role.role.img} width="200" />
-
-            <h2
+            <div
               style={{
-                fontSize: 42,
-                fontWeight: "bold",
-                marginTop: 10,
-                textShadow: "0 0 10px rgba(255,255,255,0.6)"
+                width: 200,
+                height: 200,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
               }}
+            >
+              <img
+                src={role.role.img}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  transform: role.role.id === "seer" ? "translateX(60px)" : "none"
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                marginTop: 10
+              }}
+            >
+
+              <span
+                style={{
+                  fontSize: 16,
+                  opacity: 0.6
+                }}
               >
-              {role.role.name}
-            </h2>
+                あなたの役職：
+              </span>
+
+              <span
+                style={{
+                  fontSize: 32,
+                  fontWeight: "bold",
+                  textShadow: "0 0 10px rgba(255,255,255,0.6)"
+                }}
+              >
+                {role.role.name}
+              </span>
+
+            </div>
+
 
             {role.role.id === "werewolf" && (() => {
               const wolfMates = players
