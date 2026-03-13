@@ -930,22 +930,31 @@ function startTimer() {
 
         <div
           style={{
-            fontSize: 22,
-            opacity: 0.9,
-            letterSpacing: 2
+            marginTop: 60,
+            textAlign: "center"
           }}
         >
-          議論時間
-        </div>
 
-        <div
-          style={{
-            fontSize: 72,
-            fontWeight: "bold",
-            marginTop: 150
-          }}
-        >
-          {formatTime(timeLeft)}
+          <div
+            style={{
+              fontSize: 22,
+              opacity: 0.9,
+              letterSpacing: 2,
+              textShadow: "0 2px 8px rgba(0,0,0,0.5)"
+            }}
+          >
+            議論時間
+          </div>
+
+          <div
+            style={{
+              fontSize: 80,
+              fontWeight: "bold",
+            }}
+          >
+            {formatTime(timeLeft)}
+          </div>
+
         </div>
 
         {!timerRunning && (
