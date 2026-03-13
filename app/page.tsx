@@ -98,7 +98,7 @@ function PlayerSlot({
 
       {role && (
         <>
-          <img src={role.img} width="68" alt={role.name} />
+          <img src={role.img} width="65" alt={role.name} />
           <div>{role.name}</div>
         </>
       )}
