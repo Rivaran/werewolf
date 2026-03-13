@@ -933,7 +933,7 @@ function startTimer() {
             fontSize: 22,
             opacity: 0.9,
             letterSpacing: 2,
-            marginTop: 8
+            marginTop: 20
           }}
         >
           議論時間
