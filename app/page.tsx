@@ -269,6 +269,14 @@ export default function Page() {
     }
   }, [phase])
 
+  useEffect(() => {
+    if (phase === "night" && !nightActionReady) {
+      playAudio(
+        `/audio/[11-${nightPlayer}]${nightPlayer}番の人は他のプレイヤーが目を瞑ったのを確認した後・・・.wav`
+      )
+    }
+  }, [nightPlayer, phase])
+
   function randomDelay(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min
   }
@@ -538,9 +546,12 @@ function startTimer() {
             return
           }
 
-          setPhase("night")
-
-          playAudio(`/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`)
+          playAudio(
+            `/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`,
+            () => {
+              setPhase("night")
+            }
+          )
         }}
 
           style={{
@@ -714,7 +725,8 @@ function startTimer() {
           alignItems: "center",
           justifyContent: "center",
           gap: 20,
-          position: "relative"
+          position: "relative",
+          paddingTop: 80
           /*background: "#000",
           color: "white",
           height: "100vh",
@@ -740,7 +752,19 @@ function startTimer() {
           </h1>
         </div>
 
-        <h2>プレイヤー {nightPlayer}</h2>
+        <div
+          style={{
+            fontSize: 20,
+            letterSpacing: 2,
+            padding: "6px 14px",
+            borderRadius: 20,
+            background: "rgba(0,0,0,0.35)",
+            backdropFilter: "blur(4px)",
+            marginBottom: 10
+          }}
+        >
+        プレイヤー {nightPlayer}
+        </div>
 
         {!nightActionReady && (
 
@@ -765,7 +789,20 @@ function startTimer() {
                 setShowNextButton(true)
               }
                             
-            }}
+            }
+          }
+          style={{
+            marginTop: 20,
+            padding: "14px 28px",
+            fontSize: 20,
+            borderRadius: 12,
+            border: "none",
+            background: "linear-gradient(135deg,#ffd966,#ffb347)",
+            color: "#333",
+            fontWeight: "bold",
+            boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
+            cursor: "pointer"
+          }}
           >
           画面タップ
           </button>
@@ -776,47 +813,89 @@ function startTimer() {
 
           <div style={{ textAlign: "center" }}>
 
-            <img src={role.img} width="200" />
+            <div
+              style={{
+                width: 200,
+                margin: "0 auto",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              <img src={role.img} width="140" />
+            </div>
 
-            <h2>{role.name}</h2>
+            <span
+              style={{
+                fontSize: 16,
+                opacity: 0.6
+              }}
+            >
+              あなたの役職：
+            </span>
+
+            <span
+              style={{
+                fontSize: 32,
+                fontWeight: "bold",
+                textShadow: "0 0 10px rgba(255,255,255,0.6)"
+              }}
+            >
+              {role.name}
+            </span>
 
             {role?.id === "seer" && !seerResults[nightPlayer] && (
               <div>
                 <h3>占うプレイヤーを選択</h3>
 
-                {players.map((p, i) => {
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, 1fr)",
+                    gap: 14,
+                    marginTop: 20
+                  }}
+                >
 
-                  const num = i + 1
+                  {players.map((p, i) => {
 
-                  if (num === nightPlayer) return null
-                  if (num === executedPlayer) return null
+                    const num = i + 1
 
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => {
+                    if (num === nightPlayer) return null
+                    if (num === executedPlayer) return null
 
-                        const target = players[i]?.role
+                    return (
+                        <button
+                          key={num}
+                          onClick={() => {
 
-                        setSeerResults(prev => ({
-                          ...prev,
-                          [nightPlayer]: target?.id === "werewolf"
-                            ? "人狼です"
-                            : "人狼ではありません"
-                        }))
+                            const target = players[i]?.role
 
-                        setShowNextButton(true)
-                      }}
-                      style={{
-                        fontSize: 20,
-                        padding: 10,
-                        margin: 5
-                      }}
-                    >
-                      プレイヤー {num}
-                    </button>
+                            setSeerResults(prev => ({
+                              ...prev,
+                              [nightPlayer]: target?.id === "werewolf"
+                                ? "人狼です"
+                                : "人狼ではありません"
+                            }))
+
+                            setShowNextButton(true)
+                          }}
+                          style={{
+                            padding: "14px 20px",
+                            fontSize: 18,
+                            borderRadius: 14,
+                            border: "1px solid rgba(255,255,255,0.35)",
+                            background: "rgba(255,255,255,0.15)",
+                            color: "white",
+                            backdropFilter: "blur(6px)",
+                            cursor: "pointer"
+                            }}
+                        >
+                          プレイヤー {num}
+                        </button>
                   )
                 })}
+                </div>
               </div>
             )}
 
@@ -833,33 +912,48 @@ function startTimer() {
               <div>
                 <h3>護衛するプレイヤーを選択</h3>
 
-                {players.map((p, i) => {
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, 1fr)",
+                    gap: 14,
+                    marginTop: 20
+                  }}
+                >
 
-                  const num = i + 1
+                  {players.map((p, i) => {
 
-                  if (num === nightPlayer) return null
-                  if (num === executedPlayer) return null
+                    const num = i + 1
 
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        setGuardTargets(prev => ({
-                        ...prev,
-                        [nightPlayer]: num
-                      }))
-                        setShowNextButton(true)
-                      }}
-                      style={{
-                        fontSize: 20,
-                        padding: 10,
-                        margin: 5
-                      }}
-                    >
-                      プレイヤー {num}
-                    </button>
+                    if (num === nightPlayer) return null
+                    if (num === executedPlayer) return null
+
+                    return (
+                        <button
+                          key={num}
+                          onClick={() => {
+                            setGuardTargets(prev => ({
+                            ...prev,
+                            [nightPlayer]: num
+                          }))
+                            setShowNextButton(true)
+                          }}
+                          style={{
+                            padding: "14px 20px",
+                            fontSize: 18,
+                            borderRadius: 14,
+                            border: "1px solid rgba(255,255,255,0.35)",
+                            background: "rgba(255,255,255,0.15)",
+                            color: "white",
+                            backdropFilter: "blur(6px)",
+                            cursor: "pointer"
+                          }}
+                        >
+                          プレイヤー {num}
+                        </button>
                   )
                 })}
+                </div>
               </div>
             )}
 
@@ -867,33 +961,48 @@ function startTimer() {
               <div>
                 <h3>襲撃するプレイヤーを選択</h3>
 
-                {players.map((p, i) => {
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, 1fr)",
+                    gap: 14,
+                    marginTop: 20
+                  }}
+                >
 
-                  const num = i + 1
+                  {players.map((p, i) => {
 
-                  if (num === nightPlayer) return null
-                  if (num === executedPlayer) return null
+                    const num = i + 1
 
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        setWolfTarget(num)
-                        setShowNextButton(true)
-                      }}
-                      style={{
-                        fontSize: 20,
-                        padding: 10,
-                        margin: 5
-                      }}
-                    >
-                      プレイヤー {num}
-                    </button>
+                    if (num === nightPlayer) return null
+                    if (num === executedPlayer) return null
+
+                    return (
+                        <button
+                          key={num}
+                          onClick={() => {
+                            setWolfTarget(num)
+                            setShowNextButton(true)
+                          }}
+                          style={{
+                              padding: "14px 20px",
+                              fontSize: 18,
+                              borderRadius: 14,
+                              border: "1px solid rgba(255,255,255,0.35)",
+                              background: "rgba(255,255,255,0.15)",
+                              color: "white",
+                              backdropFilter: "blur(6px)",
+                              cursor: "pointer"
+                          }}
+                        >
+                          プレイヤー {num}
+                        </button>
                   )
                 })}
+                </div>
               </div>
             )}
-
+            
             {role?.id === "werewolf" && wolfTarget !== null && (
               <div>
                 <h3>襲撃先</h3>
@@ -912,50 +1021,60 @@ function startTimer() {
               (role.id !== "knight" || !!guardTargets[nightPlayer]) &&
               (role.id !== "seer" || !!seerResults[nightPlayer])
             ) && (
-              <button
-                onClick={() => {
 
-                  let next = nightPlayer + 1
-
-                  while (next <= playerCount) {
-                    const p = players[next - 1]
-                    if (p && p.alive) break
-                    next++
-                  }
-
-                  setNightPlayer(next)
-                  setNightActionReady(false)
-
-                  if (next > playerCount) {
-
-                    const finished = resolveNight()
-
-                    if (!finished) {
-                      setDay(d => d + 1)
-                      setPhase("morning")
-                    }
-                    
-                    setTimeLeft(120)
-                    setTimerRunning(false)
-
-                    setNightActionReady(false)
-                    setNightPlayer(1)
-
-                    setTimeout(() => {
-                      playAudio("/audio/[04]朝になりました。皆さん目を開けて議論を開始してください.wav")
-                    }, 1000)
-
-                    return
-                  }
-
-                }}
+              <div
                 style={{
-                  fontSize: 20,
-                  padding: 15
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 12,
+                  marginTop: 10
                 }}
-                >
-                  次のプレイヤー
-              </button>
+              >
+                <button
+                  onClick={() => {
+
+                    let next = nightPlayer + 1
+
+                    while (next <= playerCount) {
+                      const p = players[next - 1]
+                      if (p && p.alive) break
+                      next++
+                    }
+                    setNightPlayer(next)
+                    setNightActionReady(false)
+                    if (next > playerCount) {
+                      const finished = resolveNight()
+                      if (!finished) {
+                        setDay(d => d + 1)
+                        setPhase("morning")
+                      }                    
+                      setTimeLeft(120)
+                      setTimerRunning(false)
+                      setNightActionReady(false)
+                      setNightPlayer(1)
+                      setTimeout(() => {
+                        playAudio("/audio/[04]朝になりました。皆さん目を開けて議論を開始してください.wav")
+                      }, 1000)
+                      return
+                    }
+                  }}
+                  style={{
+                    marginTop: 20,
+                    padding: "14px 36px",
+                    fontSize: 20,
+                    borderRadius: 12,
+                    border: "none",
+                    background: "linear-gradient(135deg,#66ccff,#3399ff)",
+                    color: "white",
+                    fontWeight: "bold",
+                    boxShadow: "0 6px 14px rgba(0,0,0,0.4)",
+                    cursor: "pointer"
+                  }}
+                  >
+                    次のプレイヤー
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -1373,39 +1492,52 @@ function startTimer() {
         </div>
 
         {voteTarget !== null && (
-          <div style={{marginTop: 20 }}>
-            <p>プレイヤー {voteTarget} を追放しますか？</p>
+          <div>
+            <div style={{marginTop:20,textAlign:"center"}}>
+              <p>プレイヤー {voteTarget} を追放しますか？</p>
+            </div>
 
-            <button
-              onClick={() => executePlayer(voteTarget)}
-              style={{ 
-                padding: "12px 26px",
-                fontSize: 18,
-                borderRadius: 12,
-                background: "#4fa3ff",
-                border: "none",
-                color: "white",
-                cursor: "pointer",
-                marginRight: 12
-              }}
-            >
-              決定
-            </button>
-
-            <button
+            <div
               style={{
-                padding: "10px 22px",
-                fontSize: 16,
-                borderRadius: 12,
-                background: "rgba(255,255,255,0.15)",
-                border: "1px solid rgba(255,255,255,0.35)",
-                color: "white",
-                cursor: "pointer"
+                marginTop: 20,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 16
               }}
-              onClick={() => setVoteTarget(null)}
             >
-              戻る
-            </button>
+
+              <button
+                onClick={() => executePlayer(voteTarget)}
+                style={{ 
+                  padding: "12px 26px",
+                  fontSize: 18,
+                  borderRadius: 12,
+                  background: "#4fa3ff",
+                  border: "none",
+                  color: "white",
+                  cursor: "pointer",
+                  marginRight: 12
+                }}
+              >
+                決定
+              </button>
+
+              <button
+                style={{
+                  padding: "10px 22px",
+                  fontSize: 16,
+                  borderRadius: 12,
+                  background: "rgba(255,255,255,0.15)",
+                  border: "1px solid rgba(255,255,255,0.35)",
+                  color: "white",
+                  cursor: "pointer"
+                }}
+                onClick={() => setVoteTarget(null)}
+              >
+                戻る
+              </button>
+            </div>
           </div>
         )}
 

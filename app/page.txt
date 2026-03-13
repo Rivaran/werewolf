@@ -193,59 +193,28 @@ export default function Page() {
   }
   
   function judgeAfterExecution(executedNum: number) {
+
     const updatedPlayers = players.map((p, i) =>
       i === executedNum - 1 && p ? { ...p, alive: false } : p
     )
-
-    setPlayers(updatedPlayers)
 
     const survivors = updatedPlayers.filter(
       (p): p is Player => p !== null && p.alive
     )
 
-    const werewolfCount = survivors.filter((p) => p.role.id === "werewolf").length
-    const nonWerewolfCount = survivors.filter((p) => p.role.id !== "werewolf").length
-    const hasKnight = survivors.some((p) => p.role.id === "knight")
+    const werewolfCount = survivors.filter(p => p.role.id === "werewolf").length
+    const nonWerewolfCount = survivors.filter(p => p.role.id !== "werewolf").length
+    const hasKnight = survivors.some(p => p.role.id === "knight")
 
-    if (werewolfCount === 0) {
-      setWinner("villagers")
-      setPhase("result")
-      return
-    }
+    if (werewolfCount === 0) return "villagers"
 
-    if (werewolfCount >= nonWerewolfCount) {
-      setWinner("werewolves")
-      setPhase("result")
-      return
-    }
+    if (werewolfCount >= nonWerewolfCount) return "werewolves"
 
-    if (nonWerewolfCount === werewolfCount + 1 && !hasKnight) {
-      setWinner("werewolves")
-      setPhase("result")
-      return
-    }
-
-    const firstAliveIndex = updatedPlayers.findIndex((p) => p && p.alive)
-
-    setNightPlayer(firstAliveIndex + 1)
-    setNightActionReady(false)
-    setPhase("night")
-
-    if (werewolfCount === 0) {
-      setWinner("villagers")
-      setPhase("result")
-      return "villagers"
-    }
-
-    if (werewolfCount >= nonWerewolfCount) {
-      setWinner("werewolves")
-      setPhase("result")
-      return "werewolves"
-    }
+    if (nonWerewolfCount === werewolfCount + 1 && !hasKnight) return "werewolves"
 
     return null
   }
-  
+
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -281,7 +250,10 @@ export default function Page() {
     Array.from({ length: 4 }, () => null)
   )*/
   /*const [players, setPlayers] = useState<Player[]>([])*/
-  const [players, setPlayers] = useState<(Player | null)[]>([])
+  /*const [players, setPlayers] = useState<(Player | null)[]>([])*/
+  const [players, setPlayers] = useState<(Player | null)[]>(
+    Array.from({ length: 4 }, () => null)
+  )
 
   useEffect(() => {
     if (phase === "night") {
@@ -538,22 +510,38 @@ function startTimer() {
 
         <button
 
-          onClick={() => {
+        onClick={() => {
 
-            const result = judgeAfterExecution(executedPlayer!)
+          const result = judgeAfterExecution(executedPlayer!)
 
-            if (result === "villagers") {
-              playAudio("/audio/[09-2]村人陣営の勝利です.wav")
-              return
-            }
+          if (result === "villagers") {
+            playAudio(
+              `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
+              () => {
+                playAudio("/audio/[09-2]村人陣営の勝利です.wav")
+              }
+            )
+            setWinner("villagers")
+            setPhase("result")
+            return
+          }
 
-            if (result === "werewolves") {
-              playAudio("/audio/[09-1]人狼陣営の勝利です.wav")
-              return
-            }
+          if (result === "werewolves") {
+            playAudio(
+              `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
+              () => {
+                playAudio("/audio/[09-1]人狼陣営の勝利です.wav",)
+              }
+            )
+            setWinner("werewolves")
+            setPhase("result")
+            return
+          }
 
-            playAudio(`/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`)
-          }}
+          setPhase("night")
+
+          playAudio(`/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`)
+        }}
 
           style={{
             marginTop: 40,
@@ -752,7 +740,19 @@ function startTimer() {
           </h1>
         </div>
 
-        <h2>プレイヤー {nightPlayer}</h2>
+        <div
+          style={{
+            fontSize: 20,
+            letterSpacing: 2,
+            padding: "6px 14px",
+            borderRadius: 20,
+            background: "rgba(0,0,0,0.35)",
+            backdropFilter: "blur(4px)",
+            marginBottom: 10
+          }}
+        >
+        プレイヤー {nightPlayer}
+        </div>
 
         {!nightActionReady && (
 
@@ -777,7 +777,20 @@ function startTimer() {
                 setShowNextButton(true)
               }
                             
-            }}
+            }
+          }
+          style={{
+            marginTop: 20,
+            padding: "14px 28px",
+            fontSize: 20,
+            borderRadius: 12,
+            border: "none",
+            background: "linear-gradient(135deg,#ffd966,#ffb347)",
+            color: "#333",
+            fontWeight: "bold",
+            boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
+            cursor: "pointer"
+          }}
           >
           画面タップ
           </button>
@@ -790,7 +803,24 @@ function startTimer() {
 
             <img src={role.img} width="200" />
 
-            <h2>{role.name}</h2>
+              <span
+                style={{
+                  fontSize: 16,
+                  opacity: 0.6
+                }}
+              >
+                あなたの役職：
+              </span>
+
+              <span
+                style={{
+                  fontSize: 32,
+                  fontWeight: "bold",
+                  textShadow: "0 0 10px rgba(255,255,255,0.6)"
+                }}
+              >
+                {role.name}
+              </span>
 
             {role?.id === "seer" && !seerResults[nightPlayer] && (
               <div>
@@ -1251,7 +1281,6 @@ function startTimer() {
 
             </div>
 
-
             {role.role.id === "werewolf" && (() => {
               const wolfMates = players
                 .map((p, i) =>
@@ -1264,8 +1293,8 @@ function startTimer() {
               if (wolfMates.length === 0) return null
 
               return (
-                <p style={{ marginTop: 12 }}>
-                  仲間：{wolfMates.join(" , ")}
+                <p style={{ marginTop: 12, fontSize: 20}}>
+                  仲間：プレイヤー{wolfMates.join(" , ")}
                 </p>
               )
             })()}
@@ -1347,33 +1376,42 @@ function startTimer() {
           }}
         >
 
-          {players.map((_, i) => {
+        {players.map((p, i) => {
 
-            return (
+          const dead = p?.alive === false
 
-              <button
-                key={i}
-                style={{
-                  width: 160,
-                  padding: 12,
-                  margin: 4,
-                  fontSize: 18,
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  background: "rgba(255,255,255,0.6)",
-                  color: "white",
-                  cursor: "pointer",
-                  backdropFilter: "blur(6px)"
-                }}
-                onClick={() => setVoteTarget(i + 1)}
-              >
-                プレイヤー {i + 1}
-              </button>
+          return (
+            <button
+              key={i}
+              disabled={dead}
+              style={{
+                width: 160,
+                padding: 12,
+                margin: 4,
+                fontSize: 18,
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.25)",
+                background: dead
+                  ? "rgba(80,80,80,0.65)"
+                  : "rgba(255,255,255,0.6)",
+                color: "white",
 
-            )
+                cursor: dead ? "not-allowed" : "pointer",
 
-          })}
+                opacity: dead ? 0.4 : 1,
 
+                backdropFilter: "blur(6px)"
+              }}
+
+              onClick={() => {
+                if (!dead) setVoteTarget(i + 1)
+              }}
+            >
+              プレイヤー {i + 1}
+              {dead}
+            </button>
+          )
+        })}
         </div>
 
         {voteTarget !== null && (
