@@ -76,7 +76,10 @@ function PlayerSlot({
         margin: 5,
         width: 120,
         height: 120,
-        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
       <div>配役 {id}</div>
@@ -380,7 +383,6 @@ function startTimer() {
       alert("配役をすべて選択してください")
       return
     }
-    
     setDay(0)
     
     const selectedRoles = players
@@ -1100,14 +1102,15 @@ function startTimer() {
       </div>
 
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <h2>配役選択</h2>
+        <h2>配役選択</h2>
         <div
           style={{
-            display: "flex",
-            flexWrap: "wrap",
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 14,
+            justifyItems: "center",
             justifyContent: "center",
-            gap: 10,
-            marginBottom: 10
+            marginBottom: 20,
           }}
         >
           {players.map((role, i) => (
