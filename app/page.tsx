@@ -932,7 +932,8 @@ function startTimer() {
           style={{
             fontSize: 22,
             opacity: 0.9,
-            letterSpacing: 2
+            letterSpacing: 2,
+            marginTop: 8
           }}
         >
           議論時間
