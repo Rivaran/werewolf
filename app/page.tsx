@@ -467,7 +467,7 @@ function startTimer() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20
+          gap: 20          
         }}
       >
 
@@ -477,7 +477,7 @@ function startTimer() {
           onClick={() => judgeAfterExecution(executedPlayer!)}
           style={{
             fontSize: 20,
-            padding: 15
+            padding: 15,
           }}
         >
           遺言終了
@@ -1228,7 +1228,8 @@ function startTimer() {
                   border: "1px solid rgba(255,255,255,0.25)",
                   background: "rgba(255,255,255,0.6)",
                   color: "white",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  backdropFilter: "blur(6px)"
                 }}
                 onClick={() => setVoteTarget(i + 1)}
               >
@@ -1393,7 +1394,6 @@ function startTimer() {
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
             gap: 1,
-            justifyItems: "center",
             justifyContent: "center"
           }}
         >
