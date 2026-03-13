@@ -623,7 +623,7 @@ function startTimer() {
 
         <div
           style={{
-            fontSize: 51,
+            fontSize: 46,
             letterSpacing: 4,
             fontWeight: "bold",
             textShadow: "0 4px 16px rgba(0,0,0,0.6)",
