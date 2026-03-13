@@ -75,21 +75,29 @@ function PlayerSlot({
     <div
       ref={setNodeRef}
       style={{
-        border: "2px dashed #999",
-        padding: 10,
+        /*border: "2px dashed #999",
+        padding: 8,
         width: "100%",
         aspectRatio: "1 / 1",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "center"*/
+        border: "2px dashed #999",
+        width: "100%",
+        aspectRatio: "1 / 1",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: role ? "flex-start" : "center",
+        padding: role ? 1 : 30
       }}
     >
       <div>配役 {id}</div>
 
       {role && (
         <>
-          <img src={role.img} width="60" alt={role.name} />
+          <img src={role.img} width="70" alt={role.name} />
           <div>{role.name}</div>
         </>
       )}
@@ -1392,7 +1400,7 @@ function startTimer() {
             gap: 10,*/
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 1,
+            gap: 8,
             justifyContent: "center"
           }}
         >
