@@ -469,25 +469,61 @@ function startTimer() {
 
       <div
         style={{
+          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundBlendMode: "darken",
+          color: "white",
+          backgroundColor: "rgba(0,0,0,0.25)",
+
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20          
+          gap: 20,
+          position: "relative"
+
         }}
       >
 
-        <h1>プレイヤー {executedPlayer}</h1>
+       <h1
+          style={{
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: 34,
+            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 4,
+            opacity: 0.9
+          }}
+        >
+          遺言の時間
+        </h1>
+
+        <h1 style={{
+          fontSize: 26,
+          fontWeight: "bold",
+          letterSpacing: 2
+        }}>プレイヤー {executedPlayer} の遺言</h1>
+
+        <h1>ここで遺言を言ってください</h1>
 
         <button
           onClick={() => judgeAfterExecution(executedPlayer!)}
           style={{
+            marginTop: 40,
+            padding: "14px 36px",
             fontSize: 20,
-            padding: 15,
+            borderRadius: 14,
+            border: "none",
+            background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+            color: "white",
+            fontWeight: "bold",
+            boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+            cursor: "pointer"
           }}
         >
-          遺言終了
+          夜時間へ
         </button>
 
       </div>
