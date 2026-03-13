@@ -12,6 +12,7 @@ import {
   useSensors
  } from "@dnd-kit/core"
 
+ 
 const roles = [
   { id: "villager", name: "村人", img: "/image/村人.png" },
   { id: "werewolf", name: "人狼", img: "/image/人狼.png" },
@@ -294,7 +295,7 @@ export default function Page() {
       "/audio/[05]議論終了の時間となりました。投票に移ります.wav",
       () => {
         playAudio(
-          "/audio/[06]5からカウントダウン",
+          "/audio/[06]5からカウントダウン.wav",
           () => {
             setPhase("vote")
           }
@@ -494,24 +495,50 @@ function startTimer() {
 
       <div
         style={{
+          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundBlendMode: "darken",
+          color: "white",
+          backgroundColor: "rgba(0,0,0,0.25)",
+
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20
+          gap: 20,
+          position: "relative"
+
         }}
       >
 
-        <h1>投票タイム</h1>
+      <h1
+        style={{
+          position: "absolute",
+          top: 60,
+          left: "50%",
+          transform: "translateX(-50%)",
+          fontSize: 42,
+          textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+          letterSpacing: 2
+        }}
+      >
+        投票タイム
+      </h1>
 
         <button
           onClick={() => setPhase("vote")}
           style={{
-            fontSize: 24,
-            padding: 20
+            marginTop: 30,
+            padding: "10px 22px",
+            fontSize: 16,
+            color: "white",
+            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.35)",
+            borderRadius: 12,
+            backdropFilter: "blur(4px)",
+            cursor: "pointer"
           }}
-        >
+          >
           追放者選択画面へ
         </button>
 
@@ -841,7 +868,7 @@ function startTimer() {
           color: "white",
 
           backgroundColor: timerRunning
-           ? "rgba(0,0,0,0.18)"
+           ? "rgba(0,0,0,0.25)"
            : "",
 
           height: "100vh",
@@ -1147,43 +1174,103 @@ function startTimer() {
 
       <div
         style={{
+          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundBlendMode: "darken",
+          color: "white",
+          backgroundColor: "rgba(0,0,0,0.25)",
+
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20
+          gap: 20,
+          position: "relative"
         }}
       >
+        <h1
+          style={{
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: 42,
+            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 2
+          }}
+        >
+          追放者決定
+        </h1>
 
-        <h1>追放されたプレイヤーを選択</h1>
+        <h1>追放するプレイヤーを選択</h1>
 
-        {players.map((p, i) => {
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 10,
+            marginTop: 20
+          }}
+        >
 
-          if (!p?.alive) return null
+          {players.map((_, i) => {
 
-          return (
-            <button
-              key={i}
-              onClick={() => setVoteTarget(i + 1)}
-            >
-              プレイヤー {i + 1}
-            </button>
-          )
-        })}
+            return (
+
+              <button
+                key={i}
+                style={{
+                  width: 220,
+                  padding: 12,
+                  margin: 6,
+                  fontSize: 18,
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  background: "rgba(255,255,255,0.6)",
+                  color: "white",
+                  cursor: "pointer"
+                }}
+                onClick={() => setVoteTarget(i + 1)}
+              >
+                プレイヤー {i + 1}
+              </button>
+
+            )
+
+          })}
+
+        </div>
 
         {voteTarget !== null && (
-          <div style={{ marginTop: 20 }}>
+          <div style={{marginTop: 20 }}>
             <p>プレイヤー {voteTarget} を追放しますか？</p>
 
             <button
               onClick={() => executePlayer(voteTarget)}
-              style={{ marginRight: 10 }}
+              style={{ 
+                padding: "12px 26px",
+                fontSize: 18,
+                borderRadius: 12,
+                background: "#4fa3ff",
+                border: "none",
+                color: "white",
+                cursor: "pointer",
+                marginRight: 12
+              }}
             >
               決定
             </button>
 
             <button
+              style={{
+                padding: "10px 22px",
+                fontSize: 16,
+                borderRadius: 12,
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.35)",
+                color: "white",
+                cursor: "pointer"
+              }}
               onClick={() => setVoteTarget(null)}
             >
               戻る
