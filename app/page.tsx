@@ -10,8 +10,9 @@ import {
   TouchSensor,
   useSensor,
   useSensors
- } from "@dnd-kit/core"
+} from "@dnd-kit/core"
 
+const winner = "werewolf"
  
 const roles = [
   { id: "villager", name: "村人", img: "/image/村人.png" },
@@ -120,7 +121,7 @@ export default function Page() {
   const [firstSeerWhite, setFirstSeerWhite] = useState<number | null>(null)
   const [morningDeath, setMorningDeath] = useState<number | null>(null)
   const [day, setDay] = useState(0)
-  const [theme, setTheme] = useState("mama")
+  const [theme, setTheme] = useState("ai")
   const [voteTarget, setVoteTarget] = useState<number | null>(null)
 
   const roles = [
@@ -593,36 +594,55 @@ function startTimer() {
   }
 
   if (phase === "result") {
+
+    const bgImage =
+      winner === "villagers"
+        ? `url(/image/${theme}/village_win.png)`
+        : `url(/image/${theme}/wolf_win.png)`
+
     return (
       <div
         style={{
+          background: `${bgImage} center / cover no-repeat`,
+          /*backgroundBlendMode: "darken",
+          backgroundColor: "rgba(0,0,0,0.25)",*/
+          color: "white",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
-          gap: 20
+          justifyContent: "flex-start",
+          gap: 20,
+          position: "relative",
+          paddingTop: "20vh",
         }}
       >
-        <h1>{winner === "villagers" ? "村人陣営の勝利" : "人狼陣営の勝利"}</h1>
+
+        <div
+          style={{
+            fontSize: 56,
+            letterSpacing: 4,
+            fontWeight: "bold",
+            textShadow: "0 4px 16px rgba(0,0,0,0.6)",
+          }}
+        >
+          {winner === "villagers"
+            ? "村人陣営の勝利"
+            : "人狼陣営の勝利"}
+        </div>
 
         <button
-          onClick={() => {
-            setPhase("setup")
-            setTimeLeft(180)
-            setTimerRunning(false)
-            setExecutedPlayer(null)
-            setWinner(null)
-            setCurrentPlayer(1)
-            setShowRole(false)
-            setFirstSeerWhite(null)
-            setSeerResults({})
-            setWolfTarget(null)
-            setGuardTargets({})
-          }}
           style={{
-            fontSize: 20,
-            padding: 15
+            marginTop: 150,
+            padding: "16px 40px",
+            fontSize: 22,
+            borderRadius: 14,
+            border: "none",
+            background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+            color: "white",
+            fontWeight: "bold",
+            boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+            cursor: "pointer",
           }}
         >
           トップに戻る
@@ -1361,20 +1381,6 @@ function startTimer() {
       >
 
         <button
-          onClick={() => setTheme("mama")}
-          style={{
-            padding: "6px 14px",
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            cursor: "pointer",
-            background: theme === "mama" ? "#ffd966" : "#fff",
-            fontWeight: theme === "mama" ? "bold" : "normal"
-          }}
-        >
-          イラスト1
-        </button>
-
-        <button
           onClick={() => setTheme("ai")}
           style={{
             padding: "6px 14px",
@@ -1383,6 +1389,20 @@ function startTimer() {
             cursor: "pointer",
             background: theme === "ai" ? "#ffd966" : "#fff",
             fontWeight: theme === "ai" ? "bold" : "normal"
+          }}
+        >
+          イラスト1
+        </button>
+
+        <button
+          onClick={() => setTheme("mama")}
+          style={{
+            padding: "6px 14px",
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            cursor: "pointer",
+            background: theme === "mama" ? "#ffd966" : "#fff",
+            fontWeight: theme === "mama" ? "bold" : "normal"
           }}
         >
           イラスト2
