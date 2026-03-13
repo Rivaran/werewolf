@@ -91,7 +91,7 @@ function PlayerSlot({
 }
 
 export default function Page() {
-
+  
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -1009,10 +1009,54 @@ function startTimer() {
   
   return (
 
-    <div style={{ padding: 20 }}>
-      
-      <button onClick={() => setTheme("mama")}>イラスト１</button>
-      <button onClick={() => setTheme("ai")}>イラスト２</button>
+    <div
+      style={{
+        padding: 20,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center"
+      }}
+    >
+
+      <div
+        style={{
+          position: "absolute",
+          top: 20,
+          right: 20,
+          display: "flex",
+          gap: 10
+        }}
+      >
+
+        <button
+          onClick={() => setTheme("mama")}
+          style={{
+            padding: "6px 14px",
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            cursor: "pointer",
+            background: theme === "mama" ? "#ffd966" : "#fff",
+            fontWeight: theme === "mama" ? "bold" : "normal"
+          }}
+        >
+          イラスト1
+        </button>
+
+        <button
+          onClick={() => setTheme("ai")}
+          style={{
+            padding: "6px 14px",
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            cursor: "pointer",
+            background: theme === "ai" ? "#ffd966" : "#fff",
+            fontWeight: theme === "ai" ? "bold" : "normal"
+          }}
+        >
+          イラスト2
+        </button>
+
+      </div>
 
       <img
         src={`/image/${theme}/title.png`}
@@ -1042,8 +1086,15 @@ function startTimer() {
       </div>
 
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <h2>プレイヤー</h2>
-        <div style={{ display: "flex", flexWrap: "wrap" }}>
+          <h2>レギュレーション</h2>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: 10
+          }}
+        >
           {players.map((role, i) => (
             <PlayerSlot
               key={i}
