@@ -64,9 +64,11 @@ function RoleCard({ role }: { role: { id: string; name: string; img: string } })
 function PlayerSlot({
   id,
   role,
+  theme
 }: {
   id: number
   role: { id: string; name: string; img: string } | null
+  theme: string
 }) {
   const { setNodeRef } = useDroppable({
     id: "slot-" + id,
@@ -98,7 +100,7 @@ function PlayerSlot({
 
       {role && (
         <>
-          <img src={role.img} width="65" alt={role.name} />
+          <img src={role.img} width={theme === "ai" ? 56 : 70} alt={role.name} />
           <div>{role.name}</div>
         </>
       )}
@@ -136,6 +138,7 @@ export default function Page() {
 }))
 
   type Player = {
+    id: number
     role: (typeof roles)[number]
     alive: boolean
   }
@@ -227,6 +230,20 @@ export default function Page() {
     setNightPlayer(firstAliveIndex + 1)
     setNightActionReady(false)
     setPhase("night")
+
+    if (werewolfCount === 0) {
+      setWinner("villagers")
+      setPhase("result")
+      return "villagers"
+    }
+
+    if (werewolfCount >= nonWerewolfCount) {
+      setWinner("werewolves")
+      setPhase("result")
+      return "werewolves"
+    }
+
+    return null
   }
   
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -260,9 +277,11 @@ export default function Page() {
 
   const [playerCount, setPlayerCount] = useState(4)
 
-  const [players, setPlayers] = useState<(Player | null)[]>(
+  /*const [players, setPlayers] = useState<(Player | null)[]>(
     Array.from({ length: 4 }, () => null)
-  )
+  )*/
+  /*const [players, setPlayers] = useState<Player[]>([])*/
+  const [players, setPlayers] = useState<(Player | null)[]>([])
 
   useEffect(() => {
     if (phase === "night") {
@@ -284,6 +303,11 @@ export default function Page() {
 
   function executePlayer(num: number) {
 
+    setPlayers(prev =>
+      prev.map(p =>
+        p && p.id === num ? { ...p, alive: false } : p
+      )
+    )
     setVoteTarget(null)
 
     setExecutedPlayer(num)
@@ -361,6 +385,7 @@ function startTimer() {
     const newPlayers = [...players]
 
     newPlayers[slotIndex] = {
+      id: slotIndex + 1,
       role,
       alive: true
     }
@@ -402,11 +427,12 @@ function startTimer() {
       .map(p => p!.role)
       
     const shuffled = shuffle(selectedRoles)
-    const shuffledPlayers = shuffled.map(role => ({
+    const shuffledPlayers = shuffled.map((role, i) => ({
+      id: i + 1,
       role,
       alive: true
     }))
-
+    
     clearInterval(timerRef.current!)
     setTimeLeft(180)
     setTimerRunning(false)
@@ -511,7 +537,24 @@ function startTimer() {
         <h1>ここで遺言を言ってください</h1>
 
         <button
-          onClick={() => judgeAfterExecution(executedPlayer!)}
+
+          onClick={() => {
+
+            const result = judgeAfterExecution(executedPlayer!)
+
+            if (result === "villagers") {
+              playAudio("/audio/[09-2]村人陣営の勝利です.wav")
+              return
+            }
+
+            if (result === "werewolves") {
+              playAudio("/audio/[09-1]人狼陣営の勝利です.wav")
+              return
+            }
+
+            playAudio(`/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`)
+          }}
+
           style={{
             marginTop: 40,
             padding: "14px 36px",
@@ -611,7 +654,8 @@ function startTimer() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "flex-start",
+          /*justifyContent: "flex-start",*/
+          justifyContent: "center",
           gap: 20,
           position: "relative",
           paddingTop: "20vh",
@@ -620,7 +664,7 @@ function startTimer() {
 
         <div
           style={{
-            fontSize: 56,
+            fontSize: 46,
             letterSpacing: 4,
             fontWeight: "bold",
             textShadow: "0 4px 16px rgba(0,0,0,0.6)",
@@ -632,6 +676,19 @@ function startTimer() {
         </div>
 
         <button
+          onClick={() => {
+            setPhase("setup")
+            setTimeLeft(180)
+            setTimerRunning(false)
+            setExecutedPlayer(null)
+            setWinner(null)
+            setCurrentPlayer(1)
+            setShowRole(false)
+            setFirstSeerWhite(null)
+            setSeerResults({})
+            setWolfTarget(null)
+            setGuardTargets({})
+          }}
           style={{
             marginTop: 150,
             padding: "16px 40px",
@@ -691,7 +748,7 @@ function startTimer() {
           }}
         >
           <h1 style={{fontSize: 34}}>
-            夜 {day+1}日目の夜
+            {day+1}日目の夜
           </h1>
         </div>
 
@@ -1000,13 +1057,16 @@ function startTimer() {
               textShadow: "0 2px 8px rgba(0,0,0,0.5)"
             }}
           >
-            議論時間
+          {timerRunning
+            ? `残り時間`
+            : `議論時間`}
           </div>
 
           <div
             style={{
               fontSize: 80,
               fontWeight: "bold",
+              color: timeLeft <= 10 ? "#ff4d4d" : "white"
             }}
           >
             {formatTime(timeLeft)}
@@ -1476,6 +1536,7 @@ function startTimer() {
               key={i}
               id={i + 1}
               role={role?.role ?? null}
+              theme={theme}
             />
           ))}
         </div>

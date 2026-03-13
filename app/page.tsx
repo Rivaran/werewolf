@@ -138,6 +138,7 @@ export default function Page() {
 }))
 
   type Player = {
+    id: number
     role: (typeof roles)[number]
     alive: boolean
   }
@@ -192,45 +193,28 @@ export default function Page() {
   }
   
   function judgeAfterExecution(executedNum: number) {
+
     const updatedPlayers = players.map((p, i) =>
       i === executedNum - 1 && p ? { ...p, alive: false } : p
     )
-
-    setPlayers(updatedPlayers)
 
     const survivors = updatedPlayers.filter(
       (p): p is Player => p !== null && p.alive
     )
 
-    const werewolfCount = survivors.filter((p) => p.role.id === "werewolf").length
-    const nonWerewolfCount = survivors.filter((p) => p.role.id !== "werewolf").length
-    const hasKnight = survivors.some((p) => p.role.id === "knight")
+    const werewolfCount = survivors.filter(p => p.role.id === "werewolf").length
+    const nonWerewolfCount = survivors.filter(p => p.role.id !== "werewolf").length
+    const hasKnight = survivors.some(p => p.role.id === "knight")
 
-    if (werewolfCount === 0) {
-      setWinner("villagers")
-      setPhase("result")
-      return
-    }
+    if (werewolfCount === 0) return "villagers"
 
-    if (werewolfCount >= nonWerewolfCount) {
-      setWinner("werewolves")
-      setPhase("result")
-      return
-    }
+    if (werewolfCount >= nonWerewolfCount) return "werewolves"
 
-    if (nonWerewolfCount === werewolfCount + 1 && !hasKnight) {
-      setWinner("werewolves")
-      setPhase("result")
-      return
-    }
+    if (nonWerewolfCount === werewolfCount + 1 && !hasKnight) return "werewolves"
 
-    const firstAliveIndex = updatedPlayers.findIndex((p) => p && p.alive)
-
-    setNightPlayer(firstAliveIndex + 1)
-    setNightActionReady(false)
-    setPhase("night")
+    return null
   }
-  
+
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -262,6 +246,11 @@ export default function Page() {
 
   const [playerCount, setPlayerCount] = useState(4)
 
+  /*const [players, setPlayers] = useState<(Player | null)[]>(
+    Array.from({ length: 4 }, () => null)
+  )*/
+  /*const [players, setPlayers] = useState<Player[]>([])*/
+  /*const [players, setPlayers] = useState<(Player | null)[]>([])*/
   const [players, setPlayers] = useState<(Player | null)[]>(
     Array.from({ length: 4 }, () => null)
   )
@@ -286,6 +275,11 @@ export default function Page() {
 
   function executePlayer(num: number) {
 
+    setPlayers(prev =>
+      prev.map(p =>
+        p && p.id === num ? { ...p, alive: false } : p
+      )
+    )
     setVoteTarget(null)
 
     setExecutedPlayer(num)
@@ -363,6 +357,7 @@ function startTimer() {
     const newPlayers = [...players]
 
     newPlayers[slotIndex] = {
+      id: slotIndex + 1,
       role,
       alive: true
     }
@@ -404,11 +399,12 @@ function startTimer() {
       .map(p => p!.role)
       
     const shuffled = shuffle(selectedRoles)
-    const shuffledPlayers = shuffled.map(role => ({
+    const shuffledPlayers = shuffled.map((role, i) => ({
+      id: i + 1,
       role,
       alive: true
     }))
-
+    
     clearInterval(timerRef.current!)
     setTimeLeft(180)
     setTimerRunning(false)
@@ -513,7 +509,50 @@ function startTimer() {
         <h1>ここで遺言を言ってください</h1>
 
         <button
-          onClick={() => judgeAfterExecution(executedPlayer!)}
+
+        onClick={() => {
+
+          const result = judgeAfterExecution(executedPlayer!)
+
+          if (result === "villagers") {
+            setWinner("villagers")
+            setPhase("result")
+            playAudio(
+              `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
+              () => {
+                playAudio(
+                  "/audio/[09-2]村人陣営の勝利です.wav",
+                  () => {
+                    setPhase("vote")
+                  }
+                )
+              }
+            )
+            return
+          }
+
+          if (result === "werewolves") {
+            setWinner("werewolves")
+            setPhase("result")
+            playAudio(
+              `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
+              () => {
+                playAudio(
+                  "/audio/[09-1]人狼陣営の勝利です.wav",
+                  () => {
+                    setPhase("vote")
+                  }
+                )
+              }
+            )
+            return
+          }
+
+          setPhase("night")
+
+          playAudio(`/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`)
+        }}
+
           style={{
             marginTop: 40,
             padding: "14px 36px",
@@ -707,7 +746,7 @@ function startTimer() {
           }}
         >
           <h1 style={{fontSize: 34}}>
-            夜 {day+1}日目の夜
+            {day+1}日目の夜
           </h1>
         </div>
 
@@ -1016,13 +1055,16 @@ function startTimer() {
               textShadow: "0 2px 8px rgba(0,0,0,0.5)"
             }}
           >
-            議論時間
+          {timerRunning
+            ? `残り時間`
+            : `議論時間`}
           </div>
 
           <div
             style={{
               fontSize: 80,
               fontWeight: "bold",
+              color: timeLeft <= 10 ? "#ff4d4d" : "white"
             }}
           >
             {formatTime(timeLeft)}
@@ -1207,7 +1249,6 @@ function startTimer() {
 
             </div>
 
-
             {role.role.id === "werewolf" && (() => {
               const wolfMates = players
                 .map((p, i) =>
@@ -1220,8 +1261,8 @@ function startTimer() {
               if (wolfMates.length === 0) return null
 
               return (
-                <p style={{ marginTop: 12 }}>
-                  仲間：{wolfMates.join(" , ")}
+                <p style={{ marginTop: 12, fontSize: 20}}>
+                  仲間：プレイヤー{wolfMates.join(" , ")}
                 </p>
               )
             })()}
@@ -1303,33 +1344,42 @@ function startTimer() {
           }}
         >
 
-          {players.map((_, i) => {
+        {players.map((p, i) => {
 
-            return (
+          const dead = p?.alive === false
 
-              <button
-                key={i}
-                style={{
-                  width: 160,
-                  padding: 12,
-                  margin: 4,
-                  fontSize: 18,
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  background: "rgba(255,255,255,0.6)",
-                  color: "white",
-                  cursor: "pointer",
-                  backdropFilter: "blur(6px)"
-                }}
-                onClick={() => setVoteTarget(i + 1)}
-              >
-                プレイヤー {i + 1}
-              </button>
+          return (
+            <button
+              key={i}
+              disabled={dead}
+              style={{
+                width: 160,
+                padding: 12,
+                margin: 4,
+                fontSize: 18,
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.25)",
+                background: dead
+                  ? "rgba(80,80,80,0.65)"
+                  : "rgba(255,255,255,0.6)",
+                color: "white",
 
-            )
+                cursor: dead ? "not-allowed" : "pointer",
 
-          })}
+                opacity: dead ? 0.4 : 1,
 
+                backdropFilter: "blur(6px)"
+              }}
+
+              onClick={() => {
+                if (!dead) setVoteTarget(i + 1)
+              }}
+            >
+              プレイヤー {i + 1}
+              {dead}
+            </button>
+          )
+        })}
         </div>
 
         {voteTarget !== null && (
