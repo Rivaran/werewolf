@@ -517,7 +517,7 @@ function startTimer() {
           top: 60,
           left: "50%",
           transform: "translateX(-50%)",
-          fontSize: 35,
+          fontSize: 34,
           textShadow: "0 3px 12px rgba(0,0,0,0.6)",
           letterSpacing: 2
         }}
@@ -626,7 +626,7 @@ function startTimer() {
             textAlign: "center"
           }}
         >
-          <h1 style={{fontSize: 35}}>
+          <h1 style={{fontSize: 34}}>
             夜 {day+1}日目の夜
           </h1>
         </div>
@@ -900,7 +900,7 @@ function startTimer() {
       >
         <h1
           style={{
-            fontSize: 35,
+            fontSize: 34,
             textShadow: "0 3px 12px rgba(0,0,0,0.6)",
             letterSpacing: 2
           }}
@@ -1194,7 +1194,7 @@ function startTimer() {
             top: 60,
             left: "50%",
             transform: "translateX(-50%)",
-            fontSize: 35,
+            fontSize: 34,
             textShadow: "0 3px 12px rgba(0,0,0,0.6)",
             letterSpacing: 2
           }}
@@ -1386,16 +1386,15 @@ function startTimer() {
         
         <div
           style={{
-            display: "flex",
+            /*display: "flex",
             flexWrap: "wrap",
             justifyContent: "center",
-            gap: 10,
-            /*marginBottom: 10*/
-            /*display: "grid",
+            gap: 10,*/
+            display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 14,
+            gap: 6,
             justifyItems: "center",
-            justifyContent: "center",*/
+            justifyContent: "center"
           }}
         >
           {players.map((role, i) => (
@@ -1410,7 +1409,6 @@ function startTimer() {
         <h2
           style={{
             marginTop: 16,
-            /*marginBottom: 10,*/
             fontSize: 20,
             fontWeight: "bold",
             letterSpacing: 1
