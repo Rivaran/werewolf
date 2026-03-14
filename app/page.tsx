@@ -176,6 +176,7 @@ export default function Page() {
 
     const werewolfCount = survivors.filter(p => p.role.id === "werewolf").length
     const villagerCount = survivors.filter(p => p.role.id !== "werewolf").length
+    const knightAlive = survivors.some(p => p.role.id === "knight")
 
     if (werewolfCount === 0) {
       setWinner("villagers")
@@ -184,6 +185,14 @@ export default function Page() {
     }
 
     if (werewolfCount >= villagerCount) {
+      playAudio("/audio/[13-1]人狼の襲撃により人狼陣営と村人陣営が同数になりましたので、人狼陣営の勝利です.wav")
+      setWinner("werewolves")
+      setPhase("result")
+      return true
+    }
+
+    if (villagerCount > werewolfCount && !knightAlive) {
+      playAudio("/audio/[13-2]村人陣営の方が1人多いですが、騎士がこの村に残っていませんので、人狼陣営の勝利です.wav")
       setWinner("werewolves")
       setPhase("result")
       return true
