@@ -1196,7 +1196,7 @@ function startTimer() {
           </h1>
         </div>
 
-        {day === 0 ? null : (
+        {!timerRunning && day !== 0 && (
           <div
             style={{
               marginTop: 120,
@@ -1207,12 +1207,10 @@ function startTimer() {
               textAlign: "center"
             }}
           >
-              {timerRunning === true ? null : (
-                morningDeath === null ? (
-                  <p>昨晩の犠牲者はいませんでした</p>
-                ) : (
-                  <p>昨晩の犠牲者：プレイヤー {morningDeath}</p>
-                )
+              {morningDeath === null ? (
+                <p>昨晩の犠牲者はいませんでした</p>
+              ) : (
+                <p>昨晩の犠牲者：プレイヤー {morningDeath}</p>
               )}
           </div>
         )}
