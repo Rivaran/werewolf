@@ -479,6 +479,20 @@ function startTimer() {
     setShowRole(true)
   }
 
+  function getNextAlivePlayer(start: number, players: (Player | null)[]) {
+
+    for (let i = 0; i < players.length; i++) {
+      const index = (start + i) % players.length
+      const p = players[index]
+
+      if (p && p.alive) {
+        return index + 1
+      }
+    }
+
+    return 1
+  }
+
   function nextPlayer() {
 
     const next = currentPlayer + 1
@@ -577,6 +591,7 @@ function startTimer() {
           playAudio(
             `/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`,
             () => {
+              setNightPlayer(getNextAlivePlayer(0, players))
               setPhase("night")
             }
           )
@@ -996,6 +1011,19 @@ function startTimer() {
               </div>
             )}
 
+            {
+              role?.id === "knight" &&
+              guardTargets[nightPlayer] && (
+                <div>
+                  <h3>護衛先</h3>
+                  <p style={{ fontSize: 24 }}>
+                    プレイヤー {guardTargets[nightPlayer]}
+                  </p>
+                  <p>このプレイヤーを護衛します</p>
+                </div>
+              )
+            }
+
             {role?.id === "werewolf" && wolfTarget === null && (
               <div>
                 <h3>襲撃するプレイヤーを選択</h3>
@@ -1015,46 +1043,33 @@ function startTimer() {
 
                     if (num === nightPlayer) return null
                     if (!players[i]?.alive) return null
-                    if (num === nightPlayer) return null
+                    if (players[i]?.role?.id === "werewolf") return null
 
                     return (
-                        <button
-                          key={num}
-                          onClick={() => {
-                            setWolfTarget(num)
-                            setShowNextButton(true)
-                          }}
-                          style={{
-                              padding: "14px 20px",
-                              fontSize: 18,
-                              borderRadius: 14,
-                              border: "1px solid rgba(255,255,255,0.35)",
-                              background: "rgba(255,255,255,0.15)",
-                              color: "white",
-                              backdropFilter: "blur(6px)",
-                              cursor: "pointer"
-                          }}
-                        >
-                          プレイヤー {num}
-                        </button>
-                  )
+                      <button
+                        key={num}
+                        onClick={() => {
+                          setWolfTarget(num)
+                          setShowNextButton(true)
+                        }}
+                        style={{
+                            padding: "14px 20px",
+                            fontSize: 18,
+                            borderRadius: 14,
+                            border: "1px solid rgba(255,255,255,0.35)",
+                            background: "rgba(255,255,255,0.15)",
+                            color: "white",
+                            backdropFilter: "blur(6px)",
+                            cursor: "pointer"
+                        }}
+                      >
+                        プレイヤー {num}
+                      </button>
+                    )
                 })}
                 </div>
               </div>
             )}
-
-            {
-              role?.id === "knight" &&
-              guardTargets[nightPlayer] && (
-                <div>
-                  <h3>護衛先</h3>
-                  <p style={{ fontSize: 24 }}>
-                    プレイヤー {guardTargets[nightPlayer]}
-                  </p>
-                  <p>このプレイヤーを護衛します</p>
-                </div>
-              )
-            }
             
             {
               role?.id === "werewolf" &&
