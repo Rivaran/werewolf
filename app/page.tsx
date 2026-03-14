@@ -270,13 +270,35 @@ export default function Page() {
   }, [phase])
 
   useEffect(() => {
-    if (phase === "night" && !nightActionReady) {
-      playAudio(
-        `/audio/[11-${nightPlayer}]${nightPlayer}番の人は他のプレイヤーが目を瞑ったのを確認した後・・・.wav`
-      )
-    }
-  }, [nightPlayer, phase])
+    if (phase !== "morning") return
 
+    playAudio(
+      "/audio/[04-1]朝になりました。皆さん目を開けてください.wav",
+      () => {
+
+        if (day === 0) {
+          playAudio("/audio/[04-2]議論開始ボタンをタップして議論を開始してください.wav")
+        } else if (morningDeath === null) {
+          playAudio(
+            "/audio/[12-0]昨晩の犠牲者はいませんでした.wav",
+            () => {
+              playAudio("/audio/[04-2]議論開始ボタンをタップして議論を開始してください.wav")
+            }
+          )
+        } else {
+          playAudio(
+            `/audio/[12-${morningDeath}]昨晩の犠牲者は${morningDeath}番のプレイヤーです.wav`,
+            () => {
+              playAudio("/audio/[04-2]議論開始ボタンをタップして議論を開始してください.wav")
+            }
+          )
+        }
+
+      }
+    )
+
+  }, [phase])
+  
   function randomDelay(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min
   }
@@ -455,9 +477,6 @@ function startTimer() {
     if (next > playerCount) {
 
       setPhase("morning")
-      setTimeout(() => {
-        playAudio("/audio/[04]朝になりました。皆さん目を開けて議論を開始してください.wav")
-      }, 1000)
       return
     }
 
@@ -710,6 +729,7 @@ function startTimer() {
   if (phase === "night") {
 
     const role = players[nightPlayer - 1]?.role
+    const firstWolf = players.findIndex(p => p?.role.id === "werewolf") + 1
 
     return (
 
@@ -825,24 +845,34 @@ function startTimer() {
               <img src={role.img} width="140" />
             </div>
 
-            <span
+            <div
               style={{
-                fontSize: 16,
-                opacity: 0.6
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 8,
+                marginTop: 10
               }}
             >
-              あなたの役職：
-            </span>
+              <span
+                style={{
+                  fontSize: 16,
+                  opacity: 0.6
+                }}
+              >
+                あなたの役職：
+              </span>
 
-            <span
-              style={{
-                fontSize: 32,
-                fontWeight: "bold",
-                textShadow: "0 0 10px rgba(255,255,255,0.6)"
-              }}
-            >
-              {role.name}
-            </span>
+              <span
+                style={{
+                  fontSize: 32,
+                  fontWeight: "bold",
+                  textShadow: "0 0 10px rgba(255,255,255,0.6)"
+                }}
+              >
+                {role.name}
+              </span>
+            </div>
 
             {role?.id === "seer" && !seerResults[nightPlayer] && (
               <div>
@@ -862,7 +892,7 @@ function startTimer() {
                     const num = i + 1
 
                     if (num === nightPlayer) return null
-                    if (num === executedPlayer) return null
+                    if (!players[i]?.alive) return null
 
                     return (
                         <button
@@ -926,7 +956,7 @@ function startTimer() {
                     const num = i + 1
 
                     if (num === nightPlayer) return null
-                    if (num === executedPlayer) return null
+                    if (!players[i]?.alive) return null
 
                     return (
                         <button
@@ -975,7 +1005,8 @@ function startTimer() {
                     const num = i + 1
 
                     if (num === nightPlayer) return null
-                    if (num === executedPlayer) return null
+                    if (!players[i]?.alive) return null
+                    if (num === nightPlayer) return null
 
                     return (
                         <button
@@ -1002,17 +1033,46 @@ function startTimer() {
                 </div>
               </div>
             )}
+
+            {
+              role?.id === "knight" &&
+              guardTargets[nightPlayer] && (
+                <div>
+                  <h3>護衛先</h3>
+                  <p style={{ fontSize: 24 }}>
+                    プレイヤー {guardTargets[nightPlayer]}
+                  </p>
+                  <p>このプレイヤーを護衛します</p>
+                </div>
+              )
+            }
             
-            {role?.id === "werewolf" && wolfTarget !== null && (
-              <div>
-                <h3>襲撃先</h3>
-                <p style={{ fontSize: 24 }}>プレイヤー {wolfTarget}</p>
-                <p>仲間の人狼がこのプレイヤーを襲撃します</p>
-              </div>
-            )}
+            {
+              role?.id === "werewolf" &&
+              wolfTarget !== null &&
+              nightPlayer === firstWolf && (
+                <div>
+                  <h3>襲撃先</h3>
+                  <p style={{ fontSize: 24 }}>プレイヤー {wolfTarget}</p>
+                  <p>仲間の人狼にも襲撃先が表示されます</p>
+                </div>
+              )
+            }
+
+            {
+              role?.id === "werewolf" &&
+              wolfTarget !== null &&
+              nightPlayer !== firstWolf && (
+                <div>
+                  <h3>襲撃先</h3>
+                  <p style={{ fontSize: 24 }}>プレイヤー {wolfTarget}</p>
+                  <p>仲間の人狼がこのプレイヤーを襲撃します</p>
+                </div>
+              )
+            }
 
             {role?.id === "villager" && !showNextButton && (
-              <p>次のプレイヤーへ進むまでお待ちください...</p>
+              <p>次のプレイヤーへ進むボタンが<br></br>表示されるまでお待ちください...</p>
             )}
 
             {showNextButton && 
@@ -1053,9 +1113,6 @@ function startTimer() {
                       setTimerRunning(false)
                       setNightActionReady(false)
                       setNightPlayer(1)
-                      setTimeout(() => {
-                        playAudio("/audio/[04]朝になりました。皆さん目を開けて議論を開始してください.wav")
-                      }, 1000)
                       return
                     }
                   }}
@@ -1115,43 +1172,54 @@ function startTimer() {
           justifyContent: "center",
           gap: 20*/
         }}
-      >
-
-      <div
-        style={{
-          position: "absolute",
-          top: 60,
-          left: "50%",
-          transform: "translateX(-50%)",
-          textAlign: "center"
-        }}
-      >
-        <h1
-          style={{
-            fontSize: 34,
-            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
-            letterSpacing: 2
-          }}
         >
-          {timerRunning
-            ? `${day + 1}日目の昼`
-            : `${day + 1}日目の朝`}
-        </h1>
-      </div>
-
-        {day === 0 ? null : (
-          timerRunning === true ? null : (
-            morningDeath === null ? (
-              <p>昨夜は誰も死にませんでした</p>
-            ) : (
-              <p>昨夜の犠牲者：プレイヤー {morningDeath}</p>
-            )
-          )
-        )}
 
         <div
           style={{
-            marginTop: 60,
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            textAlign: "center"
+          }}
+        >
+          <h1
+            style={{
+              fontSize: 34,
+              textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+              letterSpacing: 2
+            }}
+          >
+            {timerRunning
+              ? `${day + 1}日目の昼`
+              : `${day + 1}日目の朝`}
+          </h1>
+        </div>
+
+        {day === 0 ? null : (
+          <div
+            style={{
+              marginTop: 120,
+              padding: "16px 28px",
+              borderRadius: 16,
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(6px)",
+              textAlign: "center"
+            }}
+          >
+              timerRunning === true ? null : (
+                morningDeath === null ? (
+                  <p>昨晩の犠牲者はいませんでした</p>
+                ) : (
+                  <p>昨晩の犠牲者：プレイヤー {morningDeath}</p>
+                )
+              )
+          </div>
+        )}
+        
+        <div
+          style={{
+            marginTop: 10,
             textAlign: "center"
           }}
         >
