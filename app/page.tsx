@@ -369,11 +369,11 @@ export default function Page() {
     clearInterval(timerRef.current!)
     setTimeLeft(0)
 
+    setPhase("voteStart")
+
     playAudio(
       "/audio/[05]議論終了の時間となりました。投票に移ります.wav",
       () => {
-
-        setPhase("voteStart")
 
         playAudio(
           "/audio/[06]5からカウントダウン.wav",
@@ -446,14 +446,14 @@ function startTimer() {
   function playAudio(src: string, onEnd?: () => void) {
 
     if (!audioRef.current) {
-      audioRef.current = new Audio(src)
+      audioRef.current = new Audio()
     }
 
     const audio = audioRef.current
 
     audio.pause()
-    audio.src = src
     audio.currentTime = 0
+    audio.src = src
 
     if (onEnd) {
       audio.onended = onEnd
@@ -461,7 +461,12 @@ function startTimer() {
       audio.onended = null
     }
 
-    audio.play()
+    const p = audio.play()
+
+    if (p !== undefined) {
+      p.catch(() => {})
+    }
+
   }
   
   function startGame() {
@@ -502,16 +507,18 @@ function startTimer() {
     setPhase("roleCheck")
     setCurrentPlayer(1)
     setShowRole(false)
-    playAudio("/audio/[00]これから人狼ゲームを開始します.wav")
 
-    setTimeout(() => {
-      playAudio("/audio/[01]役職を配布しますので、皆さん目を瞑ってください.wav")
-    }, 3400)
-
-    setTimeout(() => {
-      playAudio("/audio/[02]1番の人は他プレイヤーが目を瞑ったのを確認してから画面の役職確認ボタンをタップしてください.wav")
-    }, 8000)
-
+    playAudio(
+      "/audio/[00]これから人狼ゲームを開始します.wav",
+      () => {
+        playAudio(
+          "/audio/[01]役職を配布しますので、皆さん目を瞑ってください.wav",
+          () => {
+            playAudio("/audio/[02]1番の人は他プレイヤーが目を瞑ったのを確認してから画面の役職確認ボタンをタップしてください.wav")
+          }
+        )
+      }
+    )
   }
 
   function revealRole() {
