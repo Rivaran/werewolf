@@ -163,7 +163,7 @@ export default function Page() {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              marginLeft: -4
+              marginLeft: -10
             }}
           >
             <span style={{
