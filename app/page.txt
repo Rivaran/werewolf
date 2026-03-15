@@ -143,6 +143,57 @@ export default function Page() {
     alive: boolean
   }
 
+  function AliveCounter({ players }: { players: (Player | null)[] }) {
+
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 12,
+          right: 12,
+          display: "flex",
+          gap: 6,
+          zIndex: 9999
+        }}
+      >
+        {players.map((p, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginLeft: -4
+            }}
+          >
+            <span style={{
+              fontSize: 18,
+              marginRight: -10,
+              marginTop: -5,
+              textShadow: "0 0 6px rgba(255,255,255,0.6)"
+              }}>{i+1}:</span>
+
+            <img
+              src={
+                !p || !p.alive
+                  ? `/image/${theme}/icon_dead.png`
+                  : i+1 === currentPlayer && (phase === "night" || phase === "roleCheck")
+                    ? `/image/${theme}/icon_active.png`
+                    : `/image/${theme}/icon_alive.png`
+              }
+              style={{
+                width: 60,
+                height: 45,
+                filter: p && p.alive ? "none" : "brightness(0.6)"
+              }}
+            />
+
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   function resolveNight() {
 
     if (wolfTarget === null) {
@@ -176,6 +227,7 @@ export default function Page() {
 
     const werewolfCount = survivors.filter(p => p.role.id === "werewolf").length
     const villagerCount = survivors.filter(p => p.role.id !== "werewolf").length
+    const knightAlive = survivors.some(p => p.role.id === "knight")
 
     if (werewolfCount === 0) {
       setWinner("villagers")
@@ -184,6 +236,14 @@ export default function Page() {
     }
 
     if (werewolfCount >= villagerCount) {
+      playAudio("/audio/[13-1]人狼の襲撃により人狼陣営と村人陣営が同数になりましたので、人狼陣営の勝利です.wav")
+      setWinner("werewolves")
+      setPhase("result")
+      return true
+    }
+
+    if (villagerCount > werewolfCount && !knightAlive) {
+      playAudio("/audio/[13-2]村人陣営の方が1人多いですが、騎士がこの村に残っていませんので、人狼陣営の勝利です.wav")
       setWinner("werewolves")
       setPhase("result")
       return true
@@ -260,6 +320,7 @@ export default function Page() {
         setGuardTargets({})
         setWolfTarget(null)
         setSeerResults({})
+        setCurrentPlayer(nightPlayer)
       }
   }, [phase])
 
@@ -270,13 +331,35 @@ export default function Page() {
   }, [phase])
 
   useEffect(() => {
-    if (phase === "night" && !nightActionReady) {
-      playAudio(
-        `/audio/[11-${nightPlayer}]${nightPlayer}番の人は他のプレイヤーが目を瞑ったのを確認した後・・・.wav`
-      )
-    }
-  }, [nightPlayer, phase])
+    if (phase !== "morning") return
 
+    playAudio(
+      "/audio/[04-1]朝になりました。皆さん目を開けてください.wav",
+      () => {
+
+        if (day === 0) {
+          playAudio("/audio/[04-2]議論開始ボタンをタップして議論を開始してください.wav")
+        } else if (morningDeath === null) {
+          playAudio(
+            "/audio/[12-0]昨晩の犠牲者はいませんでした.wav",
+            () => {
+              playAudio("/audio/[04-2]議論開始ボタンをタップして議論を開始してください.wav")
+            }
+          )
+        } else {
+          playAudio(
+            `/audio/[12-${morningDeath}]昨晩の犠牲者は${morningDeath}番のプレイヤーです.wav`,
+            () => {
+              playAudio("/audio/[04-2]議論開始ボタンをタップして議論を開始してください.wav")
+            }
+          )
+        }
+
+      }
+    )
+
+  }, [phase])
+  
   function randomDelay(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min
   }
@@ -448,16 +531,27 @@ function startTimer() {
     setShowRole(true)
   }
 
+  function getNextAlivePlayer(start: number, players: (Player | null)[]) {
+
+    for (let i = 0; i < players.length; i++) {
+      const index = (start + i) % players.length
+      const p = players[index]
+
+      if (p && p.alive) {
+        return index + 1
+      }
+    }
+
+    return 1
+  }
+
   function nextPlayer() {
 
     const next = currentPlayer + 1
 
-    if (next > playerCount) {
-
+    if (next > playerCount) {      
+      setCurrentPlayer(1)
       setPhase("morning")
-      setTimeout(() => {
-        playAudio("/audio/[04]朝になりました。皆さん目を開けて議論を開始してください.wav")
-      }, 1000)
       return
     }
 
@@ -491,21 +585,22 @@ function startTimer() {
 
         }}
       >
+        <AliveCounter players={players} />
 
-       <h1
-          style={{
-            position: "absolute",
-            top: 60,
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontSize: 34,
-            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
-            letterSpacing: 4,
-            opacity: 0.9,
-            whiteSpace: "nowrap"
-          }}
-        >
-          遺言の時間
+        <h1
+            style={{
+              position: "absolute",
+              top: 60,
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontSize: 34,
+              textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+              letterSpacing: 4,
+              opacity: 0.9,
+              whiteSpace: "nowrap"
+            }}
+          >
+            遺言の時間
         </h1>
 
         <h1 style={{
@@ -517,42 +612,42 @@ function startTimer() {
         <h1>ここで遺言を言ってください</h1>
 
         <button
+          onClick={() => {
 
-        onClick={() => {
+            const result = judgeAfterExecution(executedPlayer!)
 
-          const result = judgeAfterExecution(executedPlayer!)
-
-          if (result === "villagers") {
-            playAudio(
-              `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
-              () => {
-                playAudio("/audio/[09-2]村人陣営の勝利です.wav")
-              }
-            )
-            setWinner("villagers")
-            setPhase("result")
-            return
-          }
-
-          if (result === "werewolves") {
-            playAudio(
-              `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
-              () => {
-                playAudio("/audio/[09-1]人狼陣営の勝利です.wav",)
-              }
-            )
-            setWinner("werewolves")
-            setPhase("result")
-            return
-          }
-
-          playAudio(
-            `/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`,
-            () => {
-              setPhase("night")
+            if (result === "villagers") {
+              playAudio(
+                `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
+                () => {
+                  playAudio("/audio/[09-2]村人陣営の勝利です.wav")
+                }
+              )
+              setWinner("villagers")
+              setPhase("result")
+              return
             }
-          )
-        }}
+
+            if (result === "werewolves") {
+              playAudio(
+                `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
+                () => {
+                  playAudio("/audio/[09-1]人狼陣営の勝利です.wav",)
+                }
+              )
+              setWinner("werewolves")
+              setPhase("result")
+              return
+            }
+
+            playAudio(
+              `/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`,
+              () => {
+                setNightPlayer(getNextAlivePlayer(0, players))
+                setPhase("night")
+              }
+            )
+          }}
 
           style={{
             marginTop: 40,
@@ -597,20 +692,21 @@ function startTimer() {
 
         }}
       >
+        <AliveCounter players={players} />
 
-      <h1
-        style={{
-          position: "absolute",
-          top: 60,
-          left: "50%",
-          transform: "translateX(-50%)",
-          fontSize: 34,
-          textShadow: "0 3px 12px rgba(0,0,0,0.6)",
-          letterSpacing: 2
-        }}
-      >
-        投票タイム
-      </h1>
+        <h1
+          style={{
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: 34,
+            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 2
+          }}
+        >
+          投票タイム
+        </h1>
 
         <button
           onClick={() => setPhase("vote")}
@@ -738,6 +834,7 @@ function startTimer() {
           gap: 20*/
         }}
       >
+        <AliveCounter players={players} />
 
         <div
           style={{
@@ -873,7 +970,7 @@ function startTimer() {
                     const num = i + 1
 
                     if (num === nightPlayer) return null
-                    if (num === executedPlayer) return null
+                    if (!players[i]?.alive) return null
 
                     return (
                         <button
@@ -937,7 +1034,7 @@ function startTimer() {
                     const num = i + 1
 
                     if (num === nightPlayer) return null
-                    if (num === executedPlayer) return null
+                    if (!players[i]?.alive) return null
 
                     return (
                         <button
@@ -968,6 +1065,19 @@ function startTimer() {
               </div>
             )}
 
+            {
+              role?.id === "knight" &&
+              guardTargets[nightPlayer] && (
+                <div>
+                  <h3>護衛先</h3>
+                  <p style={{ fontSize: 24 }}>
+                    プレイヤー {guardTargets[nightPlayer]}
+                  </p>
+                  <p>このプレイヤーを護衛します</p>
+                </div>
+              )
+            }
+
             {role?.id === "werewolf" && wolfTarget === null && (
               <div>
                 <h3>襲撃するプレイヤーを選択</h3>
@@ -986,29 +1096,30 @@ function startTimer() {
                     const num = i + 1
 
                     if (num === nightPlayer) return null
-                    if (num === executedPlayer) return null
+                    if (!players[i]?.alive) return null
+                    if (players[i]?.role?.id === "werewolf") return null
 
                     return (
-                        <button
-                          key={num}
-                          onClick={() => {
-                            setWolfTarget(num)
-                            setShowNextButton(true)
-                          }}
-                          style={{
-                              padding: "14px 20px",
-                              fontSize: 18,
-                              borderRadius: 14,
-                              border: "1px solid rgba(255,255,255,0.35)",
-                              background: "rgba(255,255,255,0.15)",
-                              color: "white",
-                              backdropFilter: "blur(6px)",
-                              cursor: "pointer"
-                          }}
-                        >
-                          プレイヤー {num}
-                        </button>
-                  )
+                      <button
+                        key={num}
+                        onClick={() => {
+                          setWolfTarget(num)
+                          setShowNextButton(true)
+                        }}
+                        style={{
+                            padding: "14px 20px",
+                            fontSize: 18,
+                            borderRadius: 14,
+                            border: "1px solid rgba(255,255,255,0.35)",
+                            background: "rgba(255,255,255,0.15)",
+                            color: "white",
+                            backdropFilter: "blur(6px)",
+                            cursor: "pointer"
+                        }}
+                      >
+                        プレイヤー {num}
+                      </button>
+                    )
                 })}
                 </div>
               </div>
@@ -1039,7 +1150,7 @@ function startTimer() {
             }
 
             {role?.id === "villager" && !showNextButton && (
-              <p>次のプレイヤーへ進むまでお待ちください...</p>
+              <p>次のプレイヤーへ進むボタンが<br></br>表示されるまでお待ちください...</p>
             )}
 
             {showNextButton && 
@@ -1074,15 +1185,13 @@ function startTimer() {
                       const finished = resolveNight()
                       if (!finished) {
                         setDay(d => d + 1)
+                        setCurrentPlayer(1)
                         setPhase("morning")
                       }                    
                       setTimeLeft(120)
                       setTimerRunning(false)
                       setNightActionReady(false)
                       setNightPlayer(1)
-                      setTimeout(() => {
-                        playAudio("/audio/[04]朝になりました。皆さん目を開けて議論を開始してください.wav")
-                      }, 1000)
                       return
                     }
                   }}
@@ -1142,91 +1251,102 @@ function startTimer() {
           justifyContent: "center",
           gap: 20*/
         }}
-      >
-
-      <div
-        style={{
-          position: "absolute",
-          top: 60,
-          left: "50%",
-          transform: "translateX(-50%)",
-          textAlign: "center"
-        }}
-      >
-        <h1
-          style={{
-            fontSize: 34,
-            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
-            letterSpacing: 2
-          }}
         >
-          {timerRunning
-            ? `${day + 1}日目の昼`
-            : `${day + 1}日目の朝`}
-        </h1>
-      </div>
 
-        {day === 0 ? null : (
-          timerRunning === true ? null : (
-            morningDeath === null ? (
-              <p>昨夜は誰も死にませんでした</p>
-            ) : (
-              <p>昨夜の犠牲者：プレイヤー {morningDeath}</p>
-            )
-          )
-        )}
-
-        <div
-          style={{
-            marginTop: 60,
-            textAlign: "center"
-          }}
-        >
+          <AliveCounter players={players} />
 
           <div
             style={{
+              position: "absolute",
+              top: 60,
+              left: "50%",
+              transform: "translateX(-50%)",
+              textAlign: "center"
+            }}
+          >
+            <h1
+              style={{
+                fontSize: 34,
+                textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+                letterSpacing: 2
+              }}
+            >
+              {timerRunning
+                ? `${day + 1}日目の昼`
+                : `${day + 1}日目の朝`}
+            </h1>
+          </div>
+
+          {!timerRunning && day !== 0 && (
+            <div
+              style={{
+                marginTop: 120,
+                padding: "16px 28px",
+                borderRadius: 16,
+                background: "rgba(0,0,0,0.45)",
+                backdropFilter: "blur(6px)",
+                textAlign: "center"
+              }}
+            >
+                {morningDeath === null ? (
+                  <p>昨晩の犠牲者はいませんでした</p>
+                ) : (
+                  <p>昨晩の犠牲者：プレイヤー {morningDeath}</p>
+                )}
+            </div>
+          )}
+        
+          <div
+            style={{
+              marginTop: 10,
+              textAlign: "center"
+            }}
+          >
+
+            <div
+              style={{
+                fontSize: 22,
+                opacity: 0.9,
+                letterSpacing: 2,
+                textShadow: "0 2px 8px rgba(0,0,0,0.5)"
+              }}
+            >
+            {timerRunning
+              ? `残り時間`
+              : `議論時間`}
+            </div>
+
+            <div
+              style={{
+                fontSize: 80,
+                fontWeight: "bold",
+                color: timeLeft <= 10 ? "#ff4d4d" : "white"
+              }}
+            >
+              {formatTime(timeLeft)}
+            </div>
+
+          </div>
+
+          {!timerRunning && (
+
+          <button
+            onClick={startTimer}
+            style={{
+              marginTop: 10,
+              padding: "16px 40px",
               fontSize: 22,
-              opacity: 0.9,
-              letterSpacing: 2,
-              textShadow: "0 2px 8px rgba(0,0,0,0.5)"
-            }}
-          >
-          {timerRunning
-            ? `残り時間`
-            : `議論時間`}
-          </div>
-
-          <div
-            style={{
-              fontSize: 80,
+              borderRadius: 14,
+              border: "none",
+              background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+              color: "white",
               fontWeight: "bold",
-              color: timeLeft <= 10 ? "#ff4d4d" : "white"
+              boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+              cursor: "pointer"
             }}
           >
-            {formatTime(timeLeft)}
-          </div>
-
-        </div>
-
-        {!timerRunning && (
-
-        <button
-          onClick={startTimer}
-          style={{
-            marginTop: 10,
-            padding: "16px 40px",
-            fontSize: 22,
-            borderRadius: 14,
-            border: "none",
-            background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
-            color: "white",
-            fontWeight: "bold",
-            boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
-            cursor: "pointer"
-          }}
-        >
-          議論開始
-        </button>
+            議論開始
+          </button>
 
         )}
 
@@ -1279,6 +1399,7 @@ function startTimer() {
           justifyContent: "center"*/
         }}
       >
+        <AliveCounter players={players} />
 
         <div
           style={{
@@ -1455,6 +1576,7 @@ function startTimer() {
           position: "relative"
         }}
       >
+        <AliveCounter players={players} />
         <h1
           style={{
             position: "absolute",
