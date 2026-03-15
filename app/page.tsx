@@ -168,7 +168,7 @@ export default function Page() {
           >
             <span style={{
               fontSize: 18,
-              marginRight: -10,
+              marginRight: -17,
               marginTop: -5,
               textShadow: "0 0 6px rgba(255,255,255,0.6)"
               }}>{i+1}:</span>
