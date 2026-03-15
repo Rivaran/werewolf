@@ -78,14 +78,6 @@ function PlayerSlot({
     <div
       ref={setNodeRef}
       style={{
-        /*border: "2px dashed #999",
-        padding: 8,
-        width: "100%",
-        aspectRatio: "1 / 1",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center"*/
         border: "2px dashed #999",
         width: "100%",
         aspectRatio: "1 / 1",
@@ -163,12 +155,12 @@ export default function Page() {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              marginLeft: -4
+              marginLeft: -10
             }}
           >
             <span style={{
               fontSize: 18,
-              marginRight: -10,
+              marginRight: -17,
               marginTop: -5,
               textShadow: "0 0 6px rgba(255,255,255,0.6)"
               }}>{i+1}:</span>
@@ -300,17 +292,11 @@ export default function Page() {
   const [phase, setPhase] = useState("setup")
   const [currentPlayer, setCurrentPlayer] = useState(1)
   const [showRole, setShowRole] = useState(false)
-  const [nightPlayer, setNightPlayer] = useState(1)
   const [nightActionReady, setNightActionReady] = useState(false)
   const [showNextButton, setShowNextButton] = useState(false)
 
   const [playerCount, setPlayerCount] = useState(4)
 
-  /*const [players, setPlayers] = useState<(Player | null)[]>(
-    Array.from({ length: 4 }, () => null)
-  )*/
-  /*const [players, setPlayers] = useState<Player[]>([])*/
-  /*const [players, setPlayers] = useState<(Player | null)[]>([])*/
   const [players, setPlayers] = useState<(Player | null)[]>(
     Array.from({ length: 4 }, () => null)
   )
@@ -320,7 +306,6 @@ export default function Page() {
         setGuardTargets({})
         setWolfTarget(null)
         setSeerResults({})
-        setCurrentPlayer(nightPlayer)
       }
   }, [phase])
 
@@ -643,7 +628,7 @@ function startTimer() {
             playAudio(
               `/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`,
               () => {
-                setNightPlayer(getNextAlivePlayer(0, players))
+                setCurrentPlayer(getNextAlivePlayer(0, players))
                 setPhase("night")
               }
             )
@@ -742,14 +727,11 @@ function startTimer() {
       <div
         style={{
           background: `${bgImage} center / cover no-repeat`,
-          /*backgroundBlendMode: "darken",
-          backgroundColor: "rgba(0,0,0,0.25)",*/
           color: "white",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          /*justifyContent: "flex-start",*/
           justifyContent: "center",
           gap: 20,
           position: "relative",
@@ -805,7 +787,7 @@ function startTimer() {
 
   if (phase === "night") {
 
-    const role = players[nightPlayer - 1]?.role
+    const role = players[currentPlayer - 1]?.role
     const firstWolf = players.findIndex(p => p?.role.id === "werewolf") + 1
 
     return (
@@ -824,14 +806,6 @@ function startTimer() {
           gap: 20,
           position: "relative",
           paddingTop: 80
-          /*background: "#000",
-          color: "white",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 20*/
         }}
       >
         <AliveCounter players={players} />
@@ -861,7 +835,7 @@ function startTimer() {
             marginBottom: 10
           }}
         >
-        プレイヤー {nightPlayer}
+        プレイヤー {currentPlayer}
         </div>
 
         {!nightActionReady && (
@@ -869,7 +843,7 @@ function startTimer() {
           <button
             onClick={() => {
 
-              const role = players[nightPlayer - 1]
+              const role = players[currentPlayer - 1]
 
               setNightActionReady(true)
               setShowNextButton(false)
@@ -952,7 +926,7 @@ function startTimer() {
               </span>
             </div>
 
-            {role?.id === "seer" && !seerResults[nightPlayer] && (
+            {role?.id === "seer" && !seerResults[currentPlayer] && (
               <div>
                 <h3>占うプレイヤーを選択</h3>
 
@@ -969,7 +943,7 @@ function startTimer() {
 
                     const num = i + 1
 
-                    if (num === nightPlayer) return null
+                    if (num === currentPlayer) return null
                     if (!players[i]?.alive) return null
 
                     return (
@@ -978,12 +952,13 @@ function startTimer() {
                           onClick={() => {
 
                             const target = players[i]?.role
+                            const seerTarget = players[i]?.id
 
                             setSeerResults(prev => ({
                               ...prev,
-                              [nightPlayer]: target?.id === "werewolf"
-                                ? "人狼です"
-                                : "人狼ではありません"
+                              [currentPlayer]: target?.id === "werewolf"
+                                ? `プレイヤー${seerTarget}は人狼です`
+                                : `プレイヤー${seerTarget}は人狼ではありません`
                             }))
 
                             setShowNextButton(true)
@@ -1007,16 +982,16 @@ function startTimer() {
               </div>
             )}
 
-            {role?.id === "seer" && seerResults[nightPlayer] && (
+            {role?.id === "seer" && seerResults[currentPlayer] && (
               <div>
                 <h3>占い結果</h3>
                   <p style={{fontSize:24}}>
-                    {seerResults[nightPlayer]}
+                    {seerResults[currentPlayer]}
                   </p>
               </div>
             )}
 
-            {role?.id === "knight" && !guardTargets[nightPlayer] && (
+            {role?.id === "knight" && !guardTargets[currentPlayer] && (
               <div>
                 <h3>護衛するプレイヤーを選択</h3>
 
@@ -1033,7 +1008,7 @@ function startTimer() {
 
                     const num = i + 1
 
-                    if (num === nightPlayer) return null
+                    if (num === currentPlayer) return null
                     if (!players[i]?.alive) return null
 
                     return (
@@ -1042,7 +1017,7 @@ function startTimer() {
                           onClick={() => {
                             setGuardTargets(prev => ({
                             ...prev,
-                            [nightPlayer]: num
+                            [currentPlayer]: num
                           }))
                             setShowNextButton(true)
                           }}
@@ -1067,11 +1042,11 @@ function startTimer() {
 
             {
               role?.id === "knight" &&
-              guardTargets[nightPlayer] && (
+              guardTargets[currentPlayer] && (
                 <div>
                   <h3>護衛先</h3>
                   <p style={{ fontSize: 24 }}>
-                    プレイヤー {guardTargets[nightPlayer]}
+                    プレイヤー {guardTargets[currentPlayer]}
                   </p>
                   <p>このプレイヤーを護衛します</p>
                 </div>
@@ -1095,7 +1070,7 @@ function startTimer() {
 
                     const num = i + 1
 
-                    if (num === nightPlayer) return null
+                    if (num === currentPlayer) return null
                     if (!players[i]?.alive) return null
                     if (players[i]?.role?.id === "werewolf") return null
 
@@ -1128,7 +1103,7 @@ function startTimer() {
             {
               role?.id === "werewolf" &&
               wolfTarget !== null &&
-              nightPlayer === firstWolf && (
+              currentPlayer === firstWolf && (
                 <div>
                   <h3>襲撃先</h3>
                   <p style={{ fontSize: 24 }}>プレイヤー {wolfTarget}</p>
@@ -1140,7 +1115,7 @@ function startTimer() {
             {
               role?.id === "werewolf" &&
               wolfTarget !== null &&
-              nightPlayer !== firstWolf && (
+              currentPlayer !== firstWolf && (
                 <div>
                   <h3>襲撃先</h3>
                   <p style={{ fontSize: 24 }}>プレイヤー {wolfTarget}</p>
@@ -1156,8 +1131,8 @@ function startTimer() {
             {showNextButton && 
             (
               (role.id !== "werewolf" || wolfTarget !== null) &&
-              (role.id !== "knight" || !!guardTargets[nightPlayer]) &&
-              (role.id !== "seer" || !!seerResults[nightPlayer])
+              (role.id !== "knight" || !!guardTargets[currentPlayer]) &&
+              (role.id !== "seer" || !!seerResults[currentPlayer])
             ) && (
 
               <div
@@ -1172,14 +1147,14 @@ function startTimer() {
                 <button
                   onClick={() => {
 
-                    let next = nightPlayer + 1
+                    let next = currentPlayer + 1
 
                     while (next <= playerCount) {
                       const p = players[next - 1]
                       if (p && p.alive) break
                       next++
                     }
-                    setNightPlayer(next)
+                    setCurrentPlayer(next)
                     setNightActionReady(false)
                     if (next > playerCount) {
                       const finished = resolveNight()
@@ -1191,7 +1166,7 @@ function startTimer() {
                       setTimeLeft(120)
                       setTimerRunning(false)
                       setNightActionReady(false)
-                      setNightPlayer(1)
+                      setCurrentPlayer(1)
                       return
                     }
                   }}
@@ -1242,14 +1217,6 @@ function startTimer() {
           justifyContent: "center",
           gap: 20,
           position: "relative"
-          /*background: "#fff",
-          color: "#000",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 20*/
         }}
         >
 
@@ -1389,14 +1356,6 @@ function startTimer() {
           alignItems: "center",
           justifyContent: "center",
           animation: "fadeIn 0.6s ease"
-
-          /*background: "#111",
-          color: "white",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center"*/
         }}
       >
         <AliveCounter players={players} />
@@ -1798,10 +1757,6 @@ function startTimer() {
         
         <div
           style={{
-            /*display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: 10,*/
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
             gap: 3,
@@ -1829,7 +1784,7 @@ function startTimer() {
           役職
         </h2>
 
-        <div style={{ display: "flex", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center"}}>
           {roles.map((r) => (
             <RoleCard key={r.id} role={r} />
           ))}

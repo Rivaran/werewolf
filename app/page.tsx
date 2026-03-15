@@ -78,14 +78,6 @@ function PlayerSlot({
     <div
       ref={setNodeRef}
       style={{
-        /*border: "2px dashed #999",
-        padding: 8,
-        width: "100%",
-        aspectRatio: "1 / 1",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center"*/
         border: "2px dashed #999",
         width: "100%",
         aspectRatio: "1 / 1",
@@ -300,17 +292,11 @@ export default function Page() {
   const [phase, setPhase] = useState("setup")
   const [currentPlayer, setCurrentPlayer] = useState(1)
   const [showRole, setShowRole] = useState(false)
-  /*const [nightPlayer, setNightPlayer] = useState(1)*/
   const [nightActionReady, setNightActionReady] = useState(false)
   const [showNextButton, setShowNextButton] = useState(false)
 
   const [playerCount, setPlayerCount] = useState(4)
 
-  /*const [players, setPlayers] = useState<(Player | null)[]>(
-    Array.from({ length: 4 }, () => null)
-  )*/
-  /*const [players, setPlayers] = useState<Player[]>([])*/
-  /*const [players, setPlayers] = useState<(Player | null)[]>([])*/
   const [players, setPlayers] = useState<(Player | null)[]>(
     Array.from({ length: 4 }, () => null)
   )
@@ -383,17 +369,19 @@ export default function Page() {
     clearInterval(timerRef.current!)
     setTimeLeft(0)
 
-    setPhase("voteStart")
-
     playAudio(
       "/audio/[05]議論終了の時間となりました。投票に移ります.wav",
       () => {
+
+        setPhase("voteStart")
+
         playAudio(
           "/audio/[06]5からカウントダウン.wav",
           () => {
             setPhase("vote")
           }
         )
+
       }
     )
 
@@ -642,7 +630,6 @@ function startTimer() {
             playAudio(
               `/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`,
               () => {
-                /*setNightPlayer(getNextAlivePlayer(0, players))*/
                 setCurrentPlayer(getNextAlivePlayer(0, players))
                 setPhase("night")
               }
@@ -742,14 +729,11 @@ function startTimer() {
       <div
         style={{
           background: `${bgImage} center / cover no-repeat`,
-          /*backgroundBlendMode: "darken",
-          backgroundColor: "rgba(0,0,0,0.25)",*/
           color: "white",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          /*justifyContent: "flex-start",*/
           justifyContent: "center",
           gap: 20,
           position: "relative",
@@ -805,7 +789,6 @@ function startTimer() {
 
   if (phase === "night") {
 
-    /*const role = players[nightPlayer - 1]?.role*/
     const role = players[currentPlayer - 1]?.role
     const firstWolf = players.findIndex(p => p?.role.id === "werewolf") + 1
 
@@ -825,14 +808,6 @@ function startTimer() {
           gap: 20,
           position: "relative",
           paddingTop: 80
-          /*background: "#000",
-          color: "white",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 20*/
         }}
       >
         <AliveCounter players={players} />
@@ -870,7 +845,6 @@ function startTimer() {
           <button
             onClick={() => {
 
-              /*const role = players[nightPlayer - 1]*/
               const role = players[currentPlayer - 1]
 
               setNightActionReady(true)
@@ -971,7 +945,6 @@ function startTimer() {
 
                     const num = i + 1
 
-                    /*if (num === nightPlayer) return null*/
                     if (num === currentPlayer) return null
                     if (!players[i]?.alive) return null
 
@@ -981,13 +954,13 @@ function startTimer() {
                           onClick={() => {
 
                             const target = players[i]?.role
+                            const seerTarget = players[i]?.id
 
                             setSeerResults(prev => ({
                               ...prev,
-                              /*[nightPlayer]: target?.id === "werewolf"*/
                               [currentPlayer]: target?.id === "werewolf"
-                                ? "人狼です"
-                                : "人狼ではありません"
+                                ? `プレイヤー${seerTarget}は人狼です`
+                                : `プレイヤー${seerTarget}は人狼ではありません`
                             }))
 
                             setShowNextButton(true)
@@ -1246,14 +1219,6 @@ function startTimer() {
           justifyContent: "center",
           gap: 20,
           position: "relative"
-          /*background: "#fff",
-          color: "#000",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 20*/
         }}
         >
 
@@ -1393,14 +1358,6 @@ function startTimer() {
           alignItems: "center",
           justifyContent: "center",
           animation: "fadeIn 0.6s ease"
-
-          /*background: "#111",
-          color: "white",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center"*/
         }}
       >
         <AliveCounter players={players} />
@@ -1802,10 +1759,6 @@ function startTimer() {
         
         <div
           style={{
-            /*display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: 10,*/
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
             gap: 3,
