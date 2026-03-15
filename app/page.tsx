@@ -117,6 +117,7 @@ export default function Page() {
   const [day, setDay] = useState(0)
   const [theme, setTheme] = useState("ai")
   const [voteTarget, setVoteTarget] = useState<number | null>(null)
+  const [lastGuardTarget, setLastGuardTarget] = useState<Record<number, number | null>>({})
 
   const roles = [
   { id: "villager", name: "村人" },
@@ -1021,29 +1022,59 @@ function startTimer() {
                     if (!players[i]?.alive) return null
 
                     return (
-                        <button
-                          key={num}
-                          onClick={() => {
-                            setGuardTargets(prev => ({
+                      <button
+                        key={num}
+                        disabled={lastGuardTarget[currentPlayer] === num}
+                        onClick={() => {
+                          setGuardTargets(prev => ({
                             ...prev,
                             [currentPlayer]: num
                           }))
-                            setShowNextButton(true)
-                          }}
-                          style={{
-                            padding: "14px 20px",
-                            fontSize: 18,
-                            borderRadius: 14,
-                            border: "1px solid rgba(255,255,255,0.35)",
-                            background: "rgba(255,255,255,0.15)",
-                            color: "white",
-                            backdropFilter: "blur(6px)",
-                            cursor: "pointer"
-                          }}
-                        >
-                          プレイヤー {num}
-                        </button>
-                  )
+
+                          setLastGuardTarget(prev => ({
+                            ...prev,
+                            [currentPlayer]: num
+                          }))
+
+                          setShowNextButton(true)
+                        }}
+                        style={{
+                          position: "relative",
+                          overflow: "hidden",
+                          padding: "14px 20px",
+                          fontSize: 18,
+                          borderRadius: 14,
+                          border: "1px solid rgba(255,255,255,0.35)",
+                          background:
+                            lastGuardTarget[currentPlayer] === num
+                              ? "rgba(255,255,255,0.06)"
+                              : "rgba(255,255,255,0.15)",
+                          color:
+                            lastGuardTarget[currentPlayer] === num
+                              ? "rgba(255,255,255,0.5)"
+                              : "white",
+                          backdropFilter: "blur(6px)",
+                          cursor:
+                            lastGuardTarget[currentPlayer] === num
+                              ? "not-allowed"
+                              : "pointer"
+                        }}
+                      >
+                        プレイヤー {num}
+
+                        {lastGuardTarget[currentPlayer] === num && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              pointerEvents: "none",
+                              background:
+                                "linear-gradient(160deg, transparent 48%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.9) 50%, transparent 52%)"
+                            }}
+                          />
+                        )}
+                      </button>
+                    )
                 })}
                 </div>
               </div>
