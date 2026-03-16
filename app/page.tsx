@@ -235,7 +235,7 @@ export default function Page() {
       return true
     }
 
-    if (villagerCount > werewolfCount && !knightAlive) {
+    if (villagerCount === werewolfCount + 1 && !knightAlive) {
       playAudio("/audio/[13-2]村人陣営の方が1人多いですが、騎士がこの村に残っていませんので、人狼陣営の勝利です.wav")
       setWinner("werewolves")
       setPhase("result")
