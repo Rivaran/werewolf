@@ -117,6 +117,7 @@ export default function Page() {
   const [day, setDay] = useState(0)
   const [theme, setTheme] = useState("ai")
   const [voteTarget, setVoteTarget] = useState<number | null>(null)
+  const [lastGuardTarget, setLastGuardTarget] = useState<Record<number, number | null>>({})
 
   const roles = [
   { id: "villager", name: "村人" },
@@ -374,12 +375,14 @@ export default function Page() {
     playAudio(
       "/audio/[05]議論終了の時間となりました。投票に移ります.wav",
       () => {
+
         playAudio(
           "/audio/[06]5からカウントダウン.wav",
           () => {
             setPhase("vote")
           }
         )
+
       }
     )
 
@@ -444,14 +447,14 @@ function startTimer() {
   function playAudio(src: string, onEnd?: () => void) {
 
     if (!audioRef.current) {
-      audioRef.current = new Audio(src)
+      audioRef.current = new Audio()
     }
 
     const audio = audioRef.current
 
     audio.pause()
-    audio.src = src
     audio.currentTime = 0
+    audio.src = src
 
     if (onEnd) {
       audio.onended = onEnd
@@ -459,7 +462,12 @@ function startTimer() {
       audio.onended = null
     }
 
-    audio.play()
+    const p = audio.play()
+
+    if (p !== undefined) {
+      p.catch(() => {})
+    }
+
   }
   
   function startGame() {
@@ -500,16 +508,18 @@ function startTimer() {
     setPhase("roleCheck")
     setCurrentPlayer(1)
     setShowRole(false)
-    playAudio("/audio/[00]これから人狼ゲームを開始します.wav")
 
-    setTimeout(() => {
-      playAudio("/audio/[01]役職を配布しますので、皆さん目を瞑ってください.wav")
-    }, 3400)
-
-    setTimeout(() => {
-      playAudio("/audio/[02]1番の人は他プレイヤーが目を瞑ったのを確認してから画面の役職確認ボタンをタップしてください.wav")
-    }, 8000)
-
+    playAudio(
+      "/audio/[00]これから人狼ゲームを開始します.wav",
+      () => {
+        playAudio(
+          "/audio/[01]役職を配布しますので、皆さん目を瞑ってください.wav",
+          () => {
+            playAudio("/audio/[02]1番の人は他プレイヤーが目を瞑ったのを確認してから画面の役職確認ボタンをタップしてください.wav")
+          }
+        )
+      }
+    )
   }
 
   function revealRole() {
@@ -848,7 +858,7 @@ function startTimer() {
               setNightActionReady(true)
               setShowNextButton(false)
 
-              if (role?.role.id === "villager") {
+              if (role?.role.id === "villager" || role?.role.id === "madman") {
                 const delay = randomDelay(3000, 5000)
                 setVillagerDelay(delay)
                 setTimeout(() => {
@@ -1012,29 +1022,59 @@ function startTimer() {
                     if (!players[i]?.alive) return null
 
                     return (
-                        <button
-                          key={num}
-                          onClick={() => {
-                            setGuardTargets(prev => ({
+                      <button
+                        key={num}
+                        disabled={lastGuardTarget[currentPlayer] === num}
+                        onClick={() => {
+                          setGuardTargets(prev => ({
                             ...prev,
                             [currentPlayer]: num
                           }))
-                            setShowNextButton(true)
-                          }}
-                          style={{
-                            padding: "14px 20px",
-                            fontSize: 18,
-                            borderRadius: 14,
-                            border: "1px solid rgba(255,255,255,0.35)",
-                            background: "rgba(255,255,255,0.15)",
-                            color: "white",
-                            backdropFilter: "blur(6px)",
-                            cursor: "pointer"
-                          }}
-                        >
-                          プレイヤー {num}
-                        </button>
-                  )
+
+                          setLastGuardTarget(prev => ({
+                            ...prev,
+                            [currentPlayer]: num
+                          }))
+
+                          setShowNextButton(true)
+                        }}
+                        style={{
+                          position: "relative",
+                          overflow: "hidden",
+                          padding: "14px 20px",
+                          fontSize: 18,
+                          borderRadius: 14,
+                          border: "1px solid rgba(255,255,255,0.35)",
+                          background:
+                            lastGuardTarget[currentPlayer] === num
+                              ? "rgba(255,255,255,0.06)"
+                              : "rgba(255,255,255,0.15)",
+                          color:
+                            lastGuardTarget[currentPlayer] === num
+                              ? "rgba(255,255,255,0.5)"
+                              : "white",
+                          backdropFilter: "blur(6px)",
+                          cursor:
+                            lastGuardTarget[currentPlayer] === num
+                              ? "not-allowed"
+                              : "pointer"
+                        }}
+                      >
+                        プレイヤー {num}
+
+                        {lastGuardTarget[currentPlayer] === num && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              pointerEvents: "none",
+                              background:
+                                "linear-gradient(160deg, transparent 48%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.9) 50%, transparent 52%)"
+                            }}
+                          />
+                        )}
+                      </button>
+                    )
                 })}
                 </div>
               </div>
@@ -1124,7 +1164,7 @@ function startTimer() {
               )
             }
 
-            {role?.id === "villager" && !showNextButton && (
+            {(role?.id === "villager" || role?.id === "madman" )&& !showNextButton && (
               <p>次のプレイヤーへ進むボタンが<br></br>表示されるまでお待ちください...</p>
             )}
 

@@ -311,6 +311,15 @@ export default function Page() {
   }, [phase])
 
   useEffect(() => {
+    if (phase === "night" && !nightActionReady) {
+      playAudio(
+        `/audio/[11-${currentPlayer}]${currentPlayer}番の人は他のプレイヤーが目を瞑ったのを確認した後・・・.wav`
+      )
+    }
+  }, [currentPlayer, phase])
+
+
+  useEffect(() => {
     if (phase === "vote") {
       setVoteTarget(null)
     }
@@ -764,17 +773,7 @@ function startTimer() {
 
         <button
           onClick={() => {
-            setPhase("setup")
-            setTimeLeft(180)
-            setTimerRunning(false)
-            setExecutedPlayer(null)
-            setWinner(null)
-            setCurrentPlayer(1)
-            setShowRole(false)
-            setFirstSeerWhite(null)
-            setSeerResults({})
-            setWolfTarget(null)
-            setGuardTargets({})
+            setPhase("reveal")
           }}
           style={{
             marginTop: 150,
@@ -789,8 +788,109 @@ function startTimer() {
             cursor: "pointer",
           }}
         >
-          トップに戻る
+          ネタバラシ
         </button>
+      </div>
+    )
+  }
+
+  if (phase === "reveal") {
+
+    const bgImage =
+      winner === "villagers"
+        ? `url(/image/${theme}/village_win.png)`
+        : `url(/image/${theme}/wolf_win.png)`
+
+    return (
+      <div
+        style={{
+          background: `${bgImage} center / cover no-repeat`,
+          color: "white",
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20
+        }}
+      >
+
+        <h1
+          style={{
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: 34,
+            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 2
+          }}
+        >
+          役職公開
+        </h1>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 20,
+            marginTop: 60
+          }}
+        >
+
+          {players.map((p, i) => (
+            <div
+              key={i}
+              style={{
+                textAlign: "center",
+                padding: 10,
+                background: "rgba(0,0,0,0.4)",
+                borderRadius: 12
+              }}
+            >
+              <div>プレイヤー {i+1}</div>
+
+              <img src={p?.role.img} width={80} />
+
+              <div>{p?.role.name}</div>
+
+              <div>
+                {p?.alive ? "生存" : "死亡"}
+              </div>
+            </div>
+          ))}
+
+        </div>
+
+        <button
+          onClick={() => {
+            setPhase("setup")
+            setTimeLeft(180)
+            setTimerRunning(false)
+            setExecutedPlayer(null)
+            setWinner(null)
+            setCurrentPlayer(1)
+            setShowRole(false)
+            setFirstSeerWhite(null)
+            setSeerResults({})
+            setWolfTarget(null)
+            setGuardTargets({})
+          }}
+          style={{
+            padding: "16px 40px",
+            fontSize: 22,
+            borderRadius: 14,
+            border: "none",
+            background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+            color: "white",
+            fontWeight: "bold",
+            boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+            cursor: "pointer",
+          }}
+        >
+          トップへ
+        </button>
+
       </div>
     )
   }
@@ -858,7 +958,7 @@ function startTimer() {
               setNightActionReady(true)
               setShowNextButton(false)
 
-              if (role?.role.id === "villager") {
+              if (role?.role.id === "villager" || role?.role.id === "madman") {
                 const delay = randomDelay(3000, 5000)
                 setVillagerDelay(delay)
                 setTimeout(() => {
@@ -1164,7 +1264,7 @@ function startTimer() {
               )
             }
 
-            {role?.id === "villager" && !showNextButton && (
+            {(role?.id === "villager" || role?.id === "madman" )&& !showNextButton && (
               <p>次のプレイヤーへ進むボタンが<br></br>表示されるまでお待ちください...</p>
             )}
 
