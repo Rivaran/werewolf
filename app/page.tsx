@@ -1608,17 +1608,13 @@ function startTimer() {
 
         {showRole && role && (
 
-          <div style={{ textAlign: "center" }}>
+          <div style={{ textAlign: "center", paddingTop: "40px" }}>
 
-            <div
-              style={{
-                width: 180,
-                height: 180,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-            >
+            <div style={{
+              width: 180,
+              height: 180,
+              margin: "0 auto"
+            }}>
               <img
                 src={role.role.img}
                 style={{
@@ -1626,7 +1622,8 @@ function startTimer() {
                   maxHeight: "100%",
                   objectFit: "contain",
                   marginTop: 60,
-                  transform: role.role.id === "seer" ? "translateX(122px)" : "none"
+                  transform: "translateX(11px)"
+                  /*transform: role.role.id === "seer" ? "translateX(122px)" : "none"*/
                 }}
               />
             </div>
