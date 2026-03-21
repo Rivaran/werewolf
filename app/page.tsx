@@ -1949,7 +1949,6 @@ function startTimer() {
             cursor: "pointer",
             background: theme === "mama" ? "#ffd966" : "#fff",
             fontWeight: theme === "mama" ? "bold" : "normal",
-            marginRight: 15
           }}
         >
           イラスト2
