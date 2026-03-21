@@ -119,23 +119,54 @@ export default function Page() {
   const [theme, setTheme] = useState("ai")
   const [voteTarget, setVoteTarget] = useState<number | null>(null)
   const [lastGuardTarget, setLastGuardTarget] = useState<Record<number, number | null>>({})
-  const [seerActed, setSeerActed] = useState<Record<number, boolean>>({})  
+  const [seerActed, setSeerActed] = useState<Record<number, boolean>>({})
+  const [showWolfToMadman, setShowWolfToMadman] = useState(false)
+  const [showMadmanToWolf, setShowMadmanToWolf] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   const roles = [
-  { id: "villager", name: "村人" },
-  { id: "werewolf", name: "人狼" },
-  { id: "seer", name: "占い師" },
-  { id: "knight", name: "騎士" },
-  { id: "madman", name: "狂人" },
-].map(role => ({
-  ...role,
-  img: `/image/${theme}/${role.name}.png`
-}))
+    { id: "villager", name: "村人" },
+    { id: "werewolf", name: "人狼" },
+    { id: "seer", name: "占い師" },
+    { id: "knight", name: "騎士" },
+    { id: "madman", name: "狂人" },
+  ].map(role => ({
+    ...role,
+    img: `/image/${theme}/${role.name}.png`
+  }))
 
   type Player = {
     id: number
     role: (typeof roles)[number]
     alive: boolean
+  }
+
+  function getVisiblePlayers(playerIndex: number) {
+    const me = players[playerIndex]
+    if (!me) return []
+
+    return players
+      .map((p, i) => {
+        if (!p || i === playerIndex) return null
+
+        // 人狼 → 人狼
+        if (me.role.id === "werewolf" && p.role.id === "werewolf") {
+          return i + 1
+        }
+
+        // 人狼 → 狂人（トグルON）
+        if (me.role.id === "werewolf" && showMadmanToWolf && p.role.id === "madman") {
+          return i + 1
+        }
+
+        // 狂人 → 人狼（トグルON）
+        if (me.role.id === "madman" && showWolfToMadman && p.role.id === "werewolf") {
+          return i + 1
+        }
+
+        return null
+      })
+      .filter(Boolean)
   }
 
   function AliveCounter({ players }: { players: (Player | null)[] }) {
@@ -1551,6 +1582,7 @@ function startTimer() {
   if (phase === "roleCheck") {
 
     const role = players[currentPlayer - 1]
+    const visiblePlayers = getVisiblePlayers(currentPlayer - 1)
 
     return (
       
@@ -1659,23 +1691,11 @@ function startTimer() {
 
             </div>
 
-            {role.role.id === "werewolf" && (() => {
-              const wolfMates = players
-                .map((p, i) =>
-                  p?.role.id === "werewolf" && i !== currentPlayer - 1
-                    ? i + 1
-                    : null
-                )
-                .filter(Boolean)
-
-              if (wolfMates.length === 0) return null
-
-              return (
-                <p style={{ marginTop: 12, fontSize: 20}}>
-                  仲間：プレイヤー{wolfMates.join(" , ")}
-                </p>
-              )
-            })()}
+            {visiblePlayers.length > 0 && (
+              <p style={{ marginTop: 12, fontSize: 20 }}>
+                仲間：プレイヤー {visiblePlayers.join(" , ")}
+              </p>
+            )}
 
             {role.role.id === "seer" && firstSeerWhite !== null && (
               <p style={{ marginTop: 12, fontSize: 18 }}>
@@ -1928,10 +1948,32 @@ function startTimer() {
             border: "1px solid #ccc",
             cursor: "pointer",
             background: theme === "mama" ? "#ffd966" : "#fff",
-            fontWeight: theme === "mama" ? "bold" : "normal"
+            fontWeight: theme === "mama" ? "bold" : "normal",
+            marginRight: 15
           }}
         >
           イラスト2
+        </button>
+
+        <button
+          onClick={() => setShowSettings(true)}
+          style={{
+            padding: "6px 14px",
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            background: "#fff",
+            cursor: "pointer",
+            fontWeight: "normal",
+            opacity: 0.9
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#f5f5f5"
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#fff"
+          }}
+        >
+          ⚙ 設定
         </button>
 
       </div>
@@ -2036,6 +2078,81 @@ function startTimer() {
       >
         ゲーム開始
       </button>
+
+      {showSettings && (
+
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: "rgb(255, 255, 255)",
+            backdropFilter: "blur(10px)",
+            padding: 24,
+            borderRadius: 16,
+            width: 320,
+            border: "1px solid rgba(255,255,255,0.4)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+            color: "black"
+          }}>
+            <div style={{
+              textAlign: "center",
+              marginBottom: 16
+            }}>
+              <div style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                letterSpacing: 1,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 14px",
+                borderRadius: 999,
+                background: "rgba(0,0,0,0.1)"
+              }}>
+                ⚙ ゲーム設定
+              </div>
+
+              <label style={{ display: "block", marginBottom: 8, marginTop:15 }}>
+                <input
+                  type="checkbox"
+                  checked={showWolfToMadman}
+                  onChange={(e) => setShowWolfToMadman(e.target.checked)}
+                />
+                狂人に人狼を表示
+              </label>
+
+              <label style={{ display: "block", marginBottom: 16 }}>
+                <input
+                  type="checkbox"
+                  checked={showMadmanToWolf}
+                  onChange={(e) => setShowMadmanToWolf(e.target.checked)}
+                />
+                人狼に狂人を表示
+              </label>
+              <button
+                onClick={() => setShowSettings(false)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 10,
+                  border: "none",
+                  background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+                  color: "white",
+                  fontWeight: "bold",
+                  cursor: "pointer"
+                }}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -106,7 +106,7 @@ export default function Page() {
     setMounted(true)
   }, [])
 
-  const [winner, setWinner] = useState<"villagers" | "werewolves" | null>(null)
+  const [winner, setWinner] = useState<"villagers" | "werewolves" | "werewolves_by_no_knight" | null>(null)
   const [wolfTarget, setWolfTarget] = useState<number | null>(null)
   const [villagerDelay, setVillagerDelay] = useState(0)
   const [guardTargets, setGuardTargets] = useState<Record<number, number>>({})
@@ -119,7 +119,7 @@ export default function Page() {
   const [theme, setTheme] = useState("ai")
   const [voteTarget, setVoteTarget] = useState<number | null>(null)
   const [lastGuardTarget, setLastGuardTarget] = useState<Record<number, number | null>>({})
-  
+  const [seerActed, setSeerActed] = useState<Record<number, boolean>>({})  
 
   const roles = [
   { id: "villager", name: "村人" },
@@ -237,12 +237,12 @@ export default function Page() {
       return true
     }
 
-    if (villagerCount === werewolfCount + 1 && !knightAlive) {
+    /*if (villagerCount === werewolfCount + 1 && !knightAlive) {
       playAudio("/audio/[13-2]騎士がこの村に生存しておりませんので、人狼陣営の勝利です.wav")
       setWinner("werewolves")
       setPhase("result")
       return true
-    }
+    }*/
 
     return false
   }
@@ -265,8 +265,8 @@ export default function Page() {
 
     if (werewolfCount >= nonWerewolfCount) return "werewolves"
 
-    if (nonWerewolfCount === werewolfCount + 1 && !hasKnight) return "werewolves"
-
+    if (nonWerewolfCount === werewolfCount + 1 && !hasKnight) return "werewolves_by_no_knight"
+    
     return null
   }
 
@@ -308,7 +308,7 @@ export default function Page() {
     if (phase === "night") {
         setGuardTargets({})
         setWolfTarget(null)
-        setSeerResults({})
+        setSeerActed({})
       }
   }, [phase])
 
@@ -655,41 +655,42 @@ function startTimer() {
         <h1>ここで遺言を言ってください</h1>
 
         <button
-          onClick={() => {
 
+          onClick={() => {
             const result = judgeAfterExecution(executedPlayer!)
 
-            if (result === "villagers") {
-              playAudio(
-                `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
-                () => {
-                  playAudio("/audio/[09-2]村人陣営の勝利です.wav")
-                }
-              )
-              setWinner("villagers")
-              setPhase("result")
-              return
-            }
+            const isEnd = result === "villagers" || result === "werewolves" || result === "werewolves_by_no_knight"
 
-            if (result === "werewolves") {
-              playAudio(
-                `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`,
-                () => {
-                  playAudio("/audio/[09-1]人狼陣営の勝利です.wav",)
-                }
-              )
-              setWinner("werewolves")
-              setPhase("result")
-              return
-            }
+            const baseAudio = isEnd
+              ? `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`
+              : `/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`
 
-            playAudio(
-              `/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`,
-              () => {
-                setCurrentPlayer(getNextAlivePlayer(0, players))
-                setPhase("night")
+            playAudio(baseAudio, () => {
+
+              if (result === "villagers") {
+                playAudio("/audio/[09-2]村人陣営の勝利です.wav")
+                setWinner("villagers")
+                setPhase("result")
+                return
               }
-            )
+
+              if (result === "werewolves") {
+                playAudio("/audio/[09-1]人狼陣営の勝利です.wav")
+                setWinner("werewolves")
+                setPhase("result")
+                return
+              }
+
+              if (result === "werewolves_by_no_knight") {
+                playAudio("/audio/[13-2]騎士がこの村に生存しておりませんので、人狼陣営の勝利です.wav")
+                setWinner("werewolves")
+                setPhase("result")
+                return
+              }
+              
+              setCurrentPlayer(getNextAlivePlayer(0, players))
+              setPhase("night")
+            })
           }}
 
           style={{
@@ -1061,7 +1062,7 @@ function startTimer() {
               </span>
             </div>
 
-            {role?.id === "seer" && !seerResults[currentPlayer] && (
+            {role?.id === "seer" && !seerActed[currentPlayer] && (
               <div>
                 <h3>占うプレイヤーを選択</h3>
 
@@ -1096,7 +1097,10 @@ function startTimer() {
                                 [seerTarget!]: target?.id === "werewolf" ? "black" : "white"
                               }
                             }))
-                            
+                            setSeerActed(prev => ({
+                              ...prev,
+                              [currentPlayer]: true
+                            }))
                             setShowNextButton(true)
                           }}
                           style={{
@@ -1132,7 +1136,13 @@ function startTimer() {
                     if (num === currentPlayer) {
                       return (
                         <div key={num} style={{ textAlign: "center" }}>
-                          <img src={`/image/${theme}/seer_seer.png`} width={60} />
+                          <img
+                            src={`/image/${theme}/seer_seer.png`}
+                            width={60}
+                            style={{
+                                  opacity: players[i]?.alive ? 1 : 0.3,
+                                  filter: players[i]?.alive ? "none" : "grayscale(100%)"
+                            }}/>
                           <div>{num}</div>
                         </div>
                       )
@@ -1145,7 +1155,14 @@ function startTimer() {
 
                     return (
                       <div key={num} style={{ textAlign: "center" }}>
-                        <img src={img} width={60} />
+                        <img
+                          src={img}
+                          width={60}
+                          style={{
+                            opacity: players[i]?.alive ? 1 : 0.5,
+                            filter: players[i]?.alive ? "none" : "grayscale(50%)"
+                          }}
+                        />
                         <div>{num}</div>
                       </div>
                     )
@@ -1591,17 +1608,13 @@ function startTimer() {
 
         {showRole && role && (
 
-          <div style={{ textAlign: "center" }}>
+          <div style={{ textAlign: "center", paddingTop: "40px" }}>
 
-            <div
-              style={{
-                width: 180,
-                height: 180,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-            >
+            <div style={{
+              width: 180,
+              height: 180,
+              margin: "0 auto"
+            }}>
               <img
                 src={role.role.img}
                 style={{
@@ -1609,7 +1622,8 @@ function startTimer() {
                   maxHeight: "100%",
                   objectFit: "contain",
                   marginTop: 60,
-                  transform: role.role.id === "seer" ? "translateX(122px)" : "none"
+                  transform: "translateX(11px)"
+                  /*transform: role.role.id === "seer" ? "translateX(122px)" : "none"*/
                 }}
               />
             </div>
