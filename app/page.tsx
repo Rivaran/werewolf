@@ -111,7 +111,7 @@ export default function Page() {
   const [guardTargets, setGuardTargets] = useState<Record<number, number>>({})
   const [seerResults, setSeerResults] = useState<Record<number, Record<number, "white" | "black">>>({})
   const [mounted, setMounted] = useState(false)
-  const [firstSeerWhite, setFirstSeerWhite] = useState<number | null>(null)
+  /*const [firstSeerWhite, setFirstSeerWhite] = useState<number | null>(null)*/
   const [morningDeath, setMorningDeath] = useState<number | null>(null)
   const [day, setDay] = useState(0)
   const [theme, setTheme] = useState("ai")
@@ -366,6 +366,9 @@ export default function Page() {
 
     async function runMorning() {
 
+      setDiscussionReady(false)
+      pauseTimer()
+
       await playAudio("/audio/[04-1]朝になりました。皆さん目を開けてください.wav")
 
       if (day === 0) {
@@ -395,7 +398,7 @@ export default function Page() {
 
   }, [phase])
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (phase !== "roleCheck") return
 
     const role = players[currentPlayer - 1]
@@ -409,7 +412,7 @@ export default function Page() {
         [firstSeerWhite]: "white"
       }
     }))
-  }, [phase, currentPlayer, firstSeerWhite])
+  }, [phase, currentPlayer, firstSeerWhite])*/
   
   function randomDelay(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min
@@ -575,6 +578,7 @@ export default function Page() {
       .map(p => p!.role)
 
     const shuffled = shuffle(selectedRoles)
+
     const shuffledPlayers = shuffled.map((role, i) => ({
       id: i + 1,
       role,
@@ -587,34 +591,42 @@ export default function Page() {
     setTimerRunning(false)
     setPlayers(shuffledPlayers)
 
-    const seerIndex = shuffled.findIndex(r => r.id === "seer")
-    const seerPlayerNumber = seerIndex + 1
+    // ▼ここから修正ポイント（複数占い対応）
+    const seerIndexes = shuffled
+      .map((r, i) => ({ role: r, index: i }))
+      .filter(x => x.role.id === "seer")
 
-    const whiteCandidates = shuffled
-      .map((role, i) => ({ role, num: i + 1 }))
-      .filter((x) =>
-        x.role.id !== "werewolf" &&
-        x.num !== seerPlayerNumber
-      )
+    const results: Record<number, Record<number, "white">> = {}
 
-    let firstWhiteTarget: number | null = null
+    seerIndexes.forEach(({ index }) => {
+      const seerNum = index + 1
 
-    if (whiteCandidates.length > 0) {
-      const randomIndex = Math.floor(Math.random() * whiteCandidates.length)
-      firstWhiteTarget = whiteCandidates[randomIndex].num
-    }
+      const candidates = shuffled
+        .map((r, i) => ({ role: r, num: i + 1 }))
+        .filter(x =>
+          x.role.id !== "werewolf" &&
+          x.num !== seerNum
+        )
 
-    setFirstSeerWhite(firstWhiteTarget)
-
-    if (firstWhiteTarget !== null) {
-      setSeerResults({
-        [seerPlayerNumber]: {
-          [firstWhiteTarget]: "white"
+      if (candidates.length > 0) {
+        const rand = candidates[Math.floor(Math.random() * candidates.length)]
+        results[seerNum] = {
+          [rand.num]: "white"
         }
-      })
+      }
+    })
+
+    setSeerResults(results)
+
+    // 互換用（既存ロジック壊さないために1つだけ保持）
+    /*const firstSeer = Object.keys(results)[0]
+    if (firstSeer) {
+      const firstTarget = Object.keys(results[Number(firstSeer)])[0]
+      setFirstSeerWhite(Number(firstTarget))
     } else {
-      setSeerResults({})
-    }
+      setFirstSeerWhite(null)
+    }*/
+    // ▲ここまで修正
 
     setPhase("roleCheck")
     setCurrentPlayer(1)
@@ -672,10 +684,14 @@ export default function Page() {
 
       <div
         style={{
-          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundImage: `url(/image/${theme}/day-bg.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+
           backgroundBlendMode: "darken",
-          color: "white",
           backgroundColor: "rgba(0,0,0,0.25)",
+          color: "white",
 
           height: "100vh",
           display: "flex",
@@ -735,6 +751,7 @@ export default function Page() {
 
             if (result === "villagers") {
               await playAudio("/audio/[09-2]村人陣営の勝利です.wav")
+              setExecuting(false)
               setWinner("villagers")
               setPhase("result")
               return
@@ -744,6 +761,7 @@ export default function Page() {
               await playAudio("/audio/[09-1]人狼陣営の勝利です.wav")
               setWinner("werewolves")
               setPhase("result")
+              setExecuting(false)
               return
             }
 
@@ -751,12 +769,14 @@ export default function Page() {
               await playAudio("/audio/[13-2]騎士がこの村に生存しておりませんので、人狼陣営の勝利です.wav")
               setWinner("werewolves")
               setPhase("result")
+              setExecuting(false)
               return
             }
 
             // 続行パターン
             setCurrentPlayer(getNextAlivePlayer(0, players))
             setPhase("night")
+            setExecuting(false)
 
           }}
 
@@ -790,10 +810,14 @@ export default function Page() {
 
       <div
         style={{
-          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundImage: `url(/image/${theme}/day-bg.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+
           backgroundBlendMode: "darken",
-          color: "white",
           backgroundColor: "rgba(0,0,0,0.25)",
+          color: "white",
 
           height: "100vh",
           display: "flex",
@@ -980,7 +1004,6 @@ export default function Page() {
             setWinner(null)
             setCurrentPlayer(1)
             setShowRole(false)
-            setFirstSeerWhite(null)
             setSeerResults({})
             setWolfTarget(null)
             setGuardTargets({})
@@ -1485,20 +1508,28 @@ export default function Page() {
 
   if (phase === "morning") {
 
+    const isDiscussion = discussionReady && timerRunning
+    const isPaused = discussionReady && !timerRunning
+
     return (
 
       <div
         style={{
-          background: timerRunning
-            ? `url(/image/${theme}/day-bg.png) center / cover no-repeat`
-            : `url(/image/${theme}/morning-bg.png) center / cover no-repeat`,
+          backgroundImage: discussionReady
+            ? `url(/image/${theme}/day-bg.png)`
+            : `url(/image/${theme}/morning-bg.png)`,
+
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
 
           backgroundBlendMode: "darken",
-          color: "white",
 
           backgroundColor: timerRunning
-           ? "rgba(0,0,0,0.25)"
-           : "",
+            ? "rgba(0,0,0,0.25)"
+            : "transparent",
+
+          color: "white",
 
           height: "100vh",
           display: "flex",
@@ -1508,7 +1539,7 @@ export default function Page() {
           gap: 20,
           position: "relative"
         }}
-        >
+      >
 
           <AliveCounter players={players} />
 
@@ -1528,13 +1559,13 @@ export default function Page() {
                 letterSpacing: 2
               }}
             >
-              {timerRunning
+              {discussionReady
                 ? `${day + 1}日目の昼`
                 : `${day + 1}日目の朝`}
             </h1>
           </div>
 
-          {!timerRunning && day !== 0 && (
+          {!timerRunning && day !== 0 && !isPaused && (
             <div
               style={{
                 marginTop: 120,
@@ -1568,7 +1599,7 @@ export default function Page() {
                 textShadow: "0 2px 8px rgba(0,0,0,0.5)"
               }}
             >
-            {timerRunning
+            {discussionReady || isPaused
               ? `残り時間`
               : `議論時間`}
             </div>
@@ -1585,7 +1616,7 @@ export default function Page() {
 
           </div>
 
-        {timerRunning && (
+        {isDiscussion && !isPaused && (
 
           <div style={{ display: "flex", gap: 10 }}>
             <button
@@ -1622,7 +1653,7 @@ export default function Page() {
           </div>
         )}
 
-        {!timerRunning && discussionReady  && (
+        { isPaused && (
           <button
           onClick={startTimer}
           style={{
@@ -1768,9 +1799,9 @@ export default function Page() {
                 </p>
               )}
 
-              {role.role.id === "seer" && firstSeerWhite !== null && (
+              {role.role.id === "seer" && seerResults[currentPlayer] && (
                 <p style={{ marginTop: 12, fontSize: 18 }}>
-                  プレイヤー {firstSeerWhite} は人狼ではありません
+                  プレイヤー {Object.keys(seerResults[currentPlayer])[0]} は人狼ではありません
                 </p>
               )}
 
@@ -1843,11 +1874,16 @@ export default function Page() {
 
       <div
         style={{
-          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundImage: `url(/image/${theme}/day-bg.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+
           backgroundBlendMode: "darken",
-          color: "white",
           backgroundColor: "rgba(0,0,0,0.25)",
 
+          color: "white",
+          
           height: "100vh",
           display: "flex",
           flexDirection: "column",
