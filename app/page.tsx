@@ -1068,43 +1068,68 @@ export default function Page() {
 
         {!nightActionReady && (
 
-          <button
-            onClick={() => {
-
-              const role = players[currentPlayer - 1]
-
-              setNightActionReady(true)
-              setShowNextButton(false)
-
-              if (role?.role.id === "villager" || role?.role.id === "madman") {
-                const delay = randomDelay(3000, 5000)
-                setTimeout(() => {
-                  setShowNextButton(true)
-                }, delay)
-
-              } else if(role?.role.id !== "werewolf" && role?.role.id !== "knight" && role?.role.id !== "seer") {
-                setShowNextButton(true)
-              } else if (role?.role.id === "werewolf" && wolfTarget !== null) {
-                setShowNextButton(true)
-              }
-                            
-            }
-          }
-          style={{
-            marginTop: 20,
-            padding: "14px 28px",
-            fontSize: 20,
-            borderRadius: 12,
-            border: "none",
-            background: "linear-gradient(135deg,#ffd966,#ffb347)",
-            color: "#333",
-            fontWeight: "bold",
-            boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
-            cursor: "pointer"
-          }}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 16
+            }}
           >
-          画面タップ
-          </button>
+
+            <div
+              style={{
+                fontSize: 20,
+                letterSpacing: 2,
+                padding: "6px 14px",
+                borderRadius: 20,
+                background: "rgba(0,0,0,0.35)",
+                backdropFilter: "blur(4px)",
+                marginBottom: 10
+              }}
+            >
+              プレイヤー {currentPlayer}
+            </div>
+
+            <button
+              onClick={() => {
+
+                const role = players[currentPlayer - 1]
+
+                setNightActionReady(true)
+                setShowNextButton(false)
+
+                if (role?.role.id === "villager" || role?.role.id === "madman") {
+                  const delay = randomDelay(3000, 5000)
+                  setTimeout(() => {
+                    setShowNextButton(true)
+                  }, delay)
+
+                } else if(role?.role.id !== "werewolf" && role?.role.id !== "knight" && role?.role.id !== "seer") {
+                  setShowNextButton(true)
+                } else if (role?.role.id === "werewolf" && wolfTarget !== null) {
+                  setShowNextButton(true)
+                }
+                              
+              }
+            }
+            style={{
+              marginTop: 20,
+              padding: "14px 28px",
+              fontSize: 20,
+              borderRadius: 12,
+              border: "none",
+              background: "linear-gradient(135deg,#ffd966,#ffb347)",
+              color: "#333",
+              fontWeight: "bold",
+              boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
+              cursor: "pointer"
+            }}
+            >
+            画面タップ
+            </button>
+          </div>
 
         )}
 
@@ -1722,23 +1747,47 @@ export default function Page() {
 
           {!showRole && (
 
-            <button
-              onClick={revealRole}
+            <div
               style={{
-                marginTop: 20,
-                padding: "14px 28px",
-                fontSize: 20,
-                borderRadius: 12,
-                border: "none",
-                background: "linear-gradient(135deg,#ffd966,#ffb347)",
-                color: "#333",
-                fontWeight: "bold",
-                boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
-                cursor: "pointer"
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 16
               }}
             >
-              役職確認
-            </button>
+              <div
+                style={{
+                  fontSize: 20,
+                  letterSpacing: 2,
+                  padding: "6px 14px",
+                  borderRadius: 20,
+                  background: "rgba(0,0,0,0.35)",
+                  backdropFilter: "blur(4px)",
+                  marginBottom: 10
+                }}
+              >
+              プレイヤー {currentPlayer}
+              </div>
+
+              <button
+                onClick={revealRole}
+                style={{
+                  marginTop: 20,
+                  padding: "14px 28px",
+                  fontSize: 20,
+                  borderRadius: 12,
+                  border: "none",
+                  background: "linear-gradient(135deg,#ffd966,#ffb347)",
+                  color: "#333",
+                  fontWeight: "bold",
+                  boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
+                  cursor: "pointer"
+                }}
+              >
+                役職確認
+              </button>
+            </div>
 
           )}
 
