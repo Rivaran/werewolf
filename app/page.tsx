@@ -125,6 +125,7 @@ export default function Page() {
   const [executing, setExecuting] = useState(false)
   const [discussionReady, setDiscussionReady] = useState(false)
   const [discussionEnded, setDiscussionEnded] = useState(false)
+  const [showSeerModal, setShowSeerModal] = useState(false)
 
   const roles = [
     { id: "villager", name: "村人" },
@@ -1111,7 +1112,7 @@ export default function Page() {
                 } else if (role?.role.id === "werewolf" && wolfTarget !== null) {
                   setShowNextButton(true)
                 }
-                              
+
               }
             }
             style={{
@@ -1817,7 +1818,7 @@ export default function Page() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 10,
-                  marginTop: 40
+                  marginTop: 10
                 }}
               >
 
@@ -1849,43 +1850,138 @@ export default function Page() {
               )}
 
               {role.role.id === "seer" && seerResults[currentPlayer] && (
-                <p style={{ marginTop: 12, fontSize: 18 }}>
-                  プレイヤー {Object.keys(seerResults[currentPlayer])[0]} は人狼ではありません
-                </p>
+                <div>
+                  <p 
+                    style={{
+                        marginTop: 12,
+                        fontSize: 22,
+                        fontWeight: "bold",
+                    }}>
+                      プレイヤー {Object.keys(seerResults[currentPlayer])[0]} は人狼ではありません
+                  </p>
+
+                  <button
+                    onClick={() => setShowSeerModal(true)}
+                    style={{
+                      marginTop: 20,
+                      fontSize: 20,
+                      color: "rgba(255,255,255,0.7)",
+                      background: "transparent",
+                      border: "none",
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                    }}
+                  >
+                  🔍 占い結果一覧
+                  </button>
+                </div>
+
               )}
 
-              {role.role.id === "seer" && (
-                <div>
-                  <div style={{
+              {showSeerModal && (
+                <div
+                  onClick={() => setShowSeerModal(false)}
+                  style={{
+                    position: "fixed",
+                    inset: 0,
+                    background: "rgba(0,0,0,0.6)",
                     display: "flex",
-                    gap: 12,
+                    alignItems: "center",
                     justifyContent: "center",
-                    flexWrap: "wrap",
-                    marginTop: 10
-                  }}>
-                    {players.map((p, i) => {
-                      const num = i + 1
-                      if (num === currentPlayer) {
+                    zIndex: 9999,
+                    color: "black"
+                  }}
+                >
+
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      background: "#fff",
+                      borderRadius: 20,
+                      padding: 20,
+                      width: "90%",
+                      maxWidth: 360,
+                      boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+                      textAlign: "center"
+                    }}
+                  >
+
+                    <div style={{
+                      fontSize: 18,
+                      fontWeight: "bold",
+                      marginBottom: 12
+                    }}>
+                      🔍 占い結果
+                    </div>
+
+                    <div style={{
+                      display: "flex",
+                      gap: 12,
+                      justifyContent: "center",
+                      flexWrap: "wrap",
+                      alignItems: "flex-start"
+                    }}>
+                      {players.map((p, i) => {
+                        const num = i + 1
+
+                        if (num === currentPlayer) {
+                          return (
+                            <div key={num} style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 14, width: 70 }}>{num}</div>
+                              <img src={`/image/${theme}/seer_seer.png`} width={70} />
+                              <div style={{
+                                fontWeight: "bold",
+                                marginTop: 2,
+                                width: 70,
+                                color: "#999"
+                                }}>
+                                  自分</div>
+                            </div>
+                          )
+                        }
+
+                        const result = seerResults[currentPlayer]?.[num]
+
+                        let img = `/image/${theme}/seer_non.png`
+                        if (result === "white") img = `/image/${theme}/seer_white.png`
+                        if (result === "black") img = `/image/${theme}/seer_black.png`
+
                         return (
-                          <div key={num} style={{ textAlign: "center" }}>
-                            <img src={`/image/${theme}/seer_seer.png`} width={60} />
-                            <div>{num}</div>
+                          <div key={num} style={{ textAlign: "center", width: 70 }}>
+                            <div style={{ fontSize: 14 }}>{num}</div>
+                            <img src={img} width={70} />
+                            <div style={{
+                              fontWeight: "bold",
+                              marginTop: 2,
+                              color:
+                                result === "white" ? "#4da6ff"
+                                : result === "black" ? "#ff4d4d"
+                                : "#999"
+                            }}>
+                              {result === "white" ? "白"
+                              : result === "black" ? "黒"
+                              : "未"}
+                            </div>
                           </div>
                         )
-                      }
-                      const result = seerResults[currentPlayer]?.[Number(num)]
+                      })}
+                    </div>
 
-                      let img = `/image/${theme}/seer_non.png`
-                      if (result === "white") img = `/image/${theme}/seer_white.png`
-                      if (result === "black") img = `/image/${theme}/seer_black.png`
-
-                      return (
-                        <div key={num} style={{ textAlign: "center" }}>
-                          <img src={img} width={60} />
-                          <div>{num}</div>
-                        </div>
-                      )
-                    })}
+                    <button
+                      onClick={() => setShowSeerModal(false)}
+                      style={{
+                        marginTop: 16,
+                        padding: "10px 24px",
+                        borderRadius: 10,
+                        border: "none",
+                        background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+                        color: "white",
+                        fontWeight: "bold",
+                        cursor: "pointer"
+                      }}
+                    >
+                      閉じる
+                    </button>
                   </div>
                 </div>
               )}
