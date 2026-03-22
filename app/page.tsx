@@ -1258,8 +1258,8 @@ export default function Page() {
                       }}>
                       プレイヤー {seerToday[currentPlayer].target} は
                       {seerToday[currentPlayer].result === "white"
-                        ? "人狼ではありません。"
-                        : "人狼です。"}
+                        ? "人狼ではありません"
+                        : "人狼です"}
                     </p>
                   )}
 
