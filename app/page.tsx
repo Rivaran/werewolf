@@ -1804,10 +1804,10 @@ export default function Page() {
                 <img
                   src={role.role.img}
                   style={{
-                    maxWidth: "100%",
-                    maxHeight: "100%",
                     objectFit: "contain",
-                    marginTop: 60,
+                    marginTop: 0,
+                    display: "block",
+                    margin: "0 auto"
                   }}
                 />
               </div>
@@ -1818,7 +1818,7 @@ export default function Page() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 10,
-                  marginTop: 10
+                  marginTop: 30
                 }}
               >
 
