@@ -108,9 +108,7 @@ export default function Page() {
 
   const [winner, setWinner] = useState<"villagers" | "werewolves" | "werewolves_by_no_knight" | null>(null)
   const [wolfTarget, setWolfTarget] = useState<number | null>(null)
-  const [villagerDelay, setVillagerDelay] = useState(0)
   const [guardTargets, setGuardTargets] = useState<Record<number, number>>({})
-  /*const [seerResults, setSeerResults] = useState<Record<number, string>>({})*/
   const [seerResults, setSeerResults] = useState<Record<number, Record<number, "white" | "black">>>({})
   const [mounted, setMounted] = useState(false)
   const [firstSeerWhite, setFirstSeerWhite] = useState<number | null>(null)
@@ -123,6 +121,10 @@ export default function Page() {
   const [showWolfToMadman, setShowWolfToMadman] = useState(false)
   const [showMadmanToWolf, setShowMadmanToWolf] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [morningHandled, setMorningHandled] = useState(false)
+  const [executing, setExecuting] = useState(false)
+  const [discussionReady, setDiscussionReady] = useState(false)
+  const [discussionEnded, setDiscussionEnded] = useState(false)
 
   const roles = [
     { id: "villager", name: "村人" },
@@ -268,13 +270,6 @@ export default function Page() {
       return true
     }
 
-    /*if (villagerCount === werewolfCount + 1 && !knightAlive) {
-      playAudio("/audio/[13-2]騎士がこの村に生存しておりませんので、人狼陣営の勝利です.wav")
-      setWinner("werewolves")
-      setPhase("result")
-      return true
-    }*/
-
     return false
   }
   
@@ -359,32 +354,44 @@ export default function Page() {
   }, [phase])
 
   useEffect(() => {
+    if (phase !== "morning") {
+      setMorningHandled(false)
+    }
+  }, [phase])
+
+  useEffect(() => {
     if (phase !== "morning") return
+    if (morningHandled) return
+    setMorningHandled(true)
 
-    playAudio(
-      "/audio/[04-1]朝になりました。皆さん目を開けてください.wav",
-      () => {
+    async function runMorning() {
 
-        if (day === 0) {
-          playAudio("/audio/[04-2]議論開始ボタンをタップして議論を開始してください.wav")
-        } else if (morningDeath === null) {
-          playAudio(
-            "/audio/[12-0]昨晩の犠牲者はいませんでした.wav",
-            () => {
-              playAudio("/audio/[04-2]議論開始ボタンをタップして議論を開始してください.wav")
-            }
-          )
-        } else {
-          playAudio(
-            `/audio/[12-${morningDeath}]昨晩の犠牲者は${morningDeath}番のプレイヤーです.wav`,
-            () => {
-              playAudio("/audio/[04-2]議論開始ボタンをタップして議論を開始してください.wav")
-            }
-          )
-        }
+      await playAudio("/audio/[04-1]朝になりました。皆さん目を開けてください.wav")
 
+      if (day === 0) {
+        await playAudio("/audio/[04-2]議論時間は３分です。タイマーを開始しますので、議論を開始してください.wav")
+        setDiscussionEnded(false)
+        setDiscussionReady(true)
+        startTimer()
+
+      } else if (morningDeath === null) {
+        await playAudio("/audio/[12-0]昨晩の犠牲者はいませんでした.wav")
+        await playAudio("/audio/[04-3]議論時間は２分です。タイマーを開始しますので、議論を開始してください.wav")
+        setDiscussionEnded(false)
+        setDiscussionReady(true)
+        startTimer()
+
+      } else {
+        await playAudio(`/audio/[12-${morningDeath}]昨晩の犠牲者は${morningDeath}番のプレイヤーです.wav`)
+        await playAudio("/audio/[04-3]議論時間は２分です。タイマーを開始しますので、議論を開始してください.wav")
+        setDiscussionEnded(false)
+        setDiscussionReady(true)
+        startTimer()
       }
-    )
+
+    }
+
+    runMorning()
 
   }, [phase])
 
@@ -424,26 +431,21 @@ export default function Page() {
   }
 
   function endDiscussion() {
-
+    if (discussionEnded) return
+    setDiscussionEnded(true)
     clearInterval(timerRef.current!)
+    timerRef.current = null
     setTimeLeft(0)
-
+    setTimerRunning(false)
     setPhase("voteStart")
-
-    playAudio(
-      "/audio/[05]議論終了の時間となりました。投票に移ります.wav",
-      () => {
-
-        playAudio(
-          "/audio/[06]5からカウントダウン.wav",
-          () => {
-            setPhase("vote")
-          }
-        )
-
-      }
-    )
-
+    async function runVoteStart() {
+      await playAudio("/audio/[05]議論終了の時間となりました。投票に移ります.wav")
+      if (phase !== "voteStart") return
+      await playAudio("/audio/[06]5からカウントダウン.wav")
+      if (phase !== "voteStart") return
+      setPhase("vote")
+    }
+    runVoteStart()
   }
 
   function shuffle<T>(array: T[]) {
@@ -466,13 +468,23 @@ export default function Page() {
 
   }
 
-function startTimer() {
-  if (timerRunning) return
+  function pauseTimer() {
+    clearInterval(timerRef.current!)
+    timerRef.current = null
+    setTimerRunning(false)
+  }
+
+  function startTimer() {
+    if (timerRef.current) return  // 多重起動防止
+
     setTimerRunning(true)
+
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(timerRef.current!)
+          timerRef.current = null
+          setTimerRunning(false)
           endDiscussion()
           return 0
         }
@@ -502,30 +514,51 @@ function startTimer() {
     setPlayers(newPlayers)
   }
 
-  function playAudio(src: string, onEnd?: () => void) {
+  const audioResolveRef = useRef<(() => void) | null>(null)
 
-    if (!audioRef.current) {
-      audioRef.current = new Audio()
-    }
+  function playAudio(src: string) {
+    return new Promise<void>((resolve) => {
 
-    const audio = audioRef.current
+      if (!audioRef.current) {
+        audioRef.current = new Audio()
+      }
 
-    audio.pause()
-    audio.currentTime = 0
-    audio.src = src
+      const audio = audioRef.current
 
-    if (onEnd) {
-      audio.onended = onEnd
-    } else {
-      audio.onended = null
-    }
+      if (audioResolveRef.current) {
+        audioResolveRef.current()
+        audioResolveRef.current = null
+      }
 
-    const p = audio.play()
+      audio.pause()
+      audio.currentTime = 0
 
-    if (p !== undefined) {
-      p.catch(() => {})
-    }
+      const finish = () => {
+        if (audioResolveRef.current === finish) {
+          audioResolveRef.current = null
+        }
+        resolve()
+      }
 
+      audioResolveRef.current = finish
+
+      audio.onended = finish
+      audio.onerror = finish
+
+      audio.src = src
+
+      const p = audio.play()
+
+      if (p !== undefined) {
+        p.catch(() => {
+          finish()
+        })
+      }
+
+      setTimeout(() => {
+        finish()
+      }, 10000)
+    })
   }
   
   function startGame() {
@@ -534,33 +567,32 @@ function startTimer() {
       alert("配役をすべて選択してください")
       return
     }
+
     setDay(0)
-    
+
     const selectedRoles = players
       .filter(p => p !== null)
       .map(p => p!.role)
-      
+
     const shuffled = shuffle(selectedRoles)
     const shuffledPlayers = shuffled.map((role, i) => ({
       id: i + 1,
       role,
       alive: true
     }))
-    
+
     clearInterval(timerRef.current!)
+    timerRef.current = null
     setTimeLeft(180)
     setTimerRunning(false)
     setPlayers(shuffledPlayers)
 
-    /*const whiteCandidates = shuffled
-      .map((role, i) => ({ role, num: i + 1 }))
-      .filter((x) => x.role.id !== "werewolf")*/
     const seerIndex = shuffled.findIndex(r => r.id === "seer")
     const seerPlayerNumber = seerIndex + 1
 
     const whiteCandidates = shuffled
       .map((role, i) => ({ role, num: i + 1 }))
-      .filter((x) => 
+      .filter((x) =>
         x.role.id !== "werewolf" &&
         x.num !== seerPlayerNumber
       )
@@ -588,17 +620,13 @@ function startTimer() {
     setCurrentPlayer(1)
     setShowRole(false)
 
-    playAudio(
-      "/audio/[00]これから人狼ゲームを開始します.wav",
-      () => {
-        playAudio(
-          "/audio/[01]役職を配布しますので、皆さん目を瞑ってください.wav",
-          () => {
-            playAudio("/audio/[02]1番の人は他プレイヤーが目を瞑ったのを確認してから画面の役職確認ボタンをタップしてください.wav")
-          }
-        )
-      }
-    )
+    async function runStartAudio() {
+      await playAudio("/audio/[00]これから人狼ゲームを開始します.wav")
+      await playAudio("/audio/[01]役職を配布しますので、皆さん目を瞑ってください.wav")
+      await playAudio("/audio/[02]1番の人は他プレイヤーが目を瞑ったのを確認してから画面の役職確認ボタンをタップしてください.wav")
+    }
+
+    runStartAudio()
   }
 
   function revealRole() {
@@ -686,42 +714,50 @@ function startTimer() {
         <h1>ここで遺言を言ってください</h1>
 
         <button
+          disabled={executing}
+          onClick={async () => {
 
-          onClick={() => {
+            if (executing) return
+              setExecuting(true)
+
             const result = judgeAfterExecution(executedPlayer!)
 
-            const isEnd = result === "villagers" || result === "werewolves" || result === "werewolves_by_no_knight"
+            const isEnd =
+              result === "villagers" ||
+              result === "werewolves" ||
+              result === "werewolves_by_no_knight"
 
             const baseAudio = isEnd
               ? `/audio/[08-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやって、来ません.wav`
               : `/audio/[10-${executedPlayer}]${executedPlayer}番のプレイヤーが追放され、夜がやってきます.wav`
 
-            playAudio(baseAudio, () => {
+            await playAudio(baseAudio)
 
-              if (result === "villagers") {
-                playAudio("/audio/[09-2]村人陣営の勝利です.wav")
-                setWinner("villagers")
-                setPhase("result")
-                return
-              }
+            if (result === "villagers") {
+              await playAudio("/audio/[09-2]村人陣営の勝利です.wav")
+              setWinner("villagers")
+              setPhase("result")
+              return
+            }
 
-              if (result === "werewolves") {
-                playAudio("/audio/[09-1]人狼陣営の勝利です.wav")
-                setWinner("werewolves")
-                setPhase("result")
-                return
-              }
+            if (result === "werewolves") {
+              await playAudio("/audio/[09-1]人狼陣営の勝利です.wav")
+              setWinner("werewolves")
+              setPhase("result")
+              return
+            }
 
-              if (result === "werewolves_by_no_knight") {
-                playAudio("/audio/[13-2]騎士がこの村に生存しておりませんので、人狼陣営の勝利です.wav")
-                setWinner("werewolves")
-                setPhase("result")
-                return
-              }
-              
-              setCurrentPlayer(getNextAlivePlayer(0, players))
-              setPhase("night")
-            })
+            if (result === "werewolves_by_no_knight") {
+              await playAudio("/audio/[13-2]騎士がこの村に生存しておりませんので、人狼陣営の勝利です.wav")
+              setWinner("werewolves")
+              setPhase("result")
+              return
+            }
+
+            // 続行パターン
+            setCurrentPlayer(getNextAlivePlayer(0, players))
+            setPhase("night")
+
           }}
 
           style={{
@@ -730,16 +766,18 @@ function startTimer() {
             fontSize: 20,
             borderRadius: 14,
             border: "none",
-            background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+            background: executing
+              ? "rgba(200,200,200,0.6)"
+              : "linear-gradient(135deg,#6bd4ff,#2b8cff)",
             color: "white",
             fontWeight: "bold",
             boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
-            cursor: "pointer"
+            cursor: executing ? "not-allowed" : "pointer",
+            opacity: executing ? 0.7 : 1
           }}
         >
-          夜時間へ
+          {executing ? "処理中..." : "夜時間へ"}
         </button>
-
       </div>
 
     )
@@ -1017,7 +1055,6 @@ function startTimer() {
 
               if (role?.role.id === "villager" || role?.role.id === "madman") {
                 const delay = randomDelay(3000, 5000)
-                setVillagerDelay(delay)
                 setTimeout(() => {
                   setShowNextButton(true)
                 }, delay)
@@ -1153,6 +1190,18 @@ function startTimer() {
               </div>
             )}
 
+            {role?.id === "seer" && seerResults[currentPlayer] && (
+              <div>
+                {Object.entries(seerResults[currentPlayer]).map(([num, result]) => (
+                  <p key={num} style={{ fontSize: 20 }}>
+                    プレイヤー {num}は
+                    {result === "white" ? "人狼ではありません。" : "人狼です。"}
+                  </p>
+                ))}
+
+              </div>
+            )}
+
             {role.id === "seer" && (
               <div>
                 <div style={{
@@ -1178,7 +1227,7 @@ function startTimer() {
                         </div>
                       )
                     }
-                    const result = seerResults[currentPlayer]?.[num]
+                    const result = seerResults[currentPlayer]?.[Number(num)]
 
                     let img = `/image/${theme}/seer_non.png`
                     if (result === "white") img = `/image/${theme}/seer_white.png`
@@ -1373,7 +1422,7 @@ function startTimer() {
             (
               (role.id !== "werewolf" || wolfTarget !== null) &&
               (role.id !== "knight" || !!guardTargets[currentPlayer]) &&
-              (role.id !== "seer" || !!seerResults[currentPlayer])
+              (role.id !== "seer" || Object.keys(seerResults[currentPlayer] || {}).length > 0)
             ) && (
 
               <div
@@ -1536,43 +1585,58 @@ function startTimer() {
 
           </div>
 
-          {!timerRunning && (
+        {timerRunning && (
 
-          <button
-            onClick={startTimer}
-            style={{
-              marginTop: 10,
-              padding: "16px 40px",
-              fontSize: 22,
-              borderRadius: 14,
-              border: "none",
-              background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
-              color: "white",
-              fontWeight: "bold",
-              boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
-              cursor: "pointer"
-            }}
-          >
-            議論開始
-          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={pauseTimer}
+              style={{
+                marginTop: 10,
+                padding: "8px 18px",
+                fontSize: 14,
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                borderRadius: 10,
+                color: "white",
+                cursor: "pointer"
+              }}
+            >
+              一時停止
+            </button>
 
+            <button
+              onClick={endDiscussion}
+              style={{
+                marginTop: 10,
+                padding: "8px 18px",
+                fontSize: 14,
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                borderRadius: 10,
+                color: "white",
+                cursor: "pointer"
+              }}
+            >
+              議論スキップ
+            </button>
+          </div>
         )}
 
-        {timerRunning && (
+        {!timerRunning && discussionReady  && (
           <button
-            onClick={endDiscussion}
-            style={{
-              marginTop: 10,
-              padding: "8px 18px",
-              fontSize: 14,
-              background: "rgba(255,255,255,0.15)",
-              border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: 10,
-              color: "white",
-              cursor: "pointer"
-            }}
+          onClick={startTimer}
+          style={{
+            marginTop: 10,
+            padding: "8px 18px",
+            fontSize: 14,
+            background: "rgba(255,255,255,0.15)",
+            border: "1px solid rgba(255,255,255,0.3)",
+            borderRadius: 10,
+            color: "white",
+            cursor: "pointer"
+          }}
           >
-            議論スキップ
+            再開
           </button>
         )}
       </div>
@@ -1602,165 +1666,173 @@ function startTimer() {
       >
         <AliveCounter players={players} />
 
-        <div
+        <div 
           style={{
-            position: "absolute",
-            top: 60,
-            left: "50%",
-            transform: "translateX(-50%)",
-            textAlign: "center"
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
           }}
         >
-          <h1 style={{fontSize: 40}}>
-            役職確認
-          </h1>
-        </div>
 
-        {!showRole && (
-
-          <button
-            onClick={revealRole}
+          <div
             style={{
-              marginTop: 20,
-              padding: "14px 28px",
-              fontSize: 20,
-              borderRadius: 12,
-              border: "none",
-              background: "linear-gradient(135deg,#ffd966,#ffb347)",
-              color: "#333",
-              fontWeight: "bold",
-              boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
-              cursor: "pointer"
+              position: "absolute",
+              top: 60,
+              left: "50%",
+              transform: "translateX(-50%)",
+              textAlign: "center"
             }}
           >
-            役職確認
-          </button>
+            <h1 style={{fontSize: 40}}>
+              役職確認
+            </h1>
+          </div>
 
-        )}
-
-        {showRole && role && (
-
-          <div style={{ textAlign: "center", paddingTop: "40px" }}>
-
-            <div style={{
-              width: 180,
-              height: 180,
-              margin: "0 auto"
-            }}>
-              <img
-                src={role.role.img}
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "100%",
-                  objectFit: "contain",
-                  marginTop: 60,
-                  transform: "translateX(11px)"
-                  /*transform: role.role.id === "seer" ? "translateX(122px)" : "none"*/
-                }}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                marginTop: 40
-              }}
-            >
-
-              <span
-                style={{
-                  fontSize: 16,
-                  opacity: 0.6
-                }}
-              >
-                あなたの役職：
-              </span>
-
-              <span
-                style={{
-                  fontSize: 32,
-                  fontWeight: "bold",
-                  textShadow: "0 0 10px rgba(255,255,255,0.6)"
-                }}
-              >
-                {role.role.name}
-              </span>
-
-            </div>
-
-            {visiblePlayers.length > 0 && (
-              <p style={{ marginTop: 12, fontSize: 20 }}>
-                仲間：プレイヤー {visiblePlayers.join(" , ")}
-              </p>
-            )}
-
-            {role.role.id === "seer" && firstSeerWhite !== null && (
-              <p style={{ marginTop: 12, fontSize: 18 }}>
-                プレイヤー {firstSeerWhite} は人狼ではありません
-              </p>
-            )}
-
-            {role.role.id === "seer" && (
-              <div>
-                <div style={{
-                  display: "flex",
-                  gap: 12,
-                  justifyContent: "center",
-                  flexWrap: "wrap",
-                  marginTop: 10
-                }}>
-                  {players.map((p, i) => {
-                    const num = i + 1
-                    if (num === currentPlayer) {
-                      return (
-                        <div key={num} style={{ textAlign: "center" }}>
-                          <img src={`/image/${theme}/seer_seer.png`} width={60} />
-                          <div>{num}</div>
-                        </div>
-                      )
-                    }
-                    const result = seerResults[currentPlayer]?.[num]
-
-                    let img = `/image/${theme}/seer_non.png`
-                    if (result === "white") img = `/image/${theme}/seer_white.png`
-                    if (result === "black") img = `/image/${theme}/seer_black.png`
-
-                    return (
-                      <div key={num} style={{ textAlign: "center" }}>
-                        <img src={img} width={60} />
-                        <div>{num}</div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
+          {!showRole && (
 
             <button
-              onClick={nextPlayer}
+              onClick={revealRole}
               style={{
                 marginTop: 20,
-                padding: "14px 36px",
+                padding: "14px 28px",
                 fontSize: 20,
                 borderRadius: 12,
                 border: "none",
-                background: "linear-gradient(135deg,#66ccff,#3399ff)",
-                color: "white",
+                background: "linear-gradient(135deg,#ffd966,#ffb347)",
+                color: "#333",
                 fontWeight: "bold",
-                boxShadow: "0 6px 14px rgba(0,0,0,0.4)",
+                boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
                 cursor: "pointer"
               }}
             >
-              確認済
+              役職確認
             </button>
 
-          </div>
+          )}
 
-        )}
+          {showRole && role && (
 
+            <div style={{ textAlign: "center", paddingTop: "40px" }}>
+
+              <div style={{
+                width: 180,
+                height: 180,
+                margin: "0 auto"
+              }}>
+                <img
+                  src={role.role.img}
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    objectFit: "contain",
+                    marginTop: 60,
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  marginTop: 40
+                }}
+              >
+
+                <span
+                  style={{
+                    fontSize: 16,
+                    opacity: 0.6
+                  }}
+                >
+                  あなたの役職：
+                </span>
+
+                <span
+                  style={{
+                    fontSize: 32,
+                    fontWeight: "bold",
+                    textShadow: "0 0 10px rgba(255,255,255,0.6)"
+                  }}
+                >
+                  {role.role.name}
+                </span>
+
+              </div>
+
+              {visiblePlayers.length > 0 && (
+                <p style={{ marginTop: 12, fontSize: 20 }}>
+                  仲間：プレイヤー {visiblePlayers.join(" , ")}
+                </p>
+              )}
+
+              {role.role.id === "seer" && firstSeerWhite !== null && (
+                <p style={{ marginTop: 12, fontSize: 18 }}>
+                  プレイヤー {firstSeerWhite} は人狼ではありません
+                </p>
+              )}
+
+              {role.role.id === "seer" && (
+                <div>
+                  <div style={{
+                    display: "flex",
+                    gap: 12,
+                    justifyContent: "center",
+                    flexWrap: "wrap",
+                    marginTop: 10
+                  }}>
+                    {players.map((p, i) => {
+                      const num = i + 1
+                      if (num === currentPlayer) {
+                        return (
+                          <div key={num} style={{ textAlign: "center" }}>
+                            <img src={`/image/${theme}/seer_seer.png`} width={60} />
+                            <div>{num}</div>
+                          </div>
+                        )
+                      }
+                      const result = seerResults[currentPlayer]?.[Number(num)]
+
+                      let img = `/image/${theme}/seer_non.png`
+                      if (result === "white") img = `/image/${theme}/seer_white.png`
+                      if (result === "black") img = `/image/${theme}/seer_black.png`
+
+                      return (
+                        <div key={num} style={{ textAlign: "center" }}>
+                          <img src={img} width={60} />
+                          <div>{num}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={nextPlayer}
+                style={{
+                  marginTop: 20,
+                  padding: "14px 36px",
+                  fontSize: 20,
+                  borderRadius: 12,
+                  border: "none",
+                  background: "linear-gradient(135deg,#66ccff,#3399ff)",
+                  color: "white",
+                  fontWeight: "bold",
+                  boxShadow: "0 6px 14px rgba(0,0,0,0.4)",
+                  cursor: "pointer"
+                }}
+              >
+                確認済
+              </button>
+
+            </div>
+
+          )}
+
+        </div>
       </div>
     )
   }
@@ -2117,23 +2189,76 @@ function startTimer() {
                 ⚙ ゲーム設定
               </div>
 
-              <label style={{ display: "block", marginBottom: 8, marginTop:15 }}>
-                <input
-                  type="checkbox"
-                  checked={showWolfToMadman}
-                  onChange={(e) => setShowWolfToMadman(e.target.checked)}
-                />
+              <label
+                onClick={() => setShowWolfToMadman(!showWolfToMadman)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "12px 16px",
+                  borderRadius: 14,
+                  background: showWolfToMadman ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.03)",
+                  cursor: "pointer",
+                  transition: "0.2s",
+                  boxShadow: showWolfToMadman
+                    ? "0 2px 8px rgba(0,0,0,0.2)"
+                    : "none"
+                }}
+              >
+                <div style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 6,
+                  border: "2px solid #3399ff",
+                  background: showWolfToMadman ? "#3399ff" : "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                  fontSize: 14,
+                  fontWeight: "bold",
+                }}>
+                  {showWolfToMadman ? "✓" : ""}
+                </div>
+
                 狂人に人狼を表示
               </label>
 
-              <label style={{ display: "block", marginBottom: 16 }}>
-                <input
-                  type="checkbox"
-                  checked={showMadmanToWolf}
-                  onChange={(e) => setShowMadmanToWolf(e.target.checked)}
-                />
+              <label
+                onClick={() => setShowMadmanToWolf(!showMadmanToWolf)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "12px 16px",
+                  borderRadius: 14,
+                  background: showMadmanToWolf ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.03)",
+                  cursor: "pointer",
+                  transition: "0.2s",
+                  boxShadow: showWolfToMadman
+                  ? "0 2px 8px rgba(0,0,0,0.2)"
+                  : "none"
+                }}
+              >
+                <div style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 6,
+                  border: "2px solid #3399ff",
+                  background: showMadmanToWolf ? "#3399ff" : "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                  fontSize: 14,
+                  fontWeight: "bold"
+                }}>
+                  {showMadmanToWolf ? "✓" : ""}
+                </div>
+
                 人狼に狂人を表示
               </label>
+
               <button
                 onClick={() => setShowSettings(false)}
                 style={{
