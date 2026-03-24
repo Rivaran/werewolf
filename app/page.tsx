@@ -12,8 +12,12 @@ import {
   useSensors
 } from "@dnd-kit/core"
 
-const winner = "werewolf"
- 
+import SeerModal from "@/components/SeerModal" // 占い師のモーダル(人狼⇔狂人でも使えるようにする？)
+import styles from "./page.module.css" // CSS
+
+const winner = "werewolf" // 勝利陣営の状態
+
+// 役職
 const roles = [
   { id: "villager", name: "村人", img: "/image/村人.png" },
   { id: "werewolf", name: "人狼", img: "/image/人狼.png" },
@@ -22,7 +26,7 @@ const roles = [
   { id: "madman", name: "狂人", img: "/image/狂人.png" },
 ]
 
-
+// トップページの役職カード
 function RoleCard({ role }: { role: { id: string; name: string; img: string } }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: role.id,
@@ -61,6 +65,7 @@ function RoleCard({ role }: { role: { id: string; name: string; img: string } })
   )
 }
 
+// トップページの配役
 function PlayerSlot({
   id,
   role,
@@ -100,17 +105,14 @@ function PlayerSlot({
   )
 }
 
+// 画面の処理
 export default function Page() {
-  
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
-  const [winner, setWinner] = useState<"villagers" | "werewolves" | "werewolves_by_no_knight" | null>(null)
+  const [winner, setWinner] = useState<"villagers" | "werewolves" | "werewolves_by_no_knight" | null>(null) // 勝利陣営の状態
+  const [mounted, setMounted] = useState(false) // 初回レンダリング後に処理する用らしい
   const [wolfTarget, setWolfTarget] = useState<number | null>(null)
   const [guardTargets, setGuardTargets] = useState<Record<number, number>>({})
   const [seerResults, setSeerResults] = useState<Record<number, Record<number, "white" | "black">>>({})
-  const [mounted, setMounted] = useState(false)
   const [morningDeath, setMorningDeath] = useState<number | null>(null)
   const [day, setDay] = useState(0)
   const [theme, setTheme] = useState("ai")
@@ -125,6 +127,18 @@ export default function Page() {
   const [discussionReady, setDiscussionReady] = useState(false)
   const [discussionEnded, setDiscussionEnded] = useState(false)
   const [showSeerModal, setShowSeerModal] = useState(false)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [executedPlayer, setExecutedPlayer] = useState<number | null>(null)
+  const [timeLeft, setTimeLeft] = useState(180)
+  const [timerRunning, setTimerRunning] = useState(false)
+  const [phase, setPhase] = useState("setup")
+  const [currentPlayer, setCurrentPlayer] = useState(1)
+  const [showRole, setShowRole] = useState(false)
+  const [nightActionReady, setNightActionReady] = useState(false)
+  const [showNextButton, setShowNextButton] = useState(false)
+  const [playerCount, setPlayerCount] = useState(4)
+
   const [seerToday, setSeerToday] = useState<{
     [player: number]: { target: number; result: string }
   }>({})
@@ -140,12 +154,33 @@ export default function Page() {
     img: `/image/${theme}/${role.name}.png`
   }))
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 8,
+      },
+    })
+  )
+
+  const [players, setPlayers] = useState<(Player | null)[]>(
+    Array.from({ length: 4 }, () => null)
+  )
+
+  const audioResolveRef = useRef<(() => void) | null>(null)
+
   type Player = {
     id: number
     role: (typeof roles)[number]
     alive: boolean
   }
 
+  // 仲間取得関数
   function getVisiblePlayers(playerIndex: number) {
     const me = players[playerIndex]
     if (!me) return []
@@ -164,7 +199,6 @@ export default function Page() {
           return i + 1
         }
 
-        // 狂人 → 人狼（トグルON）
         if (me.role.id === "madman" && showWolfToMadman && p.role.id === "werewolf") {
           return i + 1
         }
@@ -174,6 +208,7 @@ export default function Page() {
       .filter(Boolean)
   }
 
+  // プレイ中の画面上部に表示する生死&操作中の可視化用
   function AliveCounter({ players }: { players: (Player | null)[] }) {
 
     return (
@@ -225,6 +260,7 @@ export default function Page() {
     )
   }
 
+  // 人狼の襲撃関数
   function resolveNight() {
 
     if (wolfTarget === null) {
@@ -258,7 +294,6 @@ export default function Page() {
 
     const werewolfCount = survivors.filter(p => p.role.id === "werewolf").length
     const villagerCount = survivors.filter(p => p.role.id !== "werewolf").length
-    const knightAlive = survivors.some(p => p.role.id === "knight")
 
     if (werewolfCount === 0) {
       setWinner("villagers")
@@ -275,7 +310,8 @@ export default function Page() {
 
     return false
   }
-  
+
+  // 勝敗判定関数
   function judgeAfterExecution(executedNum: number) {
 
     const updatedPlayers = players.map((p, i) =>
@@ -299,40 +335,12 @@ export default function Page() {
     return null
   }
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  // 初回レンダリング後に処理する用らしい
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-  const [executedPlayer, setExecutedPlayer] = useState<number | null>(null)
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 150,
-        tolerance: 8,
-      },
-    })
-  )
-
-  const [timeLeft, setTimeLeft] = useState(180)
-  const [timerRunning, setTimerRunning] = useState(false)
-
-  const [phase, setPhase] = useState("setup")
-  const [currentPlayer, setCurrentPlayer] = useState(1)
-  const [showRole, setShowRole] = useState(false)
-  const [nightActionReady, setNightActionReady] = useState(false)
-  const [showNextButton, setShowNextButton] = useState(false)
-
-  const [playerCount, setPlayerCount] = useState(4)
-
-  const [players, setPlayers] = useState<(Player | null)[]>(
-    Array.from({ length: 4 }, () => null)
-  )
-
+  // 夜フェーズ描画後処理
   useEffect(() => {
     if (phase === "night") {
         setGuardTargets({})
@@ -341,6 +349,7 @@ export default function Page() {
       }
   }, [phase])
 
+  // 夜フェーズ、かつ、現プレイヤーが変わる度に、夜フェーズ準備フラグ立っていない場合の描画後処理
   useEffect(() => {
     if (phase === "night" && !nightActionReady) {
       playAudio(
@@ -349,22 +358,26 @@ export default function Page() {
     }
   }, [currentPlayer, phase])
 
-
+  // 追放フェーズ描画後処理
   useEffect(() => {
     if (phase === "vote") {
       setVoteTarget(null)
     }
   }, [phase])
 
+  // 朝フェーズ以外の描画後処理
   useEffect(() => {
     if (phase !== "morning") {
-      setMorningHandled(false)
+      setMorningHandled(false)      
     }
   }, [phase])
 
+  // 朝フェーズの描画後処理
   useEffect(() => {
+
     if (phase !== "morning") return
     if (morningHandled) return
+
     setMorningHandled(true)
 
     async function runMorning() {
@@ -375,12 +388,14 @@ export default function Page() {
       await playAudio("/audio/[04-1]朝になりました。皆さん目を開けてください.wav")
 
       if (day === 0) {
+
         await playAudio("/audio/[04-2]議論時間は３分です。タイマーを開始しますので、議論を開始してください.wav")
         setDiscussionEnded(false)
         setDiscussionReady(true)
         startTimer()
 
       } else if (morningDeath === null) {
+
         await playAudio("/audio/[12-0]昨晩の犠牲者はいませんでした.wav")
         await playAudio("/audio/[04-3]議論時間は２分です。タイマーを開始しますので、議論を開始してください.wav")
         setDiscussionEnded(false)
@@ -388,54 +403,39 @@ export default function Page() {
         startTimer()
 
       } else {
+
         await playAudio(`/audio/[12-${morningDeath}]昨晩の犠牲者は${morningDeath}番のプレイヤーです.wav`)
         await playAudio("/audio/[04-3]議論時間は２分です。タイマーを開始しますので、議論を開始してください.wav")
         setDiscussionEnded(false)
         setDiscussionReady(true)
         startTimer()
-      }
 
+      }
     }
 
     runMorning()
 
   }, [phase])
 
-  /*useEffect(() => {
-    if (phase !== "roleCheck") return
-
-    const role = players[currentPlayer - 1]
-    if (!role || role.role.id !== "seer") return
-    if (firstSeerWhite === null) return
-
-    setSeerResults(prev => ({
-      ...prev,
-      [currentPlayer]: {
-        ...(prev[currentPlayer] || {}),
-        [firstSeerWhite]: "white"
-      }
-    }))
-  }, [phase, currentPlayer, firstSeerWhite])*/
-  
+  // ランダムディレイ関数
   function randomDelay(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min
   }
 
+  // プレイヤー追放関数
   function executePlayer(num: number) {
-
     setPlayers(prev =>
       prev.map(p =>
         p && p.id === num ? { ...p, alive: false } : p
       )
     )
     setVoteTarget(null)
-
     setExecutedPlayer(num)
     setPhase("execute")
     playAudio(`/audio/[07-${num}]${num}番のプレイヤーは追放されます。遺言をどうぞ.wav`)
-
   }
 
+  // 議論終了関数
   function endDiscussion() {
     if (discussionEnded) return
     setDiscussionEnded(true)
@@ -454,6 +454,7 @@ export default function Page() {
     runVoteStart()
   }
 
+  // 役職配布
   function shuffle<T>(array: T[]) {
     const arr = [...array]
 
@@ -465,6 +466,7 @@ export default function Page() {
     return arr
   }
 
+  // タイマー表示関数
   function formatTime(sec: number) {
 
     const m = Math.floor(sec / 60)
@@ -474,14 +476,16 @@ export default function Page() {
 
   }
 
+  // 一時停止関数
   function pauseTimer() {
     clearInterval(timerRef.current!)
     timerRef.current = null
     setTimerRunning(false)
   }
 
+  // タイマー開始関数
   function startTimer() {
-    if (timerRef.current) return  // 多重起動防止
+    if (timerRef.current) return
 
     setTimerRunning(true)
 
@@ -499,6 +503,7 @@ export default function Page() {
     }, 1000)
   }
 
+  // ドロップ関数？
   function handleDragEnd(event: any) {
     const { active, over } = event
 
@@ -520,8 +525,7 @@ export default function Page() {
     setPlayers(newPlayers)
   }
 
-  const audioResolveRef = useRef<(() => void) | null>(null)
-
+  // 音声再生関数
   function playAudio(src: string) {
     return new Promise<void>((resolve) => {
 
@@ -566,7 +570,8 @@ export default function Page() {
       }, 10000)
     })
   }
-  
+
+  // ゲームスタート関数
   function startGame() {
 
     if (players.some(p => p === null)) {
@@ -594,7 +599,6 @@ export default function Page() {
     setTimerRunning(false)
     setPlayers(shuffledPlayers)
 
-    // ▼ここから修正ポイント（複数占い対応）
     const seerIndexes = shuffled
       .map((r, i) => ({ role: r, index: i }))
       .filter(x => x.role.id === "seer")
@@ -621,16 +625,6 @@ export default function Page() {
 
     setSeerResults(results)
 
-    // 互換用（既存ロジック壊さないために1つだけ保持）
-    /*const firstSeer = Object.keys(results)[0]
-    if (firstSeer) {
-      const firstTarget = Object.keys(results[Number(firstSeer)])[0]
-      setFirstSeerWhite(Number(firstTarget))
-    } else {
-      setFirstSeerWhite(null)
-    }*/
-    // ▲ここまで修正
-
     setPhase("roleCheck")
     setCurrentPlayer(1)
     setShowRole(false)
@@ -644,10 +638,12 @@ export default function Page() {
     runStartAudio()
   }
 
+  // 役職確認関数
   function revealRole() {
     setShowRole(true)
   }
 
+  // 次の生きているプレイヤー関数
   function getNextAlivePlayer(start: number, players: (Player | null)[]) {
 
     for (let i = 0; i < players.length; i++) {
@@ -662,6 +658,7 @@ export default function Page() {
     return 1
   }
 
+  // 確認済関数
   function nextPlayer() {
 
     const next = currentPlayer + 1
@@ -679,8 +676,10 @@ export default function Page() {
     playAudio(`/audio/[03-${next - 1}]${next - 1}番のプレイヤーが役職確認を終えました。続いて${next}番のプレイヤーのみ、目を開け、役職を確認してください.wav`)
   }
 
+  // 初回レンダリング後に処理する用らしい
   if (!mounted) return null
 
+  // 遺言～夜時間まで(遺言～勝敗画面まで)フェーズ
   if (phase === "execute") {
 
     return (
@@ -776,7 +775,6 @@ export default function Page() {
               return
             }
 
-            // 続行パターン
             setCurrentPlayer(getNextAlivePlayer(0, players))
             setPhase("night")
             setExecuting(false)
@@ -807,6 +805,7 @@ export default function Page() {
 
   }
 
+  // 投票フェーズ
   if (phase === "voteStart") {
 
     return (
@@ -871,6 +870,7 @@ export default function Page() {
 
   }
 
+  // 勝敗表示フェーズ
   if (phase === "result") {
 
     const bgImage =
@@ -930,6 +930,7 @@ export default function Page() {
     )
   }
 
+  // ネタバラシフェーズ
   if (phase === "reveal") {
 
     const bgImage =
@@ -1030,6 +1031,7 @@ export default function Page() {
     )
   }
 
+  // 夜フェーズ
   if (phase === "night") {
 
     const role = players[currentPlayer - 1]?.role
@@ -1038,33 +1040,15 @@ export default function Page() {
     return (
 
       <div
+        className={styles.screenBase}
         style={{
-          background: `url(/image/${theme}/night-bg.png) center / cover no-repeat`,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          backgroundBlendMode: "darken",
-          color: "white",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 20,
-          position: "relative",
-          paddingTop: 80
+          backgroundImage: `url(/image/${theme}/night-bg.png)`
         }}
       >
         <AliveCounter players={players} />
 
-        <div
-          style={{
-            position: "absolute",
-            top: 60,
-            left: "50%",
-            transform: "translateX(-50%)",
-            textAlign: "center"
-          }}
-        >
-          <h1 style={{fontSize: 34}}>
+        <div className={styles.topCenterTitle}>
+          <h1 className={styles.titleLarge}>
             {day+1}日目の夜
           </h1>
         </div>
@@ -1081,17 +1065,7 @@ export default function Page() {
             }}
           >
 
-            <div
-              style={{
-                fontSize: 20,
-                letterSpacing: 2,
-                padding: "6px 14px",
-                borderRadius: 20,
-                background: "rgba(0,0,0,0.35)",
-                backdropFilter: "blur(4px)",
-                marginBottom: 10
-              }}
-            >
+            <div className={styles.playerBadge}>
               プレイヤー {currentPlayer}
             </div>
 
@@ -1117,18 +1091,7 @@ export default function Page() {
 
               }
             }
-            style={{
-              marginTop: 20,
-              padding: "14px 28px",
-              fontSize: 20,
-              borderRadius: 12,
-              border: "none",
-              background: "linear-gradient(135deg,#ffd966,#ffb347)",
-              color: "#333",
-              fontWeight: "bold",
-              boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
-              cursor: "pointer"
-            }}
+            className={styles.orangeButton}
             >
             画面タップ
             </button>
@@ -1280,189 +1243,81 @@ export default function Page() {
                 </>
               )}
 
-            {showSeerModal && (
-              <div
-                onClick={() => setShowSeerModal(false)}
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  background: "rgba(0,0,0,0.6)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 9999,
-                  color: "black"
-                }}
-              >
+              {role?.id === "knight" && !guardTargets[currentPlayer] && (
+                <div>
+                  <h3>護衛するプレイヤーを選択</h3>
 
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  style={{
-                    background: "#fff",
-                    borderRadius: 20,
-                    padding: 20,
-                    width: "90%",
-                    maxWidth: 360,
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-                    textAlign: "center"
-                  }}
-                >
-
-                  <div style={{
-                    fontSize: 18,
-                    fontWeight: "bold",
-                    marginBottom: 12
-                  }}>
-                    🔍 占い結果
-                  </div>
-
-                  <div style={{
-                    display: "flex",
-                    gap: 12,
-                    justifyContent: "center",
-                    flexWrap: "wrap",
-                    alignItems: "flex-start"
-                  }}>
-                    {players.map((p, i) => {
-                      const num = i + 1
-
-                      if (num === currentPlayer) {
-                        return (
-                          <div key={num} style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 14, width: 70 }}>{num}</div>
-                            <img src={`/image/${theme}/seer_seer.png`} width={70} />
-                            <div style={{
-                              fontWeight: "bold",
-                              marginTop: 2,
-                              width: 70,
-                              color: "#999"
-                              }}>
-                                自分</div>
-                          </div>
-                        )
-                      }
-
-                      const result = seerResults[currentPlayer]?.[num]
-
-                      let img = `/image/${theme}/seer_non.png`
-                      if (result === "white") img = `/image/${theme}/seer_white.png`
-                      if (result === "black") img = `/image/${theme}/seer_black.png`
-
-                      return (
-                        <div key={num} style={{ textAlign: "center", width: 70 }}>
-                          <div style={{ fontSize: 14 }}>{num}</div>
-                          <img src={img} width={70} />
-                          <div style={{
-                            fontWeight: "bold",
-                            marginTop: 2,
-                            color:
-                              result === "white" ? "#4da6ff"
-                              : result === "black" ? "#ff4d4d"
-                              : "#999"
-                          }}>
-                            {result === "white" ? "白"
-                            : result === "black" ? "黒"
-                            : "未"}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() => setShowSeerModal(false)}
+                  <div
                     style={{
-                      marginTop: 16,
-                      padding: "10px 24px",
-                      borderRadius: 10,
-                      border: "none",
-                      background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
-                      color: "white",
-                      fontWeight: "bold",
-                      cursor: "pointer"
+                      display: "grid",
+                      gridTemplateColumns: "repeat(2, 1fr)",
+                      gap: 14,
+                      marginTop: 20
                     }}
                   >
-                    閉じる
-                  </button>
-                </div>
-              </div>
-            )}
 
-            {role?.id === "knight" && !guardTargets[currentPlayer] && (
-              <div>
-                <h3>護衛するプレイヤーを選択</h3>
+                    {players.map((p, i) => {
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                    gap: 14,
-                    marginTop: 20
-                  }}
-                >
+                      const num = i + 1
 
-                  {players.map((p, i) => {
+                      if (num === currentPlayer) return null
+                      if (!players[i]?.alive) return null
 
-                    const num = i + 1
+                      return (
+                        <button
+                          key={num}
+                          disabled={lastGuardTarget[currentPlayer] === num}
+                          onClick={() => {
+                            setGuardTargets(prev => ({
+                              ...prev,
+                              [currentPlayer]: num
+                            }))
 
-                    if (num === currentPlayer) return null
-                    if (!players[i]?.alive) return null
+                            setLastGuardTarget(prev => ({
+                              ...prev,
+                              [currentPlayer]: num
+                            }))
 
-                    return (
-                      <button
-                        key={num}
-                        disabled={lastGuardTarget[currentPlayer] === num}
-                        onClick={() => {
-                          setGuardTargets(prev => ({
-                            ...prev,
-                            [currentPlayer]: num
-                          }))
+                            setShowNextButton(true)
+                          }}
+                          style={{
+                            position: "relative",
+                            overflow: "hidden",
+                            padding: "14px 20px",
+                            fontSize: 18,
+                            borderRadius: 14,
+                            border: "1px solid rgba(255,255,255,0.35)",
+                            background:
+                              lastGuardTarget[currentPlayer] === num
+                                ? "rgba(255,255,255,0.06)"
+                                : "rgba(255,255,255,0.15)",
+                            color:
+                              lastGuardTarget[currentPlayer] === num
+                                ? "rgba(255,255,255,0.5)"
+                                : "white",
+                            backdropFilter: "blur(6px)",
+                            cursor:
+                              lastGuardTarget[currentPlayer] === num
+                                ? "not-allowed"
+                                : "pointer"
+                          }}
+                        >
+                          プレイヤー {num}
 
-                          setLastGuardTarget(prev => ({
-                            ...prev,
-                            [currentPlayer]: num
-                          }))
-
-                          setShowNextButton(true)
-                        }}
-                        style={{
-                          position: "relative",
-                          overflow: "hidden",
-                          padding: "14px 20px",
-                          fontSize: 18,
-                          borderRadius: 14,
-                          border: "1px solid rgba(255,255,255,0.35)",
-                          background:
-                            lastGuardTarget[currentPlayer] === num
-                              ? "rgba(255,255,255,0.06)"
-                              : "rgba(255,255,255,0.15)",
-                          color:
-                            lastGuardTarget[currentPlayer] === num
-                              ? "rgba(255,255,255,0.5)"
-                              : "white",
-                          backdropFilter: "blur(6px)",
-                          cursor:
-                            lastGuardTarget[currentPlayer] === num
-                              ? "not-allowed"
-                              : "pointer"
-                        }}
-                      >
-                        プレイヤー {num}
-
-                        {lastGuardTarget[currentPlayer] === num && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              inset: 0,
-                              pointerEvents: "none",
-                              background:
-                                "linear-gradient(160deg, transparent 48%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.9) 50%, transparent 52%)"
-                            }}
-                          />
-                        )}
-                      </button>
-                    )
-                })}
+                          {lastGuardTarget[currentPlayer] === num && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                inset: 0,
+                                pointerEvents: "none",
+                                background:
+                                  "linear-gradient(160deg, transparent 48%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.9) 50%, transparent 52%)"
+                              }}
+                            />
+                          )}
+                        </button>
+                      )
+                  })}
                 </div>
               </div>
             )}
@@ -1597,18 +1452,7 @@ export default function Page() {
                       return
                     }
                   }}
-                  style={{
-                    marginTop: 20,
-                    padding: "14px 36px",
-                    fontSize: 20,
-                    borderRadius: 12,
-                    border: "none",
-                    background: "linear-gradient(135deg,#66ccff,#3399ff)",
-                    color: "white",
-                    fontWeight: "bold",
-                    boxShadow: "0 6px 14px rgba(0,0,0,0.4)",
-                    cursor: "pointer"
-                  }}
+                  className={styles.blueButton}
                   >
                     次のプレイヤー
                 </button>
@@ -1616,10 +1460,165 @@ export default function Page() {
             )}
           </div>
         )}
+      <SeerModal
+        isOpen={showSeerModal}
+        onClose={() => setShowSeerModal(false)}
+        players={players}
+        currentPlayer={currentPlayer}
+        seerResults={seerResults}
+        theme={theme}
+      />
       </div>
     )
   }
 
+    // 追放者決定フェーズ
+  if (phase === "vote") {
+
+    return (
+
+      <div
+        style={{
+          backgroundImage: `url(/image/${theme}/day-bg.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+
+          backgroundBlendMode: "darken",
+          backgroundColor: "rgba(0,0,0,0.25)",
+
+          color: "white",
+          
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20,
+          position: "relative"
+        }}
+      >
+        <AliveCounter players={players} />
+        <h1
+          style={{
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: 34,
+            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 2
+          }}
+        >
+          追放者決定
+        </h1>
+
+        <h1>追放するプレイヤーを選択</h1>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 10,
+            marginTop: 20
+          }}
+        >
+
+        {players.map((p, i) => {
+
+          const dead = p?.alive === false
+
+          return (
+            <button
+              key={i}
+              disabled={dead}
+              style={{
+                width: 160,
+                padding: 12,
+                margin: 4,
+                fontSize: 18,
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.25)",
+                background: dead
+                  ? "rgba(80,80,80,0.65)"
+                  : "rgba(255,255,255,0.6)",
+                color: "white",
+
+                cursor: dead ? "not-allowed" : "pointer",
+
+                opacity: dead ? 0.4 : 1,
+
+                backdropFilter: "blur(6px)"
+              }}
+
+              onClick={() => {
+                if (!dead) setVoteTarget(i + 1)
+              }}
+            >
+              プレイヤー {i + 1}
+              {dead}
+            </button>
+          )
+        })}
+        </div>
+
+        {voteTarget !== null && (
+          <div>
+            <div style={{marginTop:20,textAlign:"center"}}>
+              <p>プレイヤー {voteTarget} を追放しますか？</p>
+            </div>
+
+            <div
+              style={{
+                marginTop: 20,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 16
+              }}
+            >
+
+              <button
+                onClick={() => executePlayer(voteTarget)}
+                style={{ 
+                  padding: "12px 26px",
+                  fontSize: 18,
+                  borderRadius: 12,
+                  background: "#4fa3ff",
+                  border: "none",
+                  color: "white",
+                  cursor: "pointer",
+                  marginRight: 12
+                }}
+              >
+                決定
+              </button>
+
+              <button
+                style={{
+                  padding: "10px 22px",
+                  fontSize: 16,
+                  borderRadius: 12,
+                  background: "rgba(255,255,255,0.15)",
+                  border: "1px solid rgba(255,255,255,0.35)",
+                  color: "white",
+                  cursor: "pointer"
+                }}
+                onClick={() => setVoteTarget(null)}
+              >
+                戻る
+              </button>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+    )
+
+  }
+
+  // 朝フェーズ
   if (phase === "morning") {
 
     const isDiscussion = discussionReady && timerRunning
@@ -1794,6 +1793,7 @@ export default function Page() {
     )
   }
 
+  // 役職確認フェーズ
   if (phase === "roleCheck") {
 
     const role = players[currentPlayer - 1]
@@ -1802,43 +1802,20 @@ export default function Page() {
     return (
       
       <div
+        className={styles.screenBase}
         style={{
-          background: `url(/image/${theme}/night-bg.png) center / cover no-repeat`,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          backgroundBlendMode: "darken",
-          height: "100vh",
-          display: "flex",
-          color: "white",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          animation: "fadeIn 0.6s ease"
+          backgroundImage: `url(/image/${theme}/night-bg.png)`
         }}
       >
         <AliveCounter players={players} />
 
-        <div 
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center"
-          }}
-        >
+        <div className={styles.flexCenterColumn}>
 
-          <div
-            style={{
-              position: "absolute",
-              top: 60,
-              left: "50%",
-              transform: "translateX(-50%)",
-              textAlign: "center"
-            }}
-          >
-            <h1 style={{fontSize: 40}}>
-              役職確認
-            </h1>
-          </div>
+        <div className={styles.topCenterTitle}>
+          <h1 className={styles.titleXL}>
+            役職確認
+          </h1>
+        </div>
 
           {!showRole && (
 
@@ -1851,34 +1828,14 @@ export default function Page() {
                 gap: 16
               }}
             >
-              <div
-                style={{
-                  fontSize: 20,
-                  letterSpacing: 2,
-                  padding: "6px 14px",
-                  borderRadius: 20,
-                  background: "rgba(0,0,0,0.35)",
-                  backdropFilter: "blur(4px)",
-                  marginBottom: 10
-                }}
-              >
-              プレイヤー {currentPlayer}
+
+              <div className={styles.playerBadge}>
+                プレイヤー {currentPlayer}
               </div>
 
               <button
                 onClick={revealRole}
-                style={{
-                  marginTop: 20,
-                  padding: "14px 28px",
-                  fontSize: 20,
-                  borderRadius: 12,
-                  border: "none",
-                  background: "linear-gradient(135deg,#ffd966,#ffb347)",
-                  color: "#333",
-                  fontWeight: "bold",
-                  boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
-                  cursor: "pointer"
-                }}
+                className={styles.orangeButton}
               >
                 役職確認
               </button>
@@ -1972,128 +1929,9 @@ export default function Page() {
 
               )}
 
-              {showSeerModal && (
-                <div
-                  onClick={() => setShowSeerModal(false)}
-                  style={{
-                    position: "fixed",
-                    inset: 0,
-                    background: "rgba(0,0,0,0.6)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 9999,
-                    color: "black"
-                  }}
-                >
-
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      background: "#fff",
-                      borderRadius: 20,
-                      padding: 20,
-                      width: "90%",
-                      maxWidth: 360,
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-                      textAlign: "center"
-                    }}
-                  >
-
-                    <div style={{
-                      fontSize: 18,
-                      fontWeight: "bold",
-                      marginBottom: 12
-                    }}>
-                      🔍 占い結果
-                    </div>
-
-                    <div style={{
-                      display: "flex",
-                      gap: 12,
-                      justifyContent: "center",
-                      flexWrap: "wrap",
-                      alignItems: "flex-start"
-                    }}>
-                      {players.map((p, i) => {
-                        const num = i + 1
-
-                        if (num === currentPlayer) {
-                          return (
-                            <div key={num} style={{ textAlign: "center" }}>
-                              <div style={{ fontSize: 14, width: 70 }}>{num}</div>
-                              <img src={`/image/${theme}/seer_seer.png`} width={70} />
-                              <div style={{
-                                fontWeight: "bold",
-                                marginTop: 2,
-                                width: 70,
-                                color: "#999"
-                                }}>
-                                  自分</div>
-                            </div>
-                          )
-                        }
-
-                        const result = seerResults[currentPlayer]?.[num]
-
-                        let img = `/image/${theme}/seer_non.png`
-                        if (result === "white") img = `/image/${theme}/seer_white.png`
-                        if (result === "black") img = `/image/${theme}/seer_black.png`
-
-                        return (
-                          <div key={num} style={{ textAlign: "center", width: 70 }}>
-                            <div style={{ fontSize: 14 }}>{num}</div>
-                            <img src={img} width={70} />
-                            <div style={{
-                              fontWeight: "bold",
-                              marginTop: 2,
-                              color:
-                                result === "white" ? "#4da6ff"
-                                : result === "black" ? "#ff4d4d"
-                                : "#999"
-                            }}>
-                              {result === "white" ? "白"
-                              : result === "black" ? "黒"
-                              : "未"}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-
-                    <button
-                      onClick={() => setShowSeerModal(false)}
-                      style={{
-                        marginTop: 16,
-                        padding: "10px 24px",
-                        borderRadius: 10,
-                        border: "none",
-                        background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
-                        color: "white",
-                        fontWeight: "bold",
-                        cursor: "pointer"
-                      }}
-                    >
-                      閉じる
-                    </button>
-                  </div>
-                </div>
-              )}
-
               <button
                 onClick={nextPlayer}
-                style={{
-                  marginTop: 20,
-                  padding: "14px 36px",
-                  fontSize: 20,
-                  borderRadius: 12,
-                  border: "none",
-                  background: "linear-gradient(135deg,#66ccff,#3399ff)",
-                  color: "white",
-                  fontWeight: "bold",
-                  boxShadow: "0 6px 14px rgba(0,0,0,0.4)",
-                  cursor: "pointer"
-                }}
+                className={styles.blueButton}
               >
                 確認済
               </button>
@@ -2103,155 +1941,19 @@ export default function Page() {
           )}
 
         </div>
+        <SeerModal
+          isOpen={showSeerModal}
+          onClose={() => setShowSeerModal(false)}
+          players={players}
+          currentPlayer={currentPlayer}
+          seerResults={seerResults}
+          theme={theme}
+        />
       </div>
     )
-  }
-
-  if (phase === "vote") {
-
-    return (
-
-      <div
-        style={{
-          backgroundImage: `url(/image/${theme}/day-bg.png)`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-
-          backgroundBlendMode: "darken",
-          backgroundColor: "rgba(0,0,0,0.25)",
-
-          color: "white",
-          
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 20,
-          position: "relative"
-        }}
-      >
-        <AliveCounter players={players} />
-        <h1
-          style={{
-            position: "absolute",
-            top: 60,
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontSize: 34,
-            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
-            letterSpacing: 2
-          }}
-        >
-          追放者決定
-        </h1>
-
-        <h1>追放するプレイヤーを選択</h1>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: 10,
-            marginTop: 20
-          }}
-        >
-
-        {players.map((p, i) => {
-
-          const dead = p?.alive === false
-
-          return (
-            <button
-              key={i}
-              disabled={dead}
-              style={{
-                width: 160,
-                padding: 12,
-                margin: 4,
-                fontSize: 18,
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.25)",
-                background: dead
-                  ? "rgba(80,80,80,0.65)"
-                  : "rgba(255,255,255,0.6)",
-                color: "white",
-
-                cursor: dead ? "not-allowed" : "pointer",
-
-                opacity: dead ? 0.4 : 1,
-
-                backdropFilter: "blur(6px)"
-              }}
-
-              onClick={() => {
-                if (!dead) setVoteTarget(i + 1)
-              }}
-            >
-              プレイヤー {i + 1}
-              {dead}
-            </button>
-          )
-        })}
-        </div>
-
-        {voteTarget !== null && (
-          <div>
-            <div style={{marginTop:20,textAlign:"center"}}>
-              <p>プレイヤー {voteTarget} を追放しますか？</p>
-            </div>
-
-            <div
-              style={{
-                marginTop: 20,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 16
-              }}
-            >
-
-              <button
-                onClick={() => executePlayer(voteTarget)}
-                style={{ 
-                  padding: "12px 26px",
-                  fontSize: 18,
-                  borderRadius: 12,
-                  background: "#4fa3ff",
-                  border: "none",
-                  color: "white",
-                  cursor: "pointer",
-                  marginRight: 12
-                }}
-              >
-                決定
-              </button>
-
-              <button
-                style={{
-                  padding: "10px 22px",
-                  fontSize: 16,
-                  borderRadius: 12,
-                  background: "rgba(255,255,255,0.15)",
-                  border: "1px solid rgba(255,255,255,0.35)",
-                  color: "white",
-                  cursor: "pointer"
-                }}
-                onClick={() => setVoteTarget(null)}
-              >
-                戻る
-              </button>
-            </div>
-          </div>
-        )}
-
-      </div>
-
-    )
-
   }
   
+  // トップページ
   return (
 
     <div
@@ -2275,28 +1977,18 @@ export default function Page() {
 
         <button
           onClick={() => setTheme("ai")}
-          style={{
-            padding: "6px 14px",
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            cursor: "pointer",
-            background: theme === "ai" ? "#ffd966" : "#fff",
-            fontWeight: theme === "ai" ? "bold" : "normal"
-          }}
+          className={`${styles.illustrationButton} ${
+            theme === "ai" ? styles.illustrationButtonActive : ""
+          }`}
         >
           イラスト1
         </button>
 
         <button
           onClick={() => setTheme("mama")}
-          style={{
-            padding: "6px 14px",
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            cursor: "pointer",
-            background: theme === "mama" ? "#ffd966" : "#fff",
-            fontWeight: theme === "mama" ? "bold" : "normal",
-          }}
+          className={`${styles.illustrationButton} ${
+            theme === "mama" ? styles.illustrationButtonActive : ""
+          }`}
         >
           イラスト2
         </button>
@@ -2362,13 +2054,7 @@ export default function Page() {
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
 
         <h2
-          style={{
-            marginTop: 8,
-            /*marginBottom: 10,*/
-            fontSize: 20,
-            fontWeight: "bold",
-            letterSpacing: 1
-          }}
+          className={styles.sectionTitle}
         >
           配役選択
         </h2>
@@ -2392,12 +2078,7 @@ export default function Page() {
         </div>
 
         <h2
-          style={{
-            marginTop: 16,
-            fontSize: 20,
-            fontWeight: "bold",
-            letterSpacing: 1
-          }}
+          className={styles.sectionTitle}
         >
           役職
         </h2>
@@ -2425,6 +2106,7 @@ export default function Page() {
         ゲーム開始
       </button>
 
+      {/* 設定画面のモーダル */}
       {showSettings && (
 
         <div style={{
@@ -2466,33 +2148,15 @@ export default function Page() {
 
               <label
                 onClick={() => setShowWolfToMadman(!showWolfToMadman)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "12px 16px",
-                  borderRadius: 14,
-                  background: showWolfToMadman ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.03)",
-                  cursor: "pointer",
-                  transition: "0.2s",
-                  boxShadow: showWolfToMadman
-                    ? "0 2px 8px rgba(0,0,0,0.2)"
-                    : "none"
-                }}
+                className={`${styles.toggleLabel} ${
+                  showWolfToMadman ? styles.toggleLabelActive : ""
+                }`}
               >
-                <div style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 6,
-                  border: "2px solid #3399ff",
-                  background: showWolfToMadman ? "#3399ff" : "transparent",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontSize: 14,
-                  fontWeight: "bold",
-                }}>
+                <div
+                  className={`${styles.toggleBox} ${
+                    showWolfToMadman ? styles.toggleBoxActive : ""
+                  }`}
+                >
                   {showWolfToMadman ? "✓" : ""}
                 </div>
 
@@ -2501,33 +2165,15 @@ export default function Page() {
 
               <label
                 onClick={() => setShowMadmanToWolf(!showMadmanToWolf)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "12px 16px",
-                  borderRadius: 14,
-                  background: showMadmanToWolf ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.03)",
-                  cursor: "pointer",
-                  transition: "0.2s",
-                  boxShadow: showWolfToMadman
-                  ? "0 2px 8px rgba(0,0,0,0.2)"
-                  : "none"
-                }}
+                className={`${styles.toggleLabel} ${
+                  showMadmanToWolf ? styles.toggleLabelActive : ""
+                }`}
               >
-                <div style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 6,
-                  border: "2px solid #3399ff",
-                  background: showMadmanToWolf ? "#3399ff" : "transparent",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontSize: 14,
-                  fontWeight: "bold"
-                }}>
+                <div
+                  className={`${styles.toggleBox} ${
+                    showMadmanToWolf ? styles.toggleBoxActive : ""
+                  }`}
+                >
                   {showMadmanToWolf ? "✓" : ""}
                 </div>
 

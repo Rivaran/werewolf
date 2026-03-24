@@ -12,8 +12,10 @@ import {
   useSensors
 } from "@dnd-kit/core"
 
+import SeerModal from "@/components/SeerModal"
+
 const winner = "werewolf"
- 
+
 const roles = [
   { id: "villager", name: "村人", img: "/image/村人.png" },
   { id: "werewolf", name: "人狼", img: "/image/人狼.png" },
@@ -111,7 +113,6 @@ export default function Page() {
   const [guardTargets, setGuardTargets] = useState<Record<number, number>>({})
   const [seerResults, setSeerResults] = useState<Record<number, Record<number, "white" | "black">>>({})
   const [mounted, setMounted] = useState(false)
-  const [firstSeerWhite, setFirstSeerWhite] = useState<number | null>(null)
   const [morningDeath, setMorningDeath] = useState<number | null>(null)
   const [day, setDay] = useState(0)
   const [theme, setTheme] = useState("ai")
@@ -125,7 +126,11 @@ export default function Page() {
   const [executing, setExecuting] = useState(false)
   const [discussionReady, setDiscussionReady] = useState(false)
   const [discussionEnded, setDiscussionEnded] = useState(false)
-
+  const [showSeerModal, setShowSeerModal] = useState(false)
+  const [seerToday, setSeerToday] = useState<{
+    [player: number]: { target: number; result: string }
+  }>({})
+  
   const roles = [
     { id: "villager", name: "村人" },
     { id: "werewolf", name: "人狼" },
@@ -161,7 +166,6 @@ export default function Page() {
           return i + 1
         }
 
-        // 狂人 → 人狼（トグルON）
         if (me.role.id === "madman" && showWolfToMadman && p.role.id === "werewolf") {
           return i + 1
         }
@@ -255,7 +259,6 @@ export default function Page() {
 
     const werewolfCount = survivors.filter(p => p.role.id === "werewolf").length
     const villagerCount = survivors.filter(p => p.role.id !== "werewolf").length
-    const knightAlive = survivors.some(p => p.role.id === "knight")
 
     if (werewolfCount === 0) {
       setWinner("villagers")
@@ -366,6 +369,9 @@ export default function Page() {
 
     async function runMorning() {
 
+      setDiscussionReady(false)
+      pauseTimer()
+
       await playAudio("/audio/[04-1]朝になりました。皆さん目を開けてください.wav")
 
       if (day === 0) {
@@ -395,22 +401,6 @@ export default function Page() {
 
   }, [phase])
 
-  useEffect(() => {
-    if (phase !== "roleCheck") return
-
-    const role = players[currentPlayer - 1]
-    if (!role || role.role.id !== "seer") return
-    if (firstSeerWhite === null) return
-
-    setSeerResults(prev => ({
-      ...prev,
-      [currentPlayer]: {
-        ...(prev[currentPlayer] || {}),
-        [firstSeerWhite]: "white"
-      }
-    }))
-  }, [phase, currentPlayer, firstSeerWhite])
-  
   function randomDelay(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min
   }
@@ -475,7 +465,7 @@ export default function Page() {
   }
 
   function startTimer() {
-    if (timerRef.current) return  // 多重起動防止
+    if (timerRef.current) return
 
     setTimerRunning(true)
 
@@ -575,6 +565,7 @@ export default function Page() {
       .map(p => p!.role)
 
     const shuffled = shuffle(selectedRoles)
+
     const shuffledPlayers = shuffled.map((role, i) => ({
       id: i + 1,
       role,
@@ -587,34 +578,31 @@ export default function Page() {
     setTimerRunning(false)
     setPlayers(shuffledPlayers)
 
-    const seerIndex = shuffled.findIndex(r => r.id === "seer")
-    const seerPlayerNumber = seerIndex + 1
+    const seerIndexes = shuffled
+      .map((r, i) => ({ role: r, index: i }))
+      .filter(x => x.role.id === "seer")
 
-    const whiteCandidates = shuffled
-      .map((role, i) => ({ role, num: i + 1 }))
-      .filter((x) =>
-        x.role.id !== "werewolf" &&
-        x.num !== seerPlayerNumber
-      )
+    const results: Record<number, Record<number, "white">> = {}
 
-    let firstWhiteTarget: number | null = null
+    seerIndexes.forEach(({ index }) => {
+      const seerNum = index + 1
 
-    if (whiteCandidates.length > 0) {
-      const randomIndex = Math.floor(Math.random() * whiteCandidates.length)
-      firstWhiteTarget = whiteCandidates[randomIndex].num
-    }
+      const candidates = shuffled
+        .map((r, i) => ({ role: r, num: i + 1 }))
+        .filter(x =>
+          x.role.id !== "werewolf" &&
+          x.num !== seerNum
+        )
 
-    setFirstSeerWhite(firstWhiteTarget)
-
-    if (firstWhiteTarget !== null) {
-      setSeerResults({
-        [seerPlayerNumber]: {
-          [firstWhiteTarget]: "white"
+      if (candidates.length > 0) {
+        const rand = candidates[Math.floor(Math.random() * candidates.length)]
+        results[seerNum] = {
+          [rand.num]: "white"
         }
-      })
-    } else {
-      setSeerResults({})
-    }
+      }
+    })
+
+    setSeerResults(results)
 
     setPhase("roleCheck")
     setCurrentPlayer(1)
@@ -672,10 +660,14 @@ export default function Page() {
 
       <div
         style={{
-          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundImage: `url(/image/${theme}/day-bg.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+
           backgroundBlendMode: "darken",
-          color: "white",
           backgroundColor: "rgba(0,0,0,0.25)",
+          color: "white",
 
           height: "100vh",
           display: "flex",
@@ -735,6 +727,7 @@ export default function Page() {
 
             if (result === "villagers") {
               await playAudio("/audio/[09-2]村人陣営の勝利です.wav")
+              setExecuting(false)
               setWinner("villagers")
               setPhase("result")
               return
@@ -744,6 +737,7 @@ export default function Page() {
               await playAudio("/audio/[09-1]人狼陣営の勝利です.wav")
               setWinner("werewolves")
               setPhase("result")
+              setExecuting(false)
               return
             }
 
@@ -751,12 +745,13 @@ export default function Page() {
               await playAudio("/audio/[13-2]騎士がこの村に生存しておりませんので、人狼陣営の勝利です.wav")
               setWinner("werewolves")
               setPhase("result")
+              setExecuting(false)
               return
             }
 
-            // 続行パターン
             setCurrentPlayer(getNextAlivePlayer(0, players))
             setPhase("night")
+            setExecuting(false)
 
           }}
 
@@ -790,10 +785,14 @@ export default function Page() {
 
       <div
         style={{
-          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundImage: `url(/image/${theme}/day-bg.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+
           backgroundBlendMode: "darken",
-          color: "white",
           backgroundColor: "rgba(0,0,0,0.25)",
+          color: "white",
 
           height: "100vh",
           display: "flex",
@@ -980,7 +979,6 @@ export default function Page() {
             setWinner(null)
             setCurrentPlayer(1)
             setShowRole(false)
-            setFirstSeerWhite(null)
             setSeerResults({})
             setWolfTarget(null)
             setGuardTargets({})
@@ -1045,43 +1043,68 @@ export default function Page() {
 
         {!nightActionReady && (
 
-          <button
-            onClick={() => {
-
-              const role = players[currentPlayer - 1]
-
-              setNightActionReady(true)
-              setShowNextButton(false)
-
-              if (role?.role.id === "villager" || role?.role.id === "madman") {
-                const delay = randomDelay(3000, 5000)
-                setTimeout(() => {
-                  setShowNextButton(true)
-                }, delay)
-
-              } else if(role?.role.id !== "werewolf" && role?.role.id !== "knight" && role?.role.id !== "seer") {
-                setShowNextButton(true)
-              } else if (role?.role.id === "werewolf" && wolfTarget !== null) {
-                setShowNextButton(true)
-              }
-                            
-            }
-          }
-          style={{
-            marginTop: 20,
-            padding: "14px 28px",
-            fontSize: 20,
-            borderRadius: 12,
-            border: "none",
-            background: "linear-gradient(135deg,#ffd966,#ffb347)",
-            color: "#333",
-            fontWeight: "bold",
-            boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
-            cursor: "pointer"
-          }}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 16
+            }}
           >
-          画面タップ
-          </button>
+
+            <div
+              style={{
+                fontSize: 20,
+                letterSpacing: 2,
+                padding: "6px 14px",
+                borderRadius: 20,
+                background: "rgba(0,0,0,0.35)",
+                backdropFilter: "blur(4px)",
+                marginBottom: 10
+              }}
+            >
+              プレイヤー {currentPlayer}
+            </div>
+
+            <button
+              onClick={() => {
+
+                const role = players[currentPlayer - 1]
+
+                setNightActionReady(true)
+                setShowNextButton(false)
+
+                if (role?.role.id === "villager" || role?.role.id === "madman") {
+                  const delay = randomDelay(3000, 5000)
+                  setTimeout(() => {
+                    setShowNextButton(true)
+                  }, delay)
+
+                } else if(role?.role.id !== "werewolf" && role?.role.id !== "knight" && role?.role.id !== "seer") {
+                  setShowNextButton(true)
+                } else if (role?.role.id === "werewolf" && wolfTarget !== null) {
+                  setShowNextButton(true)
+                }
+
+              }
+            }
+            style={{
+              marginTop: 20,
+              padding: "14px 28px",
+              fontSize: 20,
+              borderRadius: 12,
+              border: "none",
+              background: "linear-gradient(135deg,#ffd966,#ffb347)",
+              color: "#333",
+              fontWeight: "bold",
+              boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
+              cursor: "pointer"
+            }}
+            >
+            画面タップ
+            </button>
+          </div>
 
         )}
 
@@ -1130,202 +1153,180 @@ export default function Page() {
               </span>
             </div>
 
-            {role?.id === "seer" && !seerActed[currentPlayer] && (
-              <div>
-                <h3>占うプレイヤーを選択</h3>
+            {role?.id === "seer" && (
+              <>
+                {!seerActed[currentPlayer] && (
+                  <div>
+                    <h3>占うプレイヤーを選択</h3>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                    gap: 14,
-                    marginTop: 20
-                  }}
-                >
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(2, 1fr)",
+                      gap: 14,
+                      marginTop: 20
+                    }}>
+                      {players.map((p, i) => {
+                        const num = i + 1
+                        if (num === currentPlayer) return null
+                        if (!players[i]?.alive) return null
 
-                  {players.map((p, i) => {
+                        return (
+                          <button
+                            key={num}
+                            onClick={() => {
 
-                    const num = i + 1
+                              const target = players[i]?.role
+                              const seerTarget = players[i]?.id
+                              const result = target?.id === "werewolf" ? "black" : "white"
 
-                    if (num === currentPlayer) return null
-                    if (!players[i]?.alive) return null
+                              setSeerToday(prev => ({
+                                ...prev,
+                                [currentPlayer]: {
+                                  target: num,
+                                  result
+                                }
+                              }))
+                              
+                              setSeerResults(prev => ({
+                                ...prev,
+                                [currentPlayer]: {
+                                  ...(prev[currentPlayer] || {}),
+                                  [seerTarget!]: result
+                                }
+                              }))
 
-                    return (
+                              setSeerActed(prev => ({
+                                ...prev,
+                                [currentPlayer]: true
+                              }))
+
+                              setShowNextButton(true)
+                            }}
+                            style={{
+                              padding: "14px 20px",
+                              fontSize: 18,
+                              borderRadius: 14,
+                              border: "1px solid rgba(255,255,255,0.35)",
+                              background: "rgba(255,255,255,0.15)",
+                              color: "white",
+                              backdropFilter: "blur(6px)",
+                              cursor: "pointer"
+                              }}
+                            >
+                              プレイヤー {num}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {seerToday[currentPlayer] && (
+                    <p
+                      style={{
+                        marginTop: 12,
+                        fontSize: 22,
+                        fontWeight: "bold",
+                      }}>
+                      プレイヤー {seerToday[currentPlayer].target} は
+                      {seerToday[currentPlayer].result === "white"
+                        ? "人狼ではありません"
+                        : "人狼です"}
+                    </p>
+                  )}
+
+                  <button
+                    onClick={() => setShowSeerModal(true)}
+                    style={{
+                      marginTop: 20,
+                      fontSize: 20,
+                      color: "rgba(255,255,255,0.7)",
+                      background: "transparent",
+                      border: "none",
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                    }}
+                  >
+                    🔍 占い結果一覧
+                  </button>
+                </>
+              )}
+
+              {role?.id === "knight" && !guardTargets[currentPlayer] && (
+                <div>
+                  <h3>護衛するプレイヤーを選択</h3>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(2, 1fr)",
+                      gap: 14,
+                      marginTop: 20
+                    }}
+                  >
+
+                    {players.map((p, i) => {
+
+                      const num = i + 1
+
+                      if (num === currentPlayer) return null
+                      if (!players[i]?.alive) return null
+
+                      return (
                         <button
                           key={num}
+                          disabled={lastGuardTarget[currentPlayer] === num}
                           onClick={() => {
-
-                            const target = players[i]?.role
-                            const seerTarget = players[i]?.id
-
-                            setSeerResults(prev => ({
+                            setGuardTargets(prev => ({
                               ...prev,
-                              [currentPlayer]: {
-                                ...(prev[currentPlayer] || {}),
-                                [seerTarget!]: target?.id === "werewolf" ? "black" : "white"
-                              }
+                              [currentPlayer]: num
                             }))
-                            setSeerActed(prev => ({
+
+                            setLastGuardTarget(prev => ({
                               ...prev,
-                              [currentPlayer]: true
+                              [currentPlayer]: num
                             }))
+
                             setShowNextButton(true)
                           }}
                           style={{
+                            position: "relative",
+                            overflow: "hidden",
                             padding: "14px 20px",
                             fontSize: 18,
                             borderRadius: 14,
                             border: "1px solid rgba(255,255,255,0.35)",
-                            background: "rgba(255,255,255,0.15)",
-                            color: "white",
+                            background:
+                              lastGuardTarget[currentPlayer] === num
+                                ? "rgba(255,255,255,0.06)"
+                                : "rgba(255,255,255,0.15)",
+                            color:
+                              lastGuardTarget[currentPlayer] === num
+                                ? "rgba(255,255,255,0.5)"
+                                : "white",
                             backdropFilter: "blur(6px)",
-                            cursor: "pointer"
-                            }}
+                            cursor:
+                              lastGuardTarget[currentPlayer] === num
+                                ? "not-allowed"
+                                : "pointer"
+                          }}
                         >
                           プレイヤー {num}
+
+                          {lastGuardTarget[currentPlayer] === num && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                inset: 0,
+                                pointerEvents: "none",
+                                background:
+                                  "linear-gradient(160deg, transparent 48%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.9) 50%, transparent 52%)"
+                              }}
+                            />
+                          )}
                         </button>
-                  )
-                })}
-                </div>
-              </div>
-            )}
-
-            {role?.id === "seer" && seerResults[currentPlayer] && (
-              <div>
-                {Object.entries(seerResults[currentPlayer]).map(([num, result]) => (
-                  <p key={num} style={{ fontSize: 20 }}>
-                    プレイヤー {num}は
-                    {result === "white" ? "人狼ではありません。" : "人狼です。"}
-                  </p>
-                ))}
-
-              </div>
-            )}
-
-            {role.id === "seer" && (
-              <div>
-                <div style={{
-                  display: "flex",
-                  gap: 12,
-                  justifyContent: "center",
-                  flexWrap: "wrap",
-                  marginTop: 10
-                }}>
-                  {players.map((p, i) => {
-                    const num = i + 1
-                    if (num === currentPlayer) {
-                      return (
-                        <div key={num} style={{ textAlign: "center" }}>
-                          <img
-                            src={`/image/${theme}/seer_seer.png`}
-                            width={60}
-                            style={{
-                                  opacity: players[i]?.alive ? 1 : 0.3,
-                                  filter: players[i]?.alive ? "none" : "grayscale(100%)"
-                            }}/>
-                          <div>{num}</div>
-                        </div>
                       )
-                    }
-                    const result = seerResults[currentPlayer]?.[Number(num)]
-
-                    let img = `/image/${theme}/seer_non.png`
-                    if (result === "white") img = `/image/${theme}/seer_white.png`
-                    if (result === "black") img = `/image/${theme}/seer_black.png`
-
-                    return (
-                      <div key={num} style={{ textAlign: "center" }}>
-                        <img
-                          src={img}
-                          width={60}
-                          style={{
-                            opacity: players[i]?.alive ? 1 : 0.5,
-                            filter: players[i]?.alive ? "none" : "grayscale(50%)"
-                          }}
-                        />
-                        <div>{num}</div>
-                      </div>
-                    )
                   })}
-                </div>
-              </div>
-            )}
-
-            {role?.id === "knight" && !guardTargets[currentPlayer] && (
-              <div>
-                <h3>護衛するプレイヤーを選択</h3>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                    gap: 14,
-                    marginTop: 20
-                  }}
-                >
-
-                  {players.map((p, i) => {
-
-                    const num = i + 1
-
-                    if (num === currentPlayer) return null
-                    if (!players[i]?.alive) return null
-
-                    return (
-                      <button
-                        key={num}
-                        disabled={lastGuardTarget[currentPlayer] === num}
-                        onClick={() => {
-                          setGuardTargets(prev => ({
-                            ...prev,
-                            [currentPlayer]: num
-                          }))
-
-                          setLastGuardTarget(prev => ({
-                            ...prev,
-                            [currentPlayer]: num
-                          }))
-
-                          setShowNextButton(true)
-                        }}
-                        style={{
-                          position: "relative",
-                          overflow: "hidden",
-                          padding: "14px 20px",
-                          fontSize: 18,
-                          borderRadius: 14,
-                          border: "1px solid rgba(255,255,255,0.35)",
-                          background:
-                            lastGuardTarget[currentPlayer] === num
-                              ? "rgba(255,255,255,0.06)"
-                              : "rgba(255,255,255,0.15)",
-                          color:
-                            lastGuardTarget[currentPlayer] === num
-                              ? "rgba(255,255,255,0.5)"
-                              : "white",
-                          backdropFilter: "blur(6px)",
-                          cursor:
-                            lastGuardTarget[currentPlayer] === num
-                              ? "not-allowed"
-                              : "pointer"
-                        }}
-                      >
-                        プレイヤー {num}
-
-                        {lastGuardTarget[currentPlayer] === num && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              inset: 0,
-                              pointerEvents: "none",
-                              background:
-                                "linear-gradient(160deg, transparent 48%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.9) 50%, transparent 52%)"
-                            }}
-                          />
-                        )}
-                      </button>
-                    )
-                })}
                 </div>
               </div>
             )}
@@ -1479,26 +1480,42 @@ export default function Page() {
             )}
           </div>
         )}
+      <SeerModal
+        isOpen={showSeerModal}
+        onClose={() => setShowSeerModal(false)}
+        players={players}
+        currentPlayer={currentPlayer}
+        seerResults={seerResults}
+        theme={theme}
+      />
       </div>
     )
   }
 
   if (phase === "morning") {
 
+    const isDiscussion = discussionReady && timerRunning
+    const isPaused = discussionReady && !timerRunning
+
     return (
 
       <div
         style={{
-          background: timerRunning
-            ? `url(/image/${theme}/day-bg.png) center / cover no-repeat`
-            : `url(/image/${theme}/morning-bg.png) center / cover no-repeat`,
+          backgroundImage: discussionReady
+            ? `url(/image/${theme}/day-bg.png)`
+            : `url(/image/${theme}/morning-bg.png)`,
+
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
 
           backgroundBlendMode: "darken",
-          color: "white",
 
           backgroundColor: timerRunning
-           ? "rgba(0,0,0,0.25)"
-           : "",
+            ? "rgba(0,0,0,0.25)"
+            : "transparent",
+
+          color: "white",
 
           height: "100vh",
           display: "flex",
@@ -1508,7 +1525,7 @@ export default function Page() {
           gap: 20,
           position: "relative"
         }}
-        >
+      >
 
           <AliveCounter players={players} />
 
@@ -1528,13 +1545,13 @@ export default function Page() {
                 letterSpacing: 2
               }}
             >
-              {timerRunning
+              {discussionReady
                 ? `${day + 1}日目の昼`
                 : `${day + 1}日目の朝`}
             </h1>
           </div>
 
-          {!timerRunning && day !== 0 && (
+          {!timerRunning && day !== 0 && !isPaused && (
             <div
               style={{
                 marginTop: 120,
@@ -1568,7 +1585,7 @@ export default function Page() {
                 textShadow: "0 2px 8px rgba(0,0,0,0.5)"
               }}
             >
-            {timerRunning
+            {discussionReady || isPaused
               ? `残り時間`
               : `議論時間`}
             </div>
@@ -1585,20 +1602,22 @@ export default function Page() {
 
           </div>
 
-        {timerRunning && (
+        {isDiscussion && !isPaused && (
 
           <div style={{ display: "flex", gap: 10 }}>
             <button
               onClick={pauseTimer}
               style={{
-                marginTop: 10,
-                padding: "8px 18px",
-                fontSize: 14,
-                background: "rgba(255,255,255,0.15)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                borderRadius: 10,
+                marginTop: 30,
+                padding: "10px 22px",
+                fontSize: 16,
                 color: "white",
-                cursor: "pointer"
+                background: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.35)",
+                borderRadius: 12,
+                backdropFilter: "blur(4px)",
+                cursor: "pointer",
+                width: 120
               }}
             >
               一時停止
@@ -1607,33 +1626,37 @@ export default function Page() {
             <button
               onClick={endDiscussion}
               style={{
-                marginTop: 10,
-                padding: "8px 18px",
-                fontSize: 14,
-                background: "rgba(255,255,255,0.15)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                borderRadius: 10,
+                marginTop: 30,
+                padding: "10px 22px",
+                fontSize: 16,
                 color: "white",
-                cursor: "pointer"
+                background: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.35)",
+                borderRadius: 12,
+                backdropFilter: "blur(4px)",
+                cursor: "pointer",
+                width: 120
               }}
             >
-              議論スキップ
+              議論終了
             </button>
           </div>
         )}
 
-        {!timerRunning && discussionReady  && (
+        { isPaused && (
           <button
           onClick={startTimer}
           style={{
-            marginTop: 10,
-            padding: "8px 18px",
-            fontSize: 14,
-            background: "rgba(255,255,255,0.15)",
-            border: "1px solid rgba(255,255,255,0.3)",
-            borderRadius: 10,
+            marginTop: 30,
+            padding: "10px 22px",
+            fontSize: 16,
             color: "white",
-            cursor: "pointer"
+            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.35)",
+            borderRadius: 12,
+            backdropFilter: "blur(4px)",
+            cursor: "pointer",
+            width: 120
           }}
           >
             再開
@@ -1691,23 +1714,47 @@ export default function Page() {
 
           {!showRole && (
 
-            <button
-              onClick={revealRole}
+            <div
               style={{
-                marginTop: 20,
-                padding: "14px 28px",
-                fontSize: 20,
-                borderRadius: 12,
-                border: "none",
-                background: "linear-gradient(135deg,#ffd966,#ffb347)",
-                color: "#333",
-                fontWeight: "bold",
-                boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
-                cursor: "pointer"
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 16
               }}
             >
-              役職確認
-            </button>
+              <div
+                style={{
+                  fontSize: 20,
+                  letterSpacing: 2,
+                  padding: "6px 14px",
+                  borderRadius: 20,
+                  background: "rgba(0,0,0,0.35)",
+                  backdropFilter: "blur(4px)",
+                  marginBottom: 10
+                }}
+              >
+              プレイヤー {currentPlayer}
+              </div>
+
+              <button
+                onClick={revealRole}
+                style={{
+                  marginTop: 20,
+                  padding: "14px 28px",
+                  fontSize: 20,
+                  borderRadius: 12,
+                  border: "none",
+                  background: "linear-gradient(135deg,#ffd966,#ffb347)",
+                  color: "#333",
+                  fontWeight: "bold",
+                  boxShadow: "0 6px 14px rgba(0,0,0,0.35)",
+                  cursor: "pointer"
+                }}
+              >
+                役職確認
+              </button>
+            </div>
 
           )}
 
@@ -1723,10 +1770,10 @@ export default function Page() {
                 <img
                   src={role.role.img}
                   style={{
-                    maxWidth: "100%",
-                    maxHeight: "100%",
                     objectFit: "contain",
-                    marginTop: 60,
+                    marginTop: 0,
+                    display: "block",
+                    margin: "0 auto"
                   }}
                 />
               </div>
@@ -1737,7 +1784,7 @@ export default function Page() {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 10,
-                  marginTop: 40
+                  marginTop: 30
                 }}
               >
 
@@ -1768,46 +1815,33 @@ export default function Page() {
                 </p>
               )}
 
-              {role.role.id === "seer" && firstSeerWhite !== null && (
-                <p style={{ marginTop: 12, fontSize: 18 }}>
-                  プレイヤー {firstSeerWhite} は人狼ではありません
-                </p>
-              )}
-
-              {role.role.id === "seer" && (
+              {role.role.id === "seer" && seerResults[currentPlayer] && (
                 <div>
-                  <div style={{
-                    display: "flex",
-                    gap: 12,
-                    justifyContent: "center",
-                    flexWrap: "wrap",
-                    marginTop: 10
-                  }}>
-                    {players.map((p, i) => {
-                      const num = i + 1
-                      if (num === currentPlayer) {
-                        return (
-                          <div key={num} style={{ textAlign: "center" }}>
-                            <img src={`/image/${theme}/seer_seer.png`} width={60} />
-                            <div>{num}</div>
-                          </div>
-                        )
-                      }
-                      const result = seerResults[currentPlayer]?.[Number(num)]
+                  <p 
+                    style={{
+                      marginTop: 12,
+                      fontSize: 22,
+                      fontWeight: "bold",
+                    }}>
+                      プレイヤー {Object.keys(seerResults[currentPlayer])[0]} は人狼ではありません
+                  </p>
 
-                      let img = `/image/${theme}/seer_non.png`
-                      if (result === "white") img = `/image/${theme}/seer_white.png`
-                      if (result === "black") img = `/image/${theme}/seer_black.png`
-
-                      return (
-                        <div key={num} style={{ textAlign: "center" }}>
-                          <img src={img} width={60} />
-                          <div>{num}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                  <button
+                    onClick={() => setShowSeerModal(true)}
+                    style={{
+                      marginTop: 20,
+                      fontSize: 20,
+                      color: "rgba(255,255,255,0.7)",
+                      background: "transparent",
+                      border: "none",
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                    }}
+                  >
+                  🔍 占い結果一覧
+                  </button>
                 </div>
+
               )}
 
               <button
@@ -1833,9 +1867,18 @@ export default function Page() {
           )}
 
         </div>
+      <SeerModal
+        isOpen={showSeerModal}
+        onClose={() => setShowSeerModal(false)}
+        players={players}
+        currentPlayer={currentPlayer}
+        seerResults={seerResults}
+        theme={theme}
+      />
       </div>
     )
   }
+
 
   if (phase === "vote") {
 
@@ -1843,11 +1886,16 @@ export default function Page() {
 
       <div
         style={{
-          background: `url(/image/${theme}/day-bg.png) center / cover no-repeat`,
+          backgroundImage: `url(/image/${theme}/day-bg.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+
           backgroundBlendMode: "darken",
-          color: "white",
           backgroundColor: "rgba(0,0,0,0.25)",
 
+          color: "white",
+          
           height: "100vh",
           display: "flex",
           flexDirection: "column",
@@ -2089,7 +2137,6 @@ export default function Page() {
         <h2
           style={{
             marginTop: 8,
-            /*marginBottom: 10,*/
             fontSize: 20,
             fontWeight: "bold",
             letterSpacing: 1

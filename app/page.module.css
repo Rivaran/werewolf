@@ -1,0 +1,133 @@
+.orangeButton {
+  margin-top: 20px;
+  padding: 14px 28px;
+  font-size: 20px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #ffd966, #ffb347);
+  color: #333;
+  font-weight: bold;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.blueButton {
+  margin-top: 20px;
+  padding: 14px 36px;
+  font-size: 20px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #66ccff, #3399ff);
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.sectionTitle {
+  margin-top: 12px;
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.illustrationButton {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  background: #fff;
+  font-weight: normal;
+}
+
+.illustrationButtonActive {
+  background: #ffd966;
+  font-weight: bold;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.toggleLabelActive {
+  background: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.toggleBox {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid #3399ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  background: transparent;
+}
+
+.toggleBoxActive {
+  background: #3399ff;
+}
+
+.playerBadge {
+  font-size: 20px;
+  letter-spacing: 2px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  margin-bottom: 10px;
+}
+
+.screenBase {
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-color: rgba(0, 0, 0, 0.5);
+  background-blend-mode: darken;
+
+  color: white;
+  height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 20;
+  position: relative;
+  padding-top: 80px;
+}
+
+.flexCenterColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.topCenterTitle {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.titleLarge {
+  font-size: 34px;
+}
+
+.titleXL {
+  font-size: 37px;
+}
