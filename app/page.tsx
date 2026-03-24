@@ -1100,7 +1100,6 @@ export default function Page() {
               <RoleDisplay
                 name={player.role.name}
                 img={player.role.img}
-                compact
               />
 
             {player.role?.id === "seer" && (
@@ -1801,7 +1800,6 @@ export default function Page() {
               <RoleDisplay
                 name={player.role.name}
                 img={player.role.img}
-                compact
               />
 
               {visiblePlayers.length > 0 && (

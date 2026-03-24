@@ -4,17 +4,17 @@ type Props = {
   compact?: boolean
 }
 
-export default function RoleDisplay({ name, img, compact }: Props) {
+export default function RoleDisplay({ name, img }: Props) {
 
   return (
     <div style={{
       textAlign: "center",
-      paddingTop: compact ? 40 : 0
+      paddingTop : 0
     }}>
 
       <div style={{
-        width: compact ? 180 : 200,
-        height: compact ? 180 : undefined,
+        width: 200,
+        height: undefined,
         margin: "0 auto",
         display: "flex",
         alignItems: "center",
@@ -23,8 +23,8 @@ export default function RoleDisplay({ name, img, compact }: Props) {
         <img
           src={img}
           style={{
-            width: compact ? "auto" : 140,
             maxWidth: "100%",
+            maxHeight: "100%",
             objectFit: "contain"
           }}
         />
@@ -34,8 +34,8 @@ export default function RoleDisplay({ name, img, compact }: Props) {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        gap: compact ? 10 : 8,
-        marginTop: compact ? 30 : 10
+        gap: 8,
+        marginTop: 10
       }}>
         <span style={{ fontSize: 16, opacity: 0.6 }}>
           あなたの役職：
