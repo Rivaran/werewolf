@@ -1,3 +1,4 @@
+/* 確認済、画面タップボタン */
 .orangeButton {
   margin-top: 20px;
   padding: 14px 28px;
@@ -11,6 +12,7 @@
   cursor: pointer;
 }
 
+/* 次のプレイヤーへボタンなど */
 .blueButton {
   margin-top: 20px;
   padding: 14px 36px;
@@ -24,6 +26,7 @@
   cursor: pointer;
 }
 
+/* トップページの配役選択 や 役職 */
 .sectionTitle {
   margin-top: 12px;
   font-size: 20px;
@@ -31,6 +34,7 @@
   letter-spacing: 1px;
 }
 
+/* イラストボタン(未選択) */
 .illustrationButton {
   padding: 6px 14px;
   border-radius: 8px;
@@ -40,11 +44,13 @@
   font-weight: normal;
 }
 
+/* イラストボタン(選択中) */
 .illustrationButtonActive {
   background: #ffd966;
   font-weight: bold;
 }
 
+/* 設定画面のトグル */
 .toggleLabel {
   display: flex;
   align-items: center;
@@ -56,11 +62,13 @@
   background: rgba(0, 0, 0, 0.03);
 }
 
+/* 設定画面のトグル(Active) */
 .toggleLabelActive {
   background: rgba(0, 0, 0, 0.08);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* 設定画面のトグル(チェックボックス(未チェック)) */
 .toggleBox {
   width: 20px;
   height: 20px;
@@ -75,10 +83,12 @@
   background: transparent;
 }
 
+/* 設定画面のトグル(チェックボックス(チェック)) */
 .toggleBoxActive {
   background: #3399ff;
 }
 
+/* 役職確認や夜のプレイヤー表示 */
 .playerBadge {
   font-size: 20px;
   letter-spacing: 2px;
@@ -89,6 +99,7 @@
   margin-bottom: 10px;
 }
 
+/* 役職確認や夜の一番外のdiv */
 .screenBase {
   background-position: center;
   background-size: cover;
@@ -109,6 +120,7 @@
   padding-top: 80px;
 }
 
+/* 中央揃えしたいときのdiv */
 .flexCenterColumn {
   display: flex;
   flex-direction: column;
@@ -116,6 +128,7 @@
   justify-content: center;
 }
 
+/* 役職確認と夜のタイトル */
 .topCenterTitle {
   position: absolute;
   top: 60px;
@@ -124,10 +137,18 @@
   text-align: center;
 }
 
+/* 夜などのタイトルフォントサイズ */
 .titleLarge {
   font-size: 34px;
 }
 
+/* 役職確認のタイトルフォントサイズ */
 .titleXL {
   font-size: 37px;
 }
+
+/* 隙間16 */
+.gap16 {
+  gap: 16px;
+}
+

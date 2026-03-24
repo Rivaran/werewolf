@@ -13,6 +13,7 @@ import {
 } from "@dnd-kit/core"
 
 import SeerModal from "@/components/SeerModal" // 占い師のモーダル(人狼⇔狂人でも使えるようにする？)
+import RoleDisplay from "@/components/RoleDisplay" // 役職表示
 import styles from "./page.module.css" // CSS
 
 const winner = "werewolf" // 勝利陣営の状態
@@ -1034,7 +1035,8 @@ export default function Page() {
   // 夜フェーズ
   if (phase === "night") {
 
-    const role = players[currentPlayer - 1]?.role
+    /*const role = players[currentPlayer - 1]?.role*/
+    const player = players[currentPlayer - 1]
     const firstWolf = players.findIndex(p => p?.role.id === "werewolf") + 1
 
     return (
@@ -1055,15 +1057,7 @@ export default function Page() {
 
         {!nightActionReady && (
 
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 16
-            }}
-          >
+          <div className={`${styles.flexCenterColumn} ${styles.gap16}`}>
 
             <div className={styles.playerBadge}>
               プレイヤー {currentPlayer}
@@ -1099,52 +1093,17 @@ export default function Page() {
 
         )}
 
-        {nightActionReady && role && (
+        {nightActionReady && player && (
 
           <div style={{ textAlign: "center" }}>
 
-            <div
-              style={{
-                width: 200,
-                margin: "0 auto",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-            >
-              <img src={role.img} width="140" />
-            </div>
+              <RoleDisplay
+                name={player.role.name}
+                img={player.role.img}
+                compact
+              />
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 8,
-                marginTop: 10
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 16,
-                  opacity: 0.6
-                }}
-              >
-                あなたの役職：
-              </span>
-
-              <span
-                style={{
-                  fontSize: 32,
-                  fontWeight: "bold",
-                  textShadow: "0 0 10px rgba(255,255,255,0.6)"
-                }}
-              >
-                {role.name}
-              </span>
-            </div>
-
-            {role?.id === "seer" && (
+            {player.role?.id === "seer" && (
               <>
                 {!seerActed[currentPlayer] && (
                   <div>
@@ -1243,7 +1202,7 @@ export default function Page() {
                 </>
               )}
 
-              {role?.id === "knight" && !guardTargets[currentPlayer] && (
+              {player.role?.id === "knight" && !guardTargets[currentPlayer] && (
                 <div>
                   <h3>護衛するプレイヤーを選択</h3>
 
@@ -1323,7 +1282,7 @@ export default function Page() {
             )}
 
             {
-              role?.id === "knight" &&
+              player.role?.id === "knight" &&
               guardTargets[currentPlayer] && (
                 <div>
                   <h3>護衛先</h3>
@@ -1335,7 +1294,7 @@ export default function Page() {
               )
             }
 
-            {role?.id === "werewolf" && wolfTarget === null && (
+            {player.role?.id === "werewolf" && wolfTarget === null && (
               <div>
                 <h3>襲撃するプレイヤーを選択</h3>
 
@@ -1383,7 +1342,7 @@ export default function Page() {
             )}
             
             {
-              role?.id === "werewolf" &&
+              player.role?.id === "werewolf" &&
               wolfTarget !== null &&
               currentPlayer === firstWolf && (
                 <div>
@@ -1395,7 +1354,7 @@ export default function Page() {
             }
 
             {
-              role?.id === "werewolf" &&
+              player.role?.id === "werewolf" &&
               wolfTarget !== null &&
               currentPlayer !== firstWolf && (
                 <div>
@@ -1406,15 +1365,15 @@ export default function Page() {
               )
             }
 
-            {(role?.id === "villager" || role?.id === "madman" )&& !showNextButton && (
+            {(player.role?.id === "villager" || player.role?.id === "madman" )&& !showNextButton && (
               <p>次のプレイヤーへ進むボタンが<br></br>表示されるまでお待ちください...</p>
             )}
 
             {showNextButton && 
             (
-              (role.id !== "werewolf" || wolfTarget !== null) &&
-              (role.id !== "knight" || !!guardTargets[currentPlayer]) &&
-              (role.id !== "seer" || Object.keys(seerResults[currentPlayer] || {}).length > 0)
+              (player.role.id !== "werewolf" || wolfTarget !== null) &&
+              (player.role.id !== "knight" || !!guardTargets[currentPlayer]) &&
+              (player.role.id !== "seer" || Object.keys(seerResults[currentPlayer] || {}).length > 0)
             ) && (
 
               <div
@@ -1796,7 +1755,7 @@ export default function Page() {
   // 役職確認フェーズ
   if (phase === "roleCheck") {
 
-    const role = players[currentPlayer - 1]
+    const player = players[currentPlayer - 1]
     const visiblePlayers = getVisiblePlayers(currentPlayer - 1)
 
     return (
@@ -1819,15 +1778,7 @@ export default function Page() {
 
           {!showRole && (
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 16
-              }}
-            >
+            <div className={`${styles.flexCenterColumn} ${styles.gap16}`}>
 
               <div className={styles.playerBadge}>
                 プレイヤー {currentPlayer}
@@ -1843,56 +1794,15 @@ export default function Page() {
 
           )}
 
-          {showRole && role && (
+          {showRole && player && (
 
             <div style={{ textAlign: "center", paddingTop: "40px" }}>
 
-              <div style={{
-                width: 180,
-                height: 180,
-                margin: "0 auto"
-              }}>
-                <img
-                  src={role.role.img}
-                  style={{
-                    objectFit: "contain",
-                    marginTop: 0,
-                    display: "block",
-                    margin: "0 auto"
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  marginTop: 30
-                }}
-              >
-
-                <span
-                  style={{
-                    fontSize: 16,
-                    opacity: 0.6
-                  }}
-                >
-                  あなたの役職：
-                </span>
-
-                <span
-                  style={{
-                    fontSize: 32,
-                    fontWeight: "bold",
-                    textShadow: "0 0 10px rgba(255,255,255,0.6)"
-                  }}
-                >
-                  {role.role.name}
-                </span>
-
-              </div>
+              <RoleDisplay
+                name={player.role.name}
+                img={player.role.img}
+                compact
+              />
 
               {visiblePlayers.length > 0 && (
                 <p style={{ marginTop: 12, fontSize: 20 }}>
@@ -1900,7 +1810,7 @@ export default function Page() {
                 </p>
               )}
 
-              {role.role.id === "seer" && seerResults[currentPlayer] && (
+              {player.role.id === "seer" && seerResults[currentPlayer] && (
                 <div>
                   <p 
                     style={{
