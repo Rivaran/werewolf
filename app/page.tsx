@@ -139,6 +139,7 @@ export default function Page() {
   const [showNextButton, setShowNextButton] = useState(false)
   const [playerCount, setPlayerCount] = useState(4)
   const [modalType, setModalType] = useState<"seer" | "wolf" | null>(null)
+  const [wolfDecider, setWolfDecider] = useState<number | null>(null)
 
   const [seerToday, setSeerToday] = useState<{
     [player: number]: { target: number; result: string }
@@ -578,9 +579,7 @@ export default function Page() {
     setPhase("voteStart")
     async function runVoteStart() {
       await playAudio("/audio/[05]議論終了の時間となりました。投票に移ります.wav")
-      if (phase !== "voteStart") return
       await playAudio("/audio/[06]5からカウントダウン.wav")
-      if (phase !== "voteStart") return
       setPhase("vote")
     }
     runVoteStart()
@@ -1166,7 +1165,6 @@ export default function Page() {
   // 夜フェーズ
   if (phase === "night") {
 
-    /*const role = players[currentPlayer - 1]?.role*/
     const player = players[currentPlayer - 1]
     const firstWolf = players.findIndex(p => p?.role.id === "werewolf") + 1
 
@@ -1450,6 +1448,7 @@ export default function Page() {
                         key={num}
                         onClick={() => {
                           setWolfTarget(num)
+                          setWolfDecider(currentPlayer)
                           setShowNextButton(true)
                         }}
                         style={{
@@ -1474,12 +1473,16 @@ export default function Page() {
             {
               player.role?.id === "werewolf" &&
               wolfTarget !== null &&
-              currentPlayer === firstWolf && (
-                <div>
-                  <h3>襲撃先</h3>
-                  <p style={{ fontSize: 24 }}>プレイヤー {wolfTarget}</p>
-                  <p>仲間の人狼にも襲撃先が表示されます</p>
-                </div>
+              wolfDecider === currentPlayer && (
+              <div>
+                <h3>襲撃先</h3>
+                <p style={{ fontSize: 24 }}>プレイヤー {wolfTarget}</p>
+                <p>
+                  {wolfDecider === currentPlayer
+                    ? "あなたがこのプレイヤーを襲撃します"
+                    : "仲間の人狼がこのプレイヤーを襲撃します"}
+                </p>
+              </div>
               )
             }
 
@@ -1716,7 +1719,7 @@ export default function Page() {
   if (phase === "morning") {
 
     const isDiscussion = discussionReady && timerRunning
-    const isPaused = discussionReady && !timerRunning
+    const isPaused = discussionReady && !timerRunning && !discussionEnded
 
     return (
 
