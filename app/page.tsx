@@ -12,7 +12,7 @@ import {
   useSensors
 } from "@dnd-kit/core"
 
-import SeerModal from "@/components/SeerModal" // 占い師のモーダル(人狼⇔狂人でも使えるようにする？)
+import BuildModal from "@/components/BuildModal" // 占い師のモーダル(人狼⇔狂人でも使えるようにする？)
 import RoleDisplay from "@/components/RoleDisplay" // 役職表示
 import styles from "./page.module.css" // CSS
 
@@ -127,7 +127,6 @@ export default function Page() {
   const [executing, setExecuting] = useState(false)
   const [discussionReady, setDiscussionReady] = useState(false)
   const [discussionEnded, setDiscussionEnded] = useState(false)
-  const [showSeerModal, setShowSeerModal] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [executedPlayer, setExecutedPlayer] = useState<number | null>(null)
@@ -139,6 +138,7 @@ export default function Page() {
   const [nightActionReady, setNightActionReady] = useState(false)
   const [showNextButton, setShowNextButton] = useState(false)
   const [playerCount, setPlayerCount] = useState(4)
+  const [modalType, setModalType] = useState<"seer" | "wolf" | null>(null)
 
   const [seerToday, setSeerToday] = useState<{
     [player: number]: { target: number; result: string }
@@ -181,6 +181,87 @@ export default function Page() {
     alive: boolean
   }
 
+  type ResultType =
+  | "self"
+  | "white"
+  | "black"
+  | "werewolf"
+  | "madman"
+  | "unknown"
+
+  function canShowNightButton(playerNum: number) {
+    const me = players[playerNum - 1]
+    if (!me) return false
+
+    // 占い師は常にOK
+    if (me.role.id === "seer") return true
+
+    // 人狼
+    if (me.role.id === "werewolf") {
+      const others = players.filter((p, i) => i !== playerNum - 1)
+
+      // 他の人狼がいる
+      const hasWolf = others.some(p => p?.role.id === "werewolf")
+
+      // 狂人が見える設定 && 狂人がいる
+      const hasMadman =
+        showMadmanToWolf &&
+        others.some(p => p?.role.id === "madman")
+
+      return hasWolf || hasMadman
+    }
+
+    // 狂人
+    if (me.role.id === "madman") {
+      if (!showWolfToMadman) return false
+
+      const hasWolf = players.some(p => p?.role.id === "werewolf")
+      return hasWolf
+    }
+
+    return false
+  }
+
+  function buildResults(playerNum: number) {
+    const result: Record<number, { type: ResultType }> = {}
+
+    result[playerNum] = { type: "self" }
+
+    const me = players[playerNum - 1]
+
+    players.forEach((p, i) => {
+      if (!p || i + 1 === playerNum) return
+
+      // 占い
+      const seer = seerResults[playerNum]?.[i + 1]
+      if (seer) {
+        result[i + 1] = {
+          type: seer === "white" ? "white" : "black"
+        }
+        return
+      }
+
+      // 人狼視点
+      if (me?.role.id === "werewolf") {
+        if (p.role.id === "werewolf") {
+          result[i + 1] = { type: "werewolf" }
+        }
+        if (showMadmanToWolf && p.role.id === "madman") {
+          result[i + 1] = { type: "madman" }
+        }
+      }
+
+      // 狂人視点
+      if (me?.role.id === "madman") {
+        if (showWolfToMadman && p.role.id === "werewolf") {
+          result[i + 1] = { type: "werewolf" }
+        }
+      }
+    })
+
+    return result
+  }
+
   // 仲間取得関数
   function getVisiblePlayers(playerIndex: number) {
     const me = players[playerIndex]
@@ -192,21 +273,22 @@ export default function Page() {
 
         // 人狼 → 人狼
         if (me.role.id === "werewolf" && p.role.id === "werewolf") {
-          return i + 1
+          return { id: i + 1, role: "人狼" }
         }
 
-        // 人狼 → 狂人（トグルON）
+        // 人狼 → 狂人
         if (me.role.id === "werewolf" && showMadmanToWolf && p.role.id === "madman") {
-          return i + 1
+          return { id: i + 1, role: "狂人" }
         }
 
+        // 狂人 → 人狼
         if (me.role.id === "madman" && showWolfToMadman && p.role.id === "werewolf") {
-          return i + 1
+          return { id: i + 1, role: "人狼" }
         }
 
         return null
       })
-      .filter(Boolean)
+      .filter((v): v is { id: number; role: string } => v !== null)
   }
 
   // プレイ中の画面上部に表示する生死&操作中の可視化用
@@ -334,6 +416,55 @@ export default function Page() {
     if (nonWerewolfCount === werewolfCount + 1 && !hasKnight) return "werewolves_by_no_knight"
     
     return null
+  }
+
+  function buildNightResults(playerNum: number) {
+    const result: Record<number, { type: ResultType }> = {}
+
+    const me = players[playerNum - 1]
+    if (!me) return result
+
+    // 自分
+    result[playerNum] = { type: "self" }
+
+    players.forEach((p, i) => {
+      const num = i + 1
+      if (!p || num === playerNum) return
+
+      // ① 占い結果（最優先）
+      const seer = seerResults[playerNum]?.[num]
+      if (seer) {
+        result[num] = {
+          type: seer === "white" ? "white" : "black"
+        }
+        return
+      }
+
+      // ② 人狼視点
+      if (me.role.id === "werewolf") {
+        if (p.role.id === "werewolf") {
+          result[num] = { type: "werewolf" }
+          return
+        }
+        if (showMadmanToWolf && p.role.id === "madman") {
+          result[num] = { type: "madman" }
+          return
+        }
+      }
+
+      // ③ 狂人視点
+      if (me.role.id === "madman") {
+        if (showWolfToMadman && p.role.id === "werewolf") {
+          result[num] = { type: "werewolf" }
+          return
+        }
+      }
+
+      // ④ それ以外
+      result[num] = { type: "unknown" }
+    })
+
+    return result
   }
 
   // 初回レンダリング後に処理する用らしい
@@ -1185,7 +1316,7 @@ export default function Page() {
                   )}
 
                   <button
-                    onClick={() => setShowSeerModal(true)}
+                    onClick={() => setModalType("seer")}
                     style={{
                       marginTop: 20,
                       fontSize: 20,
@@ -1418,14 +1549,19 @@ export default function Page() {
             )}
           </div>
         )}
-      <SeerModal
-        isOpen={showSeerModal}
-        onClose={() => setShowSeerModal(false)}
-        players={players}
-        currentPlayer={currentPlayer}
-        seerResults={seerResults}
-        theme={theme}
-      />
+        <BuildModal
+          isOpen={modalType !== null}
+          onClose={() => setModalType(null)}
+          players={players}
+          currentPlayer={currentPlayer}
+          results={buildNightResults(currentPlayer)}
+          theme={theme}
+          title={
+            modalType === "wolf"
+              ? "👥 仲間情報"
+              : "🔍 占い結果"
+          }
+        />
       </div>
     )
   }
@@ -1795,7 +1931,7 @@ export default function Page() {
 
           {showRole && player && (
 
-            <div style={{ textAlign: "center", paddingTop: "40px" }}>
+            <div style={{ textAlign: "center" }}>
 
               <RoleDisplay
                 name={player.role.name}
@@ -1803,9 +1939,77 @@ export default function Page() {
               />
 
               {visiblePlayers.length > 0 && (
-                <p style={{ marginTop: 12, fontSize: 20 }}>
-                  仲間：プレイヤー {visiblePlayers.join(" , ")}
-                </p>
+                <div>
+                  <div style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginTop: 16
+                    }}>
+
+                      <div style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        flexWrap: "wrap",
+                        gap: 8
+                      }}>
+                        <div style={{
+                          fontSize: 25,
+                          marginTop: 8,
+                          opacity: 0.9
+                        }}>
+                          仲間：
+                        </div>
+
+                        {visiblePlayers.map(p => (
+                          <div
+                            key={p.id}
+                            style={{
+                              padding: "12px 12px",
+                              borderRadius: 999,
+                              fontSize: 20,
+                              boxShadow:
+                              p.role === "人狼"
+                                ? "0 0 12px rgba(255,77,79,0.6)"
+                                : "0 0 8px rgba(255,255,255,0.3)",
+                              background:
+                                p.role === "人狼"
+                                  ? "rgba(255,77,79,0.2)"
+                                  : "rgba(200,200,200,0.2)",
+                              color:
+                                p.role === "人狼"
+                                  ? "#ff4d4f"
+                                  : "#ccc",
+                              border:
+                                p.role === "人狼"
+                                  ? "1px solid rgba(255,77,79,0.4)"
+                                  : "1px solid rgba(255,255,255,0.2)"
+                            }}
+                          >
+                            {p.id} {p.role}
+                          </div>
+                        ))}
+                      </div>
+
+                  </div>
+
+                  <button
+                    onClick={() => setModalType("wolf")}
+                    style={{
+                      marginTop: 20,
+                      fontSize: 20,
+                      color: "rgba(255,255,255,0.7)",
+                      background: "transparent",
+                      border: "none",
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                    }}
+                  >
+                  🔍 仲間確認
+                  </button>
+                </div>
+
               )}
 
               {player.role.id === "seer" && seerResults[currentPlayer] && (
@@ -1820,7 +2024,7 @@ export default function Page() {
                   </p>
 
                   <button
-                    onClick={() => setShowSeerModal(true)}
+                    onClick={() => setModalType("seer")}
                     style={{
                       marginTop: 20,
                       fontSize: 20,
@@ -1849,13 +2053,18 @@ export default function Page() {
           )}
 
         </div>
-        <SeerModal
-          isOpen={showSeerModal}
-          onClose={() => setShowSeerModal(false)}
+        <BuildModal
+          isOpen={modalType !== null}
+          onClose={() => setModalType(null)}
           players={players}
           currentPlayer={currentPlayer}
-          seerResults={seerResults}
+          results={buildNightResults(currentPlayer)}
           theme={theme}
+          title={
+            modalType === "wolf"
+              ? "👥 仲間情報"
+              : "🔍 占い結果"
+          }
         />
       </div>
     )
