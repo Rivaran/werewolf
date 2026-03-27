@@ -622,13 +622,12 @@ export default function Page() {
 
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(timerRef.current!)
-          timerRef.current = null
-          setTimerRunning(false)
-          endDiscussion()
-          return 0
-        }
+      if (t <= 1) {
+        clearInterval(timerRef.current!)
+        timerRef.current = null
+        endDiscussion()
+        return 0
+      }
         return t - 1
       })
     }, 1000)
