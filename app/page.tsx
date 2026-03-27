@@ -1485,18 +1485,6 @@ export default function Page() {
               )
             }
 
-            {
-              player.role?.id === "werewolf" &&
-              wolfTarget !== null &&
-              currentPlayer !== firstWolf && (
-                <div>
-                  <h3>襲撃先</h3>
-                  <p style={{ fontSize: 24 }}>プレイヤー {wolfTarget}</p>
-                  <p>仲間の人狼がこのプレイヤーを襲撃します</p>
-                </div>
-              )
-            }
-
             {(player.role?.id === "villager" || player.role?.id === "madman" )&& !showNextButton && (
               <p>次のプレイヤーへ進むボタンが<br></br>表示されるまでお待ちください...</p>
             )}
