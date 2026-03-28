@@ -538,6 +538,7 @@ export function useGameState() {
     })
 
     setSeerResults(results)
+    setMediumResults({})
 
     setPhase("roleCheck")
     setCurrentPlayer(1)

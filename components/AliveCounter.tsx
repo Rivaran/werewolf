@@ -13,9 +13,9 @@ export default function AliveCounter({ players, theme, currentPlayer, phase }: P
       style={{
         position: "fixed",
         top: 12,
-        right: 12,
+        right: 20,
         display: "flex",
-        gap: 6,
+        gap: 0,
         zIndex: 9999
       }}
     >
@@ -26,16 +26,9 @@ export default function AliveCounter({ players, theme, currentPlayer, phase }: P
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            marginLeft: -10
+            marginLeft: -20
           }}
         >
-          <span style={{
-            fontSize: 18,
-            marginRight: -17,
-            marginTop: -5,
-            textShadow: "0 0 6px rgba(255,255,255,0.6)"
-            }}>{i+1}:</span>
-
           <img
             src={
               !p || !p.alive
@@ -45,11 +38,19 @@ export default function AliveCounter({ players, theme, currentPlayer, phase }: P
                   : `/image/${theme}/icon_alive.png`
             }
             style={{
-              width: 60,
+              width: 95,
               height: 45,
+              marginRight: -38,
               filter: p && p.alive ? "none" : "brightness(0.6)"
             }}
           />
+
+          <span style={{
+            fontSize: 18,
+            marginRight: 0,
+            marginTop: -5,
+            textShadow: "0 0 6px rgba(255,255,255,0.6)"
+            }}>{i+1}</span>
 
         </div>
       ))}
