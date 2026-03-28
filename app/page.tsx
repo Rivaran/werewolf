@@ -1537,18 +1537,18 @@ export default function Page() {
       >
 
         <button
-          onClick={() => setTheme("ai")}
+          onClick={() => setTheme("mama")}
           className={`${styles.illustrationButton} ${
-            theme === "ai" ? styles.illustrationButtonActive : ""
+            theme === "mama" ? styles.illustrationButtonActive : ""
           }`}
         >
           イラスト1
         </button>
 
         <button
-          onClick={() => setTheme("mama")}
+          onClick={() => setTheme("ai")}
           className={`${styles.illustrationButton} ${
-            theme === "mama" ? styles.illustrationButtonActive : ""
+            theme === "ai" ? styles.illustrationButtonActive : ""
           }`}
         >
           イラスト2

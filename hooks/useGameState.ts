@@ -16,12 +16,12 @@ export function useGameState() {
   const [seerResults, setSeerResults] = useState<Record<number, Record<number, "white" | "black">>>({})
   const [morningDeath, setMorningDeath] = useState<number | null>(null)
   const [day, setDay] = useState(0)
-  const [theme, setTheme] = useState("ai")
+  const [theme, setTheme] = useState("mama")
   const [voteTarget, setVoteTarget] = useState<number | null>(null)
   const [lastGuardTarget, setLastGuardTarget] = useState<Record<number, number | null>>({})
   const [seerActed, setSeerActed] = useState<Record<number, boolean>>({})
-  const [showWolfToMadman, setShowWolfToMadman] = useState(false)
-  const [showMadmanToWolf, setShowMadmanToWolf] = useState(false)
+  const [showWolfToMadman, setShowWolfToMadman] = useState(true)
+  const [showMadmanToWolf, setShowMadmanToWolf] = useState(true)
   const [showSettings, setShowSettings] = useState(false)
   const [morningHandled, setMorningHandled] = useState(false)
   const [executing, setExecuting] = useState(false)
@@ -66,7 +66,9 @@ export function useGameState() {
     { id: "medium", name: "霊能者" },
   ].map(role => ({
     ...role,
-    img: `/image/${theme}/${role.name}.png`
+    img: role.id === "werewolf"
+      ? `/image/${theme}/人狼1.png`
+      : `/image/${theme}/${role.name}.png`
   }))
 
   const sensors = useSensors(
@@ -503,7 +505,7 @@ export function useGameState() {
 
     const shuffledPlayers = shuffled.map((role, i) => ({
       id: i + 1,
-      role,
+      role: role.id === "werewolf" ? { ...role, img: `/image/${theme}/人狼2.png` } : role,
       alive: true
     }))
 
