@@ -109,7 +109,7 @@ export default function Page() {
 
       <div
         style={{
-          backgroundImage: `url(/image/${theme}/day-bg.png)`,
+          backgroundImage: `url(/image/${theme}/execute-bg.png)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -235,7 +235,7 @@ export default function Page() {
 
       <div
         style={{
-          backgroundImage: `url(/image/${theme}/day-bg.png)`,
+          backgroundImage: `url(/image/${theme}/voteStart-bg.png)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -907,7 +907,7 @@ export default function Page() {
 
       <div
         style={{
-          backgroundImage: `url(/image/${theme}/day-bg.png)`,
+          backgroundImage: `url(/image/${theme}/vote-bg.png)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
