@@ -91,6 +91,8 @@ export default function Page() {
     judgeAfterExecution,
     resolveNight,
     buildNightResults,
+    buildMediumResults,
+    mediumResults,
     buildResults,
     getVisiblePlayers,
     canShowNightButton,
@@ -489,7 +491,7 @@ export default function Page() {
                 setNightActionReady(true)
                 setShowNextButton(false)
 
-                if (role?.role.id === "villager" || role?.role.id === "madman") {
+                if (role?.role.id === "villager" || role?.role.id === "madman" || role?.role.id === "medium") {
                   const delay = randomDelay(3000, 5000)
                   setTimeout(() => {
                     setShowNextButton(true)
@@ -536,6 +538,27 @@ export default function Page() {
                 }}
               >
                 🔍 仲間確認
+              </button>
+            )}
+
+            {player.role.id === "medium" && (
+              <button
+                onClick={() => setModalType("medium")}
+                style={{
+                  marginTop: 12,
+                  marginBottom: 4,
+                  fontSize: 20,
+                  color: "rgba(255,255,255,0.7)",
+                  background: "transparent",
+                  border: "none",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+              >
+                👁 霊視結果一覧
+                {Object.keys(mediumResults).length === 0 && (
+                  <span style={{ fontSize: 13, opacity: 0.6, marginLeft: 6 }}>（まだなし）</span>
+                )}
               </button>
             )}
 
@@ -857,12 +880,18 @@ export default function Page() {
           onClose={() => setModalType(null)}
           players={players}
           currentPlayer={currentPlayer}
-          results={buildNightResults(currentPlayer)}
+          results={
+            modalType === "medium"
+              ? buildMediumResults(currentPlayer)
+              : buildNightResults(currentPlayer)
+          }
           theme={theme}
           title={
             modalType === "wolf"
               ? "👥 仲間情報"
-              : "🔍 占い結果"
+              : modalType === "medium"
+                ? "👁 霊視結果"
+                : "🔍 占い結果"
           }
         />
       </div>

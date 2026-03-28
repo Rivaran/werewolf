@@ -36,10 +36,11 @@ export function useGameState() {
   const [nightActionReady, setNightActionReady] = useState(false)
   const [showNextButton, setShowNextButton] = useState(false)
   const [playerCount, setPlayerCount] = useState(4)
-  const [modalType, setModalType] = useState<"seer" | "wolf" | null>(null)
+  const [modalType, setModalType] = useState<"seer" | "wolf" | "medium" | null>(null)
   const [wolfDecider, setWolfDecider] = useState<number | null>(null)
   const [tieMode, setTieMode] = useState(false)
   const [tieTargets, setTieTargets] = useState<number[]>([])
+  const [mediumResults, setMediumResults] = useState<Record<number, "white" | "black">>({})  // 霊能者の霊視結果: 追放プレイヤー番号 → white/black
   const [seerToday, setSeerToday] = useState<{
     [player: number]: { target: number; result: string }
   }>({})
@@ -62,6 +63,7 @@ export function useGameState() {
     { id: "seer", name: "占い師" },
     { id: "knight", name: "騎士" },
     { id: "madman", name: "狂人" },
+    { id: "medium", name: "霊能者" },
   ].map(role => ({
     ...role,
     img: `/image/${theme}/${role.name}.png`
@@ -309,6 +311,21 @@ export function useGameState() {
     return result
   }
 
+  // 霊能者の霊視結果ビルド関数
+  function buildMediumResults(playerNum: number) {
+    const result: Record<number, { type: ResultType }> = {}
+    result[playerNum] = { type: "self" }
+    players.forEach((p, i) => {
+      const num = i + 1
+      if (num === playerNum) return
+      const medResult = mediumResults[num]
+      if (medResult) {
+        result[num] = { type: medResult === "black" ? "black" : "white" }
+      }
+    })
+    return result
+  }
+
   // ランダムディレイ関数
   function randomDelay(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min
@@ -316,6 +333,12 @@ export function useGameState() {
 
   // プレイヤー追放関数
   function executePlayer(num: number) {
+    // 霊能者用：追放プレイヤーの役職を記録
+    const executedRole = players[num - 1]?.role.id
+    setMediumResults(prev => ({
+      ...prev,
+      [num]: executedRole === "werewolf" ? "black" : "white"
+    }))
     setPlayers(prev =>
       prev.map(p =>
         p && p.id === num ? { ...p, alive: false } : p
@@ -735,6 +758,9 @@ export function useGameState() {
     resolveNight,
     judgeAfterExecution,
     buildNightResults,
+    buildMediumResults,
+    mediumResults,
+    setMediumResults,
     randomDelay,
     executePlayer,
     endDiscussion,
