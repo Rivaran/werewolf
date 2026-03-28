@@ -38,6 +38,8 @@ export function useGameState() {
   const [playerCount, setPlayerCount] = useState(4)
   const [modalType, setModalType] = useState<"seer" | "wolf" | null>(null)
   const [wolfDecider, setWolfDecider] = useState<number | null>(null)
+  const [tieMode, setTieMode] = useState(false)
+  const [tieTargets, setTieTargets] = useState<number[]>([])
   const [seerToday, setSeerToday] = useState<{
     [player: number]: { target: number; result: string }
   }>({})
@@ -594,6 +596,8 @@ export function useGameState() {
   useEffect(() => {
     if (phase === "vote") {
       setVoteTarget(null)
+      setTieMode(false)
+      setTieTargets([])
     }
   }, [phase])
 
@@ -717,6 +721,10 @@ export function useGameState() {
     setWolfDecider,
     setSeerToday,
     setPlayers,
+    tieMode,
+    tieTargets,
+    setTieMode,
+    setTieTargets,
     // computed
     roles,
     sensors,

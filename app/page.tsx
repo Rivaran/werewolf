@@ -67,6 +67,10 @@ export default function Page() {
     setWolfDecider,
     setSeerToday,
     setPlayers,
+    tieMode,
+    tieTargets,
+    setTieMode,
+    setTieTargets,
     setTimeLeft,
     setTimerRunning,
     setExecutedPlayer,
@@ -582,6 +586,7 @@ export default function Page() {
                         const num = i + 1
                         if (num === currentPlayer) return null
                         if (!players[i]?.alive) return null
+                        if (seerResults[currentPlayer]?.[num]) return null
 
                         return (
                           <button
@@ -891,6 +896,7 @@ export default function Page() {
         }}
       >
         <AliveCounter players={players} theme={theme} currentPlayer={currentPlayer} phase={phase} />
+
         <h1
           style={{
             position: "absolute",
@@ -902,106 +908,215 @@ export default function Page() {
             letterSpacing: 2
           }}
         >
-          追放者決定
+          {tieMode ? "同数プレイヤーを選択" : "追放者決定"}
         </h1>
 
-        <h1>追放するプレイヤーを選択</h1>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: 10,
-            marginTop: 20
-          }}
-        >
-
-        {players.map((p, i) => {
-
-          const dead = p?.alive === false
-
-          return (
-            <button
-              key={i}
-              disabled={dead}
-              style={{
-                width: 160,
-                padding: 12,
-                margin: 4,
-                fontSize: 18,
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.25)",
-                background: dead
-                  ? "rgba(80,80,80,0.65)"
-                  : "rgba(255,255,255,0.6)",
-                color: "white",
-
-                cursor: dead ? "not-allowed" : "pointer",
-
-                opacity: dead ? 0.4 : 1,
-
-                backdropFilter: "blur(6px)"
-              }}
-
-              onClick={() => {
-                if (!dead) setVoteTarget(i + 1)
-              }}
-            >
-              プレイヤー {i + 1}
-              {dead}
-            </button>
-          )
-        })}
-        </div>
-
-        {voteTarget !== null && (
-          <div>
-            <div style={{marginTop:20,textAlign:"center"}}>
-              <p>プレイヤー {voteTarget} を追放しますか？</p>
-            </div>
+        {!tieMode && (
+          <>
+            <h1>追放するプレイヤーを選択</h1>
 
             <div
               style={{
-                marginTop: 20,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 16
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: 10,
+                marginTop: 20
               }}
             >
+              {players.map((p, i) => {
+                const dead = p?.alive === false
+                return (
+                  <button
+                    key={i}
+                    disabled={dead}
+                    style={{
+                      width: 160,
+                      padding: 12,
+                      margin: 4,
+                      fontSize: 18,
+                      borderRadius: 12,
+                      border: "1px solid rgba(255,255,255,0.25)",
+                      background: dead ? "rgba(80,80,80,0.65)" : "rgba(255,255,255,0.6)",
+                      color: "white",
+                      cursor: dead ? "not-allowed" : "pointer",
+                      opacity: dead ? 0.4 : 1,
+                      backdropFilter: "blur(6px)"
+                    }}
+                    onClick={() => { if (!dead) setVoteTarget(i + 1) }}
+                  >
+                    プレイヤー {i + 1}
+                    {dead}
+                  </button>
+                )
+              })}
+            </div>
 
+            {voteTarget !== null && (
+              <div>
+                <div style={{ marginTop: 20, textAlign: "center" }}>
+                  <p>プレイヤー {voteTarget} を追放しますか？</p>
+                </div>
+                <div
+                  style={{
+                    marginTop: 20,
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: 16
+                  }}
+                >
+                  <button
+                    onClick={() => executePlayer(voteTarget)}
+                    style={{
+                      padding: "12px 26px",
+                      fontSize: 18,
+                      borderRadius: 12,
+                      background: "#4fa3ff",
+                      border: "none",
+                      color: "white",
+                      cursor: "pointer",
+                    }}
+                  >
+                    決定
+                  </button>
+                  <button
+                    style={{
+                      padding: "10px 22px",
+                      fontSize: 16,
+                      borderRadius: 12,
+                      background: "rgba(255,255,255,0.15)",
+                      border: "1px solid rgba(255,255,255,0.35)",
+                      color: "white",
+                      cursor: "pointer"
+                    }}
+                    onClick={() => setVoteTarget(null)}
+                  >
+                    戻る
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {voteTarget === null && (
               <button
-                onClick={() => executePlayer(voteTarget)}
+                onClick={() => { setTieMode(true); setTieTargets([]) }}
                 style={{
-                  padding: "12px 26px",
-                  fontSize: 18,
+                  marginTop: 8,
+                  padding: "10px 22px",
+                  fontSize: 15,
                   borderRadius: 12,
-                  background: "#4fa3ff",
-                  border: "none",
-                  color: "white",
+                  background: "rgba(255,200,50,0.2)",
+                  border: "1px solid rgba(255,200,50,0.5)",
+                  color: "rgba(255,230,100,1)",
                   cursor: "pointer",
-                  marginRight: 12
+                  backdropFilter: "blur(4px)"
                 }}
               >
-                決定
+                🎲 同数だった場合のランダム追放
+              </button>
+            )}
+          </>
+        )}
+
+        {tieMode && (
+          <>
+            <p style={{ margin: 0, opacity: 0.8, fontSize: 15 }}>
+              同数だったプレイヤーを選択してください（複数選択）
+            </p>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: 10,
+                marginTop: 4
+              }}
+            >
+              {players.map((p, i) => {
+                const dead = p?.alive === false
+                const selected = tieTargets.includes(i + 1)
+                return (
+                  <button
+                    key={i}
+                    disabled={dead}
+                    style={{
+                      width: 160,
+                      padding: 12,
+                      margin: 4,
+                      fontSize: 18,
+                      borderRadius: 12,
+                      border: selected
+                        ? "2px solid rgba(255,200,50,0.9)"
+                        : "1px solid rgba(255,255,255,0.25)",
+                      background: dead
+                        ? "rgba(80,80,80,0.65)"
+                        : selected
+                          ? "rgba(255,200,50,0.35)"
+                          : "rgba(255,255,255,0.15)",
+                      color: dead ? "rgba(255,255,255,0.4)" : "white",
+                      cursor: dead ? "not-allowed" : "pointer",
+                      opacity: dead ? 0.4 : 1,
+                      backdropFilter: "blur(6px)",
+                      fontWeight: selected ? "bold" : "normal"
+                    }}
+                    onClick={() => {
+                      if (dead) return
+                      setTieTargets(prev =>
+                        prev.includes(i + 1)
+                          ? prev.filter(n => n !== i + 1)
+                          : [...prev, i + 1]
+                      )
+                    }}
+                  >
+                    プレイヤー {i + 1}
+                    {selected && " ✓"}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+              <button
+                disabled={tieTargets.length < 2}
+                onClick={() => {
+                  const picked = tieTargets[Math.floor(Math.random() * tieTargets.length)]
+                  setTieMode(false)
+                  setTieTargets([])
+                  executePlayer(picked)
+                }}
+                style={{
+                  padding: "12px 24px",
+                  fontSize: 17,
+                  borderRadius: 12,
+                  border: "none",
+                  background: tieTargets.length < 2
+                    ? "rgba(150,150,150,0.4)"
+                    : "linear-gradient(135deg,#ffcc33,#ff9900)",
+                  color: "white",
+                  cursor: tieTargets.length < 2 ? "not-allowed" : "pointer",
+                  fontWeight: "bold",
+                  opacity: tieTargets.length < 2 ? 0.5 : 1
+                }}
+              >
+                🎲 ランダム追放実行
               </button>
 
               <button
+                onClick={() => { setTieMode(false); setTieTargets([]) }}
                 style={{
-                  padding: "10px 22px",
-                  fontSize: 16,
+                  padding: "10px 20px",
+                  fontSize: 15,
                   borderRadius: 12,
                   background: "rgba(255,255,255,0.15)",
                   border: "1px solid rgba(255,255,255,0.35)",
                   color: "white",
                   cursor: "pointer"
                 }}
-                onClick={() => setVoteTarget(null)}
               >
-                戻る
+                キャンセル
               </button>
             </div>
-          </div>
+          </>
         )}
 
       </div>
