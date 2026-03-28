@@ -304,16 +304,14 @@ export default function Page() {
     return (
       <div
         style={{
-          background: `${bgImage} center / cover no-repeat`,
+          background: `${bgImage} center / contain no-repeat`,
           color: "white",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
           gap: 20,
           position: "relative",
-          paddingTop: "20vh",
         }}
       >
 
@@ -323,6 +321,7 @@ export default function Page() {
             letterSpacing: 4,
             fontWeight: "bold",
             textShadow: "0 4px 16px rgba(0,0,0,0.6)",
+            marginTop: 120
           }}
         >
           {winner === "villagers"
@@ -335,8 +334,8 @@ export default function Page() {
             setPhase("reveal")
           }}
           style={{
-            marginTop: 150,
             padding: "16px 40px",
+            marginTop: 120,
             fontSize: 22,
             borderRadius: 14,
             border: "none",
@@ -364,7 +363,7 @@ export default function Page() {
     return (
       <div
         style={{
-          background: `${bgImage} center / cover no-repeat`,
+          background: `${bgImage} center / contain no-repeat`,
           color: "white",
           height: "100vh",
           display: "flex",
