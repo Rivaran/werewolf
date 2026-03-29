@@ -301,7 +301,7 @@ export function useOneNightState() {
 
   function beginNightAction() {
     setNightActionReady(true)
-    const player = players[currentPlayer - 1]
+    const player = originalPlayers[currentPlayer - 1]
     if (!player) return
     const roleId = player.role.id
     setCurrentNightRoleId(roleId)
@@ -343,7 +343,7 @@ export function useOneNightState() {
 
   function handleSeerPlayerSelect(targetNum: number) {
     setSeerTarget(targetNum)
-    setSeerResult(players[targetNum - 1]!.role)
+    setSeerResult(originalPlayers[targetNum - 1]!.role)
   }
 
   function confirmSeerResult() {

@@ -142,10 +142,10 @@ export default function OneNightWolfPage() {
 
   // ===================== 夜フェーズ =====================
   if (s.phase === "night") {
-    const player = s.players[s.currentPlayer - 1]
+    const player = s.originalPlayers[s.currentPlayer - 1]
     const roleId = s.currentNightRoleId
-    const otherPlayers = s.players.filter((_, i) => i !== s.currentPlayer - 1)
-    const wolfAllies = s.players.filter((p, i) => i !== s.currentPlayer - 1 && p?.role.id === "werewolf")
+    const otherPlayers = s.originalPlayers.filter((_, i) => i !== s.currentPlayer - 1)
+    const wolfAllies = s.originalPlayers.filter((p, i) => i !== s.currentPlayer - 1 && p?.role.id === "werewolf")
 
     return (
       <div className={styles.screenBase} style={{ backgroundImage: `url(/image/${s.theme}/bg_night.png)`, backgroundSize: s.theme === "mama" ? "contain" : "cover" }}>
@@ -213,10 +213,9 @@ export default function OneNightWolfPage() {
                 <p style={{ fontSize: 16, marginBottom: 10 }}>
                   {s.robberTarget}番のプレイヤーと役職を交換しました
                 </p>
-                <img src={s.robberNewRole.img} width={70} alt={s.robberNewRole.name} />
                 <p style={{ fontSize: 20, fontWeight: "bold", marginTop: 8 }}>あなたの新しい役職：{s.robberNewRole.name}</p>
                 {s.robberNewRole.id === "werewolf" && (
-                  <p style={{ fontSize: 14, opacity: 0.75, marginTop: 6 }}>※夜行動はすでに終了しているため、仲間の確認はできません</p>
+                  <p style={{ fontSize: 14, opacity: 0.75, marginTop: 6 }}>※仲間の確認はできません</p>
                 )}
                 <button
                   onClick={s.robberNewRole.id === "werewolf" ? s.confirmRobberResult : s.nextNightPlayer}
