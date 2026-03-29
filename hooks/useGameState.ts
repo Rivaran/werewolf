@@ -30,7 +30,7 @@ export function useGameState() {
   const [executedPlayer, setExecutedPlayer] = useState<number | null>(null)
   const [timeLeft, setTimeLeft] = useState(180)
   const [timerRunning, setTimerRunning] = useState(false)
-  const [phase, setPhase] = useState("setup")
+  const [phase, setPhase] = useState("modeSelect")
   const [currentPlayer, setCurrentPlayer] = useState(1)
   const [showRole, setShowRole] = useState(false)
   const [nightActionReady, setNightActionReady] = useState(false)
@@ -66,9 +66,7 @@ export function useGameState() {
     { id: "medium", name: "霊能者" },
   ].map(role => ({
     ...role,
-    img: role.id === "werewolf"
-      ? `/image/${theme}/人狼1.png`
-      : `/image/${theme}/${role.name}.png`
+    img: `/image/${theme}/${role.name}.png`
   }))
 
   const sensors = useSensors(
@@ -505,7 +503,7 @@ export function useGameState() {
 
     const shuffledPlayers = shuffled.map((role, i) => ({
       id: i + 1,
-      role: role.id === "werewolf" ? { ...role, img: `/image/${theme}/人狼2.png` } : role,
+      role,
       alive: true
     }))
 

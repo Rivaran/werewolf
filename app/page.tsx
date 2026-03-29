@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { DndContext } from "@dnd-kit/core"
 
 import BuildModal from "@/components/BuildModal"
@@ -12,6 +13,8 @@ import { useGameState } from "@/hooks/useGameState"
 
 // 画面の処理
 export default function Page() {
+
+  const router = useRouter()
 
   const {
     winner,
@@ -109,8 +112,10 @@ export default function Page() {
 
       <div
         style={{
-          backgroundImage: `url(/image/${theme}/execute-bg.png)`,
-          backgroundSize: "contain",
+          backgroundImage: theme === "mama"
+            ? `url(/image/${theme}/bg_execute.png)`
+            : `url(/image/${theme}/bg_day.png)`,
+          backgroundSize: theme === "mama" ? "contain" : "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
 
@@ -235,8 +240,10 @@ export default function Page() {
 
       <div
         style={{
-          backgroundImage: `url(/image/${theme}/voteStart-bg.png)`,
-          backgroundSize: "contain",
+          backgroundImage: theme === "mama"
+            ? `url(/image/${theme}/bg_voteStart.png)`
+            : `url(/image/${theme}/bg_day.png)`,
+          backgroundSize: theme === "mama" ? "contain" : "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
 
@@ -298,13 +305,13 @@ export default function Page() {
 
     const bgImage =
       winner === "villagers"
-        ? `url(/image/${theme}/village_win.png)`
-        : `url(/image/${theme}/wolf_win.png)`
+        ? `url(/image/${theme}/bg_win_village.png)`
+        : `url(/image/${theme}/bg_win_wolf.png)`
 
     return (
       <div
         style={{
-          background: `${bgImage} center / contain no-repeat`,
+          background: `${bgImage} center / ${theme === "mama" ? "contain" : "cover"} no-repeat`,
           color: "white",
           height: "100vh",
           display: "flex",
@@ -357,13 +364,13 @@ export default function Page() {
 
     const bgImage =
       winner === "villagers"
-        ? `url(/image/${theme}/village_win.png)`
-        : `url(/image/${theme}/wolf_win.png)`
+        ? `url(/image/${theme}/bg_win_village.png)`
+        : `url(/image/${theme}/bg_win_wolf.png)`
 
     return (
       <div
         style={{
-          background: `${bgImage} center / contain no-repeat`,
+          background: `${bgImage} center / ${theme === "mama" ? "contain" : "cover"} no-repeat`,
           color: "white",
           height: "100vh",
           display: "flex",
@@ -423,7 +430,7 @@ export default function Page() {
 
         <button
           onClick={() => {
-            setPhase("setup")
+            setPhase("modeSelect")
             setTimeLeft(180)
             setTimerRunning(false)
             setExecutedPlayer(null)
@@ -465,7 +472,8 @@ export default function Page() {
       <div
         className={styles.screenBase}
         style={{
-          backgroundImage: `url(/image/${theme}/night-bg.png)`
+          backgroundImage: `url(/image/${theme}/bg_night.png)`,
+          backgroundSize: theme === "mama" ? "contain" : "cover"
         }}
       >
         <AliveCounter players={players} theme={theme} currentPlayer={currentPlayer} phase={phase} />
@@ -822,7 +830,7 @@ export default function Page() {
               )
             }
 
-            {(player.role?.id === "villager" || player.role?.id === "madman" )&& !showNextButton && (
+            {(player.role?.id === "villager" || player.role?.id === "madman" || player.role?.id === "medium") && !showNextButton && (
               <p>次のプレイヤーへ進むボタンが<br></br>表示されるまでお待ちください...</p>
             )}
 
@@ -906,8 +914,10 @@ export default function Page() {
 
       <div
         style={{
-          backgroundImage: `url(/image/${theme}/vote-bg.png)`,
-          backgroundSize: "contain",
+          backgroundImage: theme === "mama"
+            ? `url(/image/${theme}/bg_vote.png)`
+            : `url(/image/${theme}/bg_day.png)`,
+          backgroundSize: theme === "mama" ? "contain" : "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
 
@@ -1166,10 +1176,10 @@ export default function Page() {
       <div
         style={{
           backgroundImage: discussionReady
-            ? `url(/image/${theme}/day-bg.png)`
-            : `url(/image/${theme}/morning-bg.png)`,
+            ? `url(/image/${theme}/bg_day.png)`
+            : `url(/image/${theme}/bg_morning.png)`,
 
-          backgroundSize: "contain",
+          backgroundSize: theme === "mama" ? "contain" : "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
 
@@ -1341,7 +1351,8 @@ export default function Page() {
       <div
         className={styles.screenBase}
         style={{
-          backgroundImage: `url(/image/${theme}/night-bg.png)`
+          backgroundImage: `url(/image/${theme}/bg_night.png)`,
+          backgroundSize: theme === "mama" ? "contain" : "cover"
         }}
       >
         <AliveCounter players={players} theme={theme} currentPlayer={currentPlayer} phase={phase} />
@@ -1513,6 +1524,79 @@ export default function Page() {
     )
   }
 
+  // モード選択画面
+  if (phase === "modeSelect") {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 32,
+          background: "linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+        }}
+      >
+        <img
+          src="/icon.png"
+          alt="スマホGM人狼"
+          style={{ width: 120, height: 120, borderRadius: 24, boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
+        />
+
+        <h1
+          style={{
+            color: "white",
+            fontSize: 32,
+            fontWeight: "bold",
+            letterSpacing: 4,
+            textShadow: "0 2px 12px rgba(0,0,0,0.6)",
+            margin: 0,
+          }}
+        >
+          スマホGM人狼
+        </h1>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, width: 240 }}>
+          <button
+            onClick={() => setPhase("setup")}
+            style={{
+              padding: "16px 0",
+              fontSize: 20,
+              fontWeight: "bold",
+              borderRadius: 14,
+              border: "none",
+              background: "linear-gradient(135deg, #e05c5c, #c0392b)",
+              color: "white",
+              cursor: "pointer",
+              boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+            }}
+          >
+            🐺 人狼ゲーム
+          </button>
+
+          <button
+            onClick={() => router.push("/onenightwolf")}
+            style={{
+              padding: "16px 0",
+              fontSize: 20,
+              fontWeight: "bold",
+              borderRadius: 14,
+              border: "none",
+              background: "linear-gradient(135deg, #5b86e5, #36d1dc)",
+              color: "white",
+              cursor: "pointer",
+              boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+            }}
+          >
+            🌙 一夜人狼
+          </button>
+        </div>
+
+      </div>
+    )
+  }
+
   // トップページ
   return (
 
@@ -1525,63 +1609,48 @@ export default function Page() {
       }}
     >
 
-      <div
-        style={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 10,
-          marginBottom: 3
-        }}
-      >
+      {/* 1段目：戻る ／ ルール設定 */}
+      <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+        <button
+          onClick={() => setPhase("modeSelect")}
+          style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontSize: 14 }}
+        >
+          ← 戻る
+        </button>
 
         <button
+          onClick={() => setShowSettings(true)}
+          style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontWeight: "normal", opacity: 0.9 }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#f5f5f5" }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "#fff" }}
+        >
+          ルール設定
+        </button>
+      </div>
+
+      {/* 2段目：イラスト切替 */}
+      <div style={{ width: "100%", display: "flex", justifyContent: "flex-end", gap: 10, marginBottom: 3 }}>
+        <button
           onClick={() => setTheme("mama")}
-          className={`${styles.illustrationButton} ${
-            theme === "mama" ? styles.illustrationButtonActive : ""
-          }`}
+          className={`${styles.illustrationButton} ${theme === "mama" ? styles.illustrationButtonActive : ""}`}
         >
           イラスト1
         </button>
 
         <button
           onClick={() => setTheme("ai")}
-          className={`${styles.illustrationButton} ${
-            theme === "ai" ? styles.illustrationButtonActive : ""
-          }`}
+          className={`${styles.illustrationButton} ${theme === "ai" ? styles.illustrationButtonActive : ""}`}
         >
           イラスト2
         </button>
-
-        <button
-          onClick={() => setShowSettings(true)}
-          style={{
-            padding: "6px 14px",
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            background: "#fff",
-            cursor: "pointer",
-            fontWeight: "normal",
-            opacity: 0.9
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#f5f5f5"
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#fff"
-          }}
-        >
-          おまけ
-        </button>
-
       </div>
 
       <img
         src={`/image/${theme}/title.png`}
         style={{
-          width: "90%",
+          width: "100%",
           maxWidth: 400,
-          maxHeight: 120,
+          maxHeight: theme === "ai" ? 160 : 120,
           marginBottom: 3
         }}
       />
