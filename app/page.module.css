@@ -88,6 +88,42 @@
   background: #3399ff;
 }
 
+/* ママテーマ用トグルラベル */
+.toggleLabelMama {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+  background: rgba(130, 115, 175, 0.15);
+}
+
+.toggleLabelMamaActive {
+  background: rgba(115, 100, 160, 0.28);
+  box-shadow: 0 2px 8px rgba(90, 75, 135, 0.25);
+}
+
+/* ママテーマ用チェックボックス */
+.toggleBoxMama {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid #544880;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f0eeff;
+  font-size: 14px;
+  font-weight: bold;
+  background: transparent;
+}
+
+.toggleBoxMamaActive {
+  background: #6a5aa0;
+}
+
 /* 役職確認や夜のプレイヤー表示 */
 .playerBadge {
   font-size: 20px;
@@ -97,6 +133,50 @@
   background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(4px);
   margin-bottom: 10px;
+}
+
+/* ママテーマ用プレイヤーバッジ */
+.playerBadgeMama {
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  padding: 8px 20px;
+  border-radius: 999px;
+
+  background: rgba(190, 230, 170, 0.15);
+  border: 1px solid rgba(190, 230, 170, 0.4);
+
+  color: #eaf6e3;
+}
+
+/* ママテーマ用ボタン */
+.orangeButtonMama {
+  margin-top: 20px;
+  padding: 14px 28px;
+  font-size: 20px;
+  border-radius: 999px;
+
+  background: #b8d8a8;
+  border: 2px solid #95c47c;
+
+  color: #2f4a2a;
+  font-weight: bold;
+
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+}
+
+/* ママテーマ用ボタン（パステルラベンダー） */
+.blueButtonMama {
+  margin-top: 20px;
+  padding: 14px 36px;
+  font-size: 20px;
+  border-radius: 999px;
+  border: 2px solid #95c47c;
+  background: #b8d8a8;
+  color: #2f4a2a;
+  font-weight: bold;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  cursor: pointer;
 }
 
 /* 役職確認や夜の一番外のdiv */

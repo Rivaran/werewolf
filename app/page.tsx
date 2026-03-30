@@ -209,7 +209,19 @@ export default function Page() {
 
           }}
 
-          style={{
+          style={theme === "mama" ? {
+            marginTop: 40,
+            padding: "14px 36px",
+            fontSize: 20,
+            borderRadius: 999,
+            border: "2px solid #505050",
+            background: executing ? "rgba(150,150,150,0.5)" : "#6b6b6b",
+            color: "white",
+            fontWeight: "bold",
+            boxShadow: "0 3px 10px rgba(0,0,0,0.35)",
+            cursor: executing ? "not-allowed" : "pointer",
+            opacity: executing ? 0.7 : 1
+          } : {
             marginTop: 40,
             padding: "14px 36px",
             fontSize: 20,
@@ -340,7 +352,18 @@ export default function Page() {
           onClick={() => {
             setPhase("reveal")
           }}
-          style={{
+          style={theme === "mama" ? {
+            padding: "16px 40px",
+            marginTop: 120,
+            fontSize: 22,
+            borderRadius: 999,
+            border: "2px solid #222",
+            background: "#222",
+            color: "white",
+            fontWeight: "bold",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+            cursor: "pointer",
+          } : {
             padding: "16px 40px",
             marginTop: 120,
             fontSize: 22,
@@ -442,7 +465,17 @@ export default function Page() {
             setWolfTarget(null)
             setGuardTargets({})
           }}
-          style={{
+          style={theme === "mama" ? {
+            padding: "16px 40px",
+            fontSize: 22,
+            borderRadius: 999,
+            border: "2px solid #222",
+            background: "#222",
+            color: "white",
+            fontWeight: "bold",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+            cursor: "pointer",
+          } : {
             padding: "16px 40px",
             fontSize: 22,
             borderRadius: 14,
@@ -488,7 +521,7 @@ export default function Page() {
 
           <div className={`${styles.flexCenterColumn} ${styles.gap16}`}>
 
-            <div className={styles.playerBadge}>
+            <div className={theme === "mama" ? styles.playerBadgeMama : styles.playerBadge}>
               プレイヤー {currentPlayer}
             </div>
 
@@ -514,7 +547,7 @@ export default function Page() {
 
               }
             }
-            className={styles.orangeButton}
+            className={theme === "mama" ? styles.orangeButtonMama : styles.orangeButton}
             >
             画面タップ
             </button>
@@ -876,7 +909,7 @@ export default function Page() {
                       return
                     }
                   }}
-                  className={styles.blueButton}
+                  className={theme === "mama" ? styles.blueButtonMama : styles.blueButton}
                   >
                     次のプレイヤー
                 </button>
@@ -1007,7 +1040,17 @@ export default function Page() {
                 >
                   <button
                     onClick={() => executePlayer(voteTarget)}
-                    style={{
+                    style={theme === "mama" ? {
+                      padding: "12px 26px",
+                      fontSize: 18,
+                      borderRadius: 999,
+                      background: "#6b6b6b",
+                      border: "2px solid #505050",
+                      color: "white",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      boxShadow: "0 3px 10px rgba(0,0,0,0.35)"
+                    } : {
                       padding: "12px 26px",
                       fontSize: 18,
                       borderRadius: 12,
@@ -1247,7 +1290,13 @@ export default function Page() {
           <div
             style={{
               marginTop: 10,
-              textAlign: "center"
+              textAlign: "center",
+              ...(theme === "mama" && !discussionReady && !isPaused && {
+                background: "rgba(0,0,0,0.45)",
+                backdropFilter: "blur(4px)",
+                borderRadius: 16,
+                padding: "12px 32px"
+              })
             }}
           >
 
@@ -1369,13 +1418,13 @@ export default function Page() {
 
             <div className={`${styles.flexCenterColumn} ${styles.gap16}`}>
 
-              <div className={styles.playerBadge}>
+              <div className={theme === "mama" ? styles.playerBadgeMama : styles.playerBadge}>
                 プレイヤー {currentPlayer}
               </div>
 
               <button
                 onClick={revealRole}
-                className={styles.orangeButton}
+                className={theme === "mama" ? styles.orangeButtonMama : styles.orangeButton}
               >
                 役職確認
               </button>
@@ -1497,7 +1546,7 @@ export default function Page() {
 
               <button
                 onClick={nextPlayer}
-                className={styles.blueButton}
+                className={theme === "mama" ? styles.blueButtonMama : styles.blueButton}
               >
                 確認済
               </button>
@@ -1779,13 +1828,13 @@ export default function Page() {
 
               <label
                 onClick={() => setShowWolfToMadman(!showWolfToMadman)}
-                className={`${styles.toggleLabel} ${
-                  showWolfToMadman ? styles.toggleLabelActive : ""
+                className={`${theme === "mama" ? styles.toggleLabelMama : styles.toggleLabel} ${
+                  showWolfToMadman ? (theme === "mama" ? styles.toggleLabelMamaActive : styles.toggleLabelActive) : ""
                 }`}
               >
                 <div
-                  className={`${styles.toggleBox} ${
-                    showWolfToMadman ? styles.toggleBoxActive : ""
+                  className={`${theme === "mama" ? styles.toggleBoxMama : styles.toggleBox} ${
+                    showWolfToMadman ? (theme === "mama" ? styles.toggleBoxMamaActive : styles.toggleBoxActive) : ""
                   }`}
                 >
                   {showWolfToMadman ? "✓" : ""}
@@ -1796,13 +1845,13 @@ export default function Page() {
 
               <label
                 onClick={() => setShowMadmanToWolf(!showMadmanToWolf)}
-                className={`${styles.toggleLabel} ${
-                  showMadmanToWolf ? styles.toggleLabelActive : ""
+                className={`${theme === "mama" ? styles.toggleLabelMama : styles.toggleLabel} ${
+                  showMadmanToWolf ? (theme === "mama" ? styles.toggleLabelMamaActive : styles.toggleLabelActive) : ""
                 }`}
               >
                 <div
-                  className={`${styles.toggleBox} ${
-                    showMadmanToWolf ? styles.toggleBoxActive : ""
+                  className={`${theme === "mama" ? styles.toggleBoxMama : styles.toggleBox} ${
+                    showMadmanToWolf ? (theme === "mama" ? styles.toggleBoxMamaActive : styles.toggleBoxActive) : ""
                   }`}
                 >
                   {showMadmanToWolf ? "✓" : ""}
@@ -1813,7 +1862,16 @@ export default function Page() {
 
               <button
                 onClick={() => setShowSettings(false)}
-                style={{
+                style={theme === "mama" ? {
+                  padding: "10px 24px",
+                  borderRadius: 999,
+                  border: "2px solid #544880",
+                  background: "#6a5aa0",
+                  color: "#f0eeff",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  boxShadow: "0 3px 10px rgba(70,55,115,0.4)"
+                } : {
                   padding: "10px 20px",
                   borderRadius: 10,
                   border: "none",
