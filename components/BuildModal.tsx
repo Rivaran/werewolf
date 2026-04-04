@@ -1,3 +1,4 @@
+import styles from "@/app/page.module.css"
 import { ResultType } from "@/types/result"
 
 type Props = {
@@ -121,15 +122,20 @@ export default function BuildModal({
 
         <button
           onClick={onClose}
+          className={theme === "mama" ? styles.modalActionButtonMama : undefined}
           style={{
             marginTop: 16,
-            padding: "10px 24px",
-            borderRadius: 10,
-            border: "none",
-            background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
-            color: "white",
-            fontWeight: "bold",
-            cursor: "pointer"
+            ...(theme === "mama"
+              ? {}
+              : {
+                  padding: "10px 24px",
+                  borderRadius: 10,
+                  border: "none",
+                  background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+                  color: "white",
+                  fontWeight: "bold",
+                  cursor: "pointer"
+                })
           }}
         >
           閉じる

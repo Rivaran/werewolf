@@ -1289,7 +1289,10 @@ export default function Page() {
 
           <div
             style={{
-              marginTop: 10,
+              marginTop:
+                theme === "mama" && !discussionReady && !isPaused
+                  ? -88
+                  : 10,
               textAlign: "center",
               ...(theme === "mama" && !discussionReady && !isPaused && {
                 background: "rgba(0,0,0,0.45)",

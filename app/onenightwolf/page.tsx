@@ -128,7 +128,10 @@ export default function OneNightWolfPage() {
               <div style={{ textAlign: "center", marginTop: 20 }}>
                 <button
                   onClick={() => s.setShowRecommended(false)}
-                  style={{ padding: "10px 36px", fontSize: 16, borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", cursor: "pointer", fontWeight: "bold" }}
+                  className={s.theme === "mama" ? styles.modalActionButtonMama : undefined}
+                  style={s.theme === "mama"
+                    ? {}
+                    : { padding: "10px 36px", fontSize: 16, borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", cursor: "pointer", fontWeight: "bold" }}
                 >
                   閉じる
                 </button>
@@ -219,7 +222,10 @@ export default function OneNightWolfPage() {
                 )}
                 <button
                   onClick={s.robberNewRole.id === "werewolf" ? s.confirmRobberResult : s.nextNightPlayer}
-                  style={{ marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
+                  className={s.theme === "mama" ? styles.modalActionButtonMama : undefined}
+                  style={s.theme === "mama"
+                    ? { marginTop: 16 }
+                    : { marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
                 >
                   {s.robberNewRole.id === "werewolf" ? "確認済" : "次のプレイヤーへ"}
                 </button>
@@ -275,7 +281,10 @@ export default function OneNightWolfPage() {
                 <p style={{ fontSize: 20, fontWeight: "bold", marginTop: 8 }}>{s.seerResult.name}</p>
                 <button
                   onClick={s.confirmSeerResult}
-                  style={{ marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
+                  className={s.theme === "mama" ? styles.modalActionButtonMama : undefined}
+                  style={s.theme === "mama"
+                    ? { marginTop: 16 }
+                    : { marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
                 >
                   確認済
                 </button>
@@ -296,7 +305,10 @@ export default function OneNightWolfPage() {
                 </div>
                 <button
                   onClick={s.confirmSeerResult}
-                  style={{ marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
+                  className={s.theme === "mama" ? styles.modalActionButtonMama : undefined}
+                  style={s.theme === "mama"
+                    ? { marginTop: 16 }
+                    : { marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
                 >
                   確認済
                 </button>
@@ -327,7 +339,10 @@ export default function OneNightWolfPage() {
               )}
               <button
                 onClick={() => s.setWolfModalOpen(false)}
-                style={{ marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "rgba(220,50,50,0.8)", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
+                className={s.theme === "mama" ? styles.modalActionButtonMama : undefined}
+                style={s.theme === "mama"
+                  ? { marginTop: 16 }
+                  : { marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "rgba(220,50,50,0.8)", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
               >
                 閉じる
               </button>
