@@ -13,11 +13,13 @@ import {
 
 type Theme = "mama" | "ai"
 type SourceMode = "genre" | "gm" | "random"
-type WordWolfPhase = "setup" | "distribution" | "discussion" | "voteStart" | "vote" | "result"
+type WordWolfPhase = "setup" | "distribution" | "discussion" | "voteStart" | "vote" | "result" | "reveal"
+type Winner = "villagers" | "werewolves" | null
 type Participant = {
   id: number
   role: "villager" | "werewolf"
   word: string
+  alive: boolean
 }
 
 function shuffle<T>(items: T[]) {
@@ -55,6 +57,8 @@ export default function WordWolfPage() {
   const [showWord, setShowWord] = useState(false)
   const [selectedVoteTarget, setSelectedVoteTarget] = useState<number | null>(null)
   const [executedPlayer, setExecutedPlayer] = useState<number | null>(null)
+  const [winner, setWinner] = useState<Winner>(null)
+  const [day, setDay] = useState(1)
   const [timeLeft, setTimeLeft] = useState(180)
   const [timerRunning, setTimerRunning] = useState(false)
 
@@ -147,6 +151,7 @@ export default function WordWolfPage() {
       id: index + 1,
       role,
       word: role === "werewolf" ? werewolfWord : villagerWord,
+      alive: true,
     }))
 
     setParticipants(nextParticipants)
@@ -154,6 +159,8 @@ export default function WordWolfPage() {
     setShowWord(false)
     setSelectedVoteTarget(null)
     setExecutedPlayer(null)
+    setWinner(null)
+    setDay(1)
     setTimeLeft(180)
     setTimerRunning(false)
     discussionEndedRef.current = false
@@ -226,6 +233,48 @@ export default function WordWolfPage() {
     return participants[currentPlayer - 1]
   }
 
+  async function executeSelectedPlayer() {
+    if (!selectedParticipant) return
+
+    const nextParticipants = participants.map((participant) =>
+      participant.id === selectedParticipant.id
+        ? { ...participant, alive: false }
+        : participant
+    )
+
+    const remainingWerewolves = nextParticipants.filter(
+      (participant) => participant.alive && participant.role === "werewolf"
+    ).length
+
+    setParticipants(nextParticipants)
+    setExecutedPlayer(selectedParticipant.id)
+    setSelectedVoteTarget(null)
+
+    await playAudio(`/audio/[07-${selectedParticipant.id}]${selectedParticipant.id}番のプレイヤーは追放されます。遺言をどうぞ.wav`)
+
+    if (selectedParticipant.role === "villager") {
+      setWinner("werewolves")
+      setPhase("result")
+      await playAudio("/audio/[09-1]人狼陣営の勝利です.wav")
+      return
+    }
+
+    if (remainingWerewolves === 0) {
+      setWinner("villagers")
+      setPhase("result")
+      await playAudio("/audio/[09-2]村人陣営の勝利です.wav")
+      return
+    }
+
+    const nextDay = day + 1
+    setDay(nextDay)
+    setTimeLeft(120)
+    setTimerRunning(true)
+    discussionEndedRef.current = false
+    setPhase("discussion")
+    await playAudio("/audio/[04-3]議論時間は２分です。議論を開始してください.wav")
+  }
+
   const previewRoles = [
     ...Array.from({ length: wolfCount }, () => ({
       name: "人狼",
@@ -241,7 +290,7 @@ export default function WordWolfPage() {
 
   const selectedParticipant = selectedVoteTarget == null
     ? null
-    : participants.find((participant) => participant.id === selectedVoteTarget) ?? null
+    : participants.find((participant) => participant.id === selectedVoteTarget && participant.alive) ?? null
 
   if (phase === "setup") {
     return (
@@ -479,13 +528,8 @@ export default function WordWolfPage() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, textAlign: "center", padding: "0 20px" }}>
-            <img
-              src={`/image/${theme}/${participant.role === "werewolf" ? "人狼" : "村人"}.png`}
-              alt={participant.role === "werewolf" ? "人狼" : "村人"}
-              width={200}
-            />
             <p style={{ fontSize: 32, fontWeight: "bold", textShadow: "0 0 10px rgba(255,255,255,0.6)" }}>
-              {participant.role === "werewolf" ? "人狼" : "村人"}
+              あなたのワード
             </p>
             <div
               style={{
@@ -534,11 +578,14 @@ export default function WordWolfPage() {
       }}>
         <div style={{ position: "absolute", top: 60, left: "50%", transform: "translateX(-50%)", textAlign: "center" }}>
           <h1 style={{ fontSize: 34, textShadow: "0 3px 12px rgba(0,0,0,0.6)", letterSpacing: 2 }}>
-            議論タイム
+            {day}日目の昼
           </h1>
         </div>
 
         <div style={{ marginTop: 80, display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+          <div style={{ fontSize: 28, fontWeight: "bold", textShadow: "0 3px 12px rgba(0,0,0,0.45)" }}>
+            残り時間
+          </div>
           <div style={{ fontSize: 64, fontWeight: "bold", letterSpacing: 4, textShadow: "0 4px 16px rgba(0,0,0,0.5)" }}>
             {formatTime(timeLeft)}
           </div>
@@ -657,7 +704,7 @@ export default function WordWolfPage() {
         <h1>追放するプレイヤーを選択</h1>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14 }}>
-          {participants.map((participant) => (
+          {participants.filter((participant) => participant.alive).map((participant) => (
             <button
               key={participant.id}
               onClick={() => setSelectedVoteTarget(participant.id)}
@@ -683,10 +730,7 @@ export default function WordWolfPage() {
             <p>プレイヤー {selectedParticipant.id} を追放しますか？</p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 14 }}>
               <button
-                onClick={() => {
-                  setExecutedPlayer(selectedParticipant.id)
-                  setPhase("result")
-                }}
+                onClick={() => { void executeSelectedPlayer() }}
                 style={{
                   padding: "10px 22px",
                   fontSize: 16,
@@ -718,6 +762,144 @@ export default function WordWolfPage() {
             </div>
           </div>
         )}
+      </div>
+    )
+  }
+
+  if (phase === "result") {
+    return (
+      <div style={{
+        backgroundImage: `url(/image/${theme}/bg_vote.png)`,
+        backgroundSize: theme === "mama" ? "contain" : "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundBlendMode: "darken",
+        backgroundColor: "rgba(0,0,0,0.35)",
+        color: "white",
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 20,
+        padding: "0 20px",
+        textAlign: "center",
+      }}>
+        <h1 style={{ fontSize: 40, letterSpacing: 2, textShadow: "0 4px 16px rgba(0,0,0,0.6)" }}>
+          {winner === "villagers" ? "村人陣営の勝利" : "人狼陣営の勝利"}
+        </h1>
+        <p style={{ fontSize: 22, fontWeight: "bold" }}>
+          追放：{executedPlayer}番
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, width: 240 }}>
+          <button
+            onClick={() => setPhase("reveal")}
+            style={{
+              padding: "12px 0",
+              fontSize: 16,
+              borderRadius: 12,
+              border: "none",
+              background: "rgba(255,255,255,0.2)",
+              color: "#fff",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            🔎 ネタバラシ
+          </button>
+          <button
+            onClick={() => setPhase("setup")}
+            className={theme === "mama" ? styles.wordWolfStartButtonMama : styles.wordWolfStartButtonAi}
+          >
+            もう一度
+          </button>
+          <button
+            onClick={() => router.push("/")}
+            style={{ padding: "12px 0", fontSize: 16, borderRadius: 12, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", cursor: "pointer" }}
+          >
+            トップへ
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (phase === "reveal") {
+    return (
+      <div style={{
+        backgroundImage: `url(/image/${theme}/bg_vote.png)`,
+        backgroundSize: theme === "mama" ? "contain" : "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundBlendMode: "darken",
+        backgroundColor: "rgba(0,0,0,0.45)",
+        color: "white",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        gap: 20,
+        padding: "90px 20px 40px",
+      }}>
+        <h1 style={{ fontSize: 40, letterSpacing: 2, textShadow: "0 4px 16px rgba(0,0,0,0.6)" }}>
+          🔎 ネタバラシ
+        </h1>
+
+        <div style={{ width: "min(100%, 560px)", display: "flex", flexDirection: "column", gap: 14 }}>
+          {participants.map((participant) => (
+            <div
+              key={participant.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "88px 1fr",
+                gap: 14,
+                alignItems: "center",
+                padding: "14px 16px",
+                borderRadius: 16,
+                background: participant.alive
+                  ? "rgba(255,255,255,0.12)"
+                  : "rgba(255,107,107,0.2)",
+                backdropFilter: "blur(4px)",
+              }}
+            >
+              <img
+                src={`/image/${theme}/${participant.role === "werewolf" ? "人狼" : "村人"}.png`}
+                alt={participant.role === "werewolf" ? "人狼" : "村人"}
+                width={88}
+                height={88}
+                style={{ objectFit: "contain", borderRadius: 12 }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ fontSize: 24, fontWeight: "bold" }}>
+                  プレイヤー {participant.id}
+                </div>
+                <div style={{ fontSize: 18, opacity: 0.92 }}>
+                  {participant.role === "werewolf" ? "人狼" : "村人"}
+                  {participant.alive ? " / 生存" : " / 追放"}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: "bold", color: "#fff4a8" }}>
+                  お題：{participant.word}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, width: 240 }}>
+          <button
+            onClick={() => setPhase("setup")}
+            className={theme === "mama" ? styles.wordWolfStartButtonMama : styles.wordWolfStartButtonAi}
+          >
+            もう一度
+          </button>
+          <button
+            onClick={() => router.push("/")}
+            style={{ padding: "12px 0", fontSize: 16, borderRadius: 12, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", cursor: "pointer" }}
+          >
+            トップへ
+          </button>
+        </div>
       </div>
     )
   }
