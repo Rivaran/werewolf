@@ -441,7 +441,7 @@ export default function Page() {
             cursor: "pointer"
           }}
           >
-          杩芥斁鑰呴伕鎶炵敾闈伕
+          追放者選択画面へ
         </button>
 
       </div>
