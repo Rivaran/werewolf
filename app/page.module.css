@@ -191,6 +191,73 @@
   cursor: pointer;
 }
 
+.modalActionButtonMamaPurple {
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 2px solid #544880;
+  background: #6a5aa0;
+  color: #f0eeff;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(70,55,115,0.4);
+}
+
+.mainStartButtonAi {
+  margin-top: 30px;
+  padding: 16px 44px;
+  font-size: 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: linear-gradient(135deg, #b54867 0%, #c94b5f 50%, #8f2848 100%);
+  color: #fff8fb;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(104, 26, 49, 0.2);
+}
+
+.mainStartButtonMama {
+  margin-top: 30px;
+  padding: 16px 44px;
+  font-size: 22px;
+  border-radius: 18px;
+  border: 2px solid #e05d6e;
+  background: #ff6b6b;
+  color: white;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(160, 70, 80, 0.18);
+}
+
+.oneNightStartButtonAi {
+  margin-top: 30px;
+  padding: 16px 44px;
+  font-size: 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(135deg, #29214f 0%, #3e2f74 48%, #17132c 100%);
+  color: #f8f6ff;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(22, 18, 44, 0.32);
+}
+
+.oneNightStartButtonMama {
+  margin-top: 30px;
+  padding: 16px 44px;
+  font-size: 22px;
+  border-radius: 18px;
+  border: 2px solid #5f4b98;
+  background: #7a68b0;
+  color: #f8f6ff;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(46, 35, 88, 0.22);
+}
+
 /* 役職確認や夜の一番外のdiv */
 .screenBase {
   background-position: center;

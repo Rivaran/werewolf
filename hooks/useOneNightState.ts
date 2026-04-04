@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { Player, Role } from "@/types/player"
 
 export type OneNightPhase =
@@ -124,7 +124,7 @@ export function useOneNightState() {
     setSetupSlots(buildRecommended(n, theme))
   }
 
-  function handleDragEnd(event: any) {
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (!over) return
     const role = roles.find(r => r.id === active.id)

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { Player } from "@/types/player"
 import { ResultType } from "@/types/result"
 
@@ -10,7 +10,7 @@ export function useGameState() {
   // =========== STATE ===========
 
   const [winner, setWinner] = useState<"villagers" | "werewolves" | "werewolves_by_no_knight" | null>(null)
-  const [mounted, setMounted] = useState(false)
+  const mounted = true
   const [wolfTarget, setWolfTarget] = useState<number | null>(null)
   const [guardTargets, setGuardTargets] = useState<Record<number, number>>({})
   const [seerResults, setSeerResults] = useState<Record<number, Record<number, "white" | "black">>>({})
@@ -23,7 +23,7 @@ export function useGameState() {
   const [showWolfToMadman, setShowWolfToMadman] = useState(true)
   const [showMadmanToWolf, setShowMadmanToWolf] = useState(true)
   const [showSettings, setShowSettings] = useState(false)
-  const [morningHandled, setMorningHandled] = useState(false)
+  const morningHandledRef = useRef(false)
   const [executing, setExecuting] = useState(false)
   const [discussionReady, setDiscussionReady] = useState(false)
   const [discussionEnded, setDiscussionEnded] = useState(false)
@@ -418,7 +418,7 @@ export function useGameState() {
   }
 
   // ドロップ関数
-  function handleDragEnd(event: any) {
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
 
     if (!over) return
@@ -594,16 +594,17 @@ export function useGameState() {
   // =========== EFFECTS ===========
 
   // 初回レンダリング後に処理する用
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   // 夜フェーズ描画後処理
   useEffect(() => {
     if (phase === "night") {
-      setGuardTargets({})
-      setWolfTarget(null)
-      setSeerActed({})
+      const timeoutId = setTimeout(() => {
+        setGuardTargets({})
+        setWolfTarget(null)
+        setSeerActed({})
+      }, 0)
+
+      return () => clearTimeout(timeoutId)
     }
   }, [phase])
 
@@ -619,16 +620,20 @@ export function useGameState() {
   // 追放フェーズ描画後処理
   useEffect(() => {
     if (phase === "vote") {
-      setVoteTarget(null)
-      setTieMode(false)
-      setTieTargets([])
+      const timeoutId = setTimeout(() => {
+        setVoteTarget(null)
+        setTieMode(false)
+        setTieTargets([])
+      }, 0)
+
+      return () => clearTimeout(timeoutId)
     }
   }, [phase])
 
   // 朝フェーズ以外の描画後処理
   useEffect(() => {
     if (phase !== "morning") {
-      setMorningHandled(false)
+      morningHandledRef.current = false
     }
   }, [phase])
 
@@ -636,9 +641,9 @@ export function useGameState() {
   useEffect(() => {
 
     if (phase !== "morning") return
-    if (morningHandled) return
+    if (morningHandledRef.current) return
 
-    setMorningHandled(true)
+    morningHandledRef.current = true
 
     async function runMorning() {
 
@@ -698,7 +703,6 @@ export function useGameState() {
     showWolfToMadman,
     showMadmanToWolf,
     showSettings,
-    morningHandled,
     executing,
     discussionReady,
     discussionEnded,

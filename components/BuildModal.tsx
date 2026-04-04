@@ -1,10 +1,11 @@
 import styles from "@/app/page.module.css"
+import { Player } from "@/types/player"
 import { ResultType } from "@/types/result"
 
 type Props = {
   isOpen: boolean
   onClose: () => void
-  players: any[]
+  players: (Player | null)[]
   currentPlayer: number
   results: Record<number, {
   type: ResultType

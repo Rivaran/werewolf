@@ -1,5 +1,6 @@
-"use client"
+﻿"use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { DndContext } from "@dnd-kit/core"
 
@@ -11,10 +12,32 @@ import PlayerSlot from "@/components/PlayerSlot"
 import styles from "./page.module.css"
 import { useGameState } from "@/hooks/useGameState"
 
-// 画面の処理
+const ROLE_SUMMARY_ORDER = [
+  { id: "werewolf", label: "人狼" },
+  { id: "madman", label: "狂人" },
+  { id: "seer", label: "占い師" },
+  { id: "knight", label: "騎士" },
+  { id: "medium", label: "霊能者" },
+  { id: "villager", label: "村人" },
+] as const
+
+function formatRoleSummary(players: Array<{ role?: { id: string } } | null>) {
+  const counts = players.reduce<Record<string, number>>((acc, player) => {
+    const roleId = player?.role?.id
+    if (!roleId) return acc
+    acc[roleId] = (acc[roleId] ?? 0) + 1
+    return acc
+  }, {})
+
+  return ROLE_SUMMARY_ORDER
+    .map(({ id, label }) => ({ label, count: counts[id] ?? 0 }))
+    .filter(item => item.count > 0)
+}
+
 export default function Page() {
 
   const router = useRouter()
+  const [showRoleSummary, setShowRoleSummary] = useState(false)
 
   const {
     winner,
@@ -102,10 +125,125 @@ export default function Page() {
     canShowNightButton,
   } = useGameState()
 
-  // 初回レンダリング後に処理する用らしい
+  const roleSummary = formatRoleSummary(players)
+
+  function renderRoleSummaryButton() {
+    if (roleSummary.length === 0) return null
+
+    return (
+      <>
+        <button
+          onClick={() => setShowRoleSummary(true)}
+          style={theme === "mama" ? {
+            position: "fixed",
+            left: 20,
+            bottom: 20,
+            zIndex: 1000,
+            padding: "12px 20px",
+            fontSize: 15,
+            borderRadius: 999,
+            border: "2px solid #95c47c",
+            background: "rgba(184,216,168,0.95)",
+            color: "#2f4a2a",
+            fontWeight: "bold",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+            cursor: "pointer",
+          } : {
+            position: "fixed",
+            left: 20,
+            bottom: 20,
+            zIndex: 1000,
+            padding: "12px 18px",
+            fontSize: 14,
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,0.35)",
+            background: "rgba(0,0,0,0.35)",
+            color: "white",
+            backdropFilter: "blur(4px)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+            cursor: "pointer",
+          }}
+        >
+          全体配役
+        </button>
+
+        {showRoleSummary && (
+          <div
+            onClick={() => setShowRoleSummary(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.55)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2000,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "min(88vw, 360px)",
+                background: "rgba(255,255,255,0.95)",
+                color: "#222",
+                borderRadius: 20,
+                padding: 24,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+              }}
+            >
+              <div style={{ fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 18 }}>
+                全体配役
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {roleSummary.map(({ label, count }) => (
+                  <div
+                    key={label}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 14px",
+                      borderRadius: 12,
+                      background: "rgba(0,0,0,0.06)",
+                      fontSize: 18,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    <span>{label}</span>
+                    <span>×{count}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
+                <button
+                  onClick={() => setShowRoleSummary(false)}
+                  className={theme === "mama" ? styles.modalActionButtonMama : undefined}
+                  style={theme === "mama"
+                    ? {}
+                    : {
+                        padding: "10px 24px",
+                        borderRadius: 10,
+                        border: "none",
+                        background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+                        color: "white",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                      }}
+                >
+                  閉じる
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    )
+  }
+
   if (!mounted) return null
 
-  // 遺言～夜時間まで(遺言～勝敗画面まで)フェーズ
   if (phase === "execute") {
 
     return (
@@ -239,13 +377,13 @@ export default function Page() {
         >
           {executing ? "処理中..." : "夜時間へ"}
         </button>
+        {renderRoleSummaryButton()}
       </div>
 
     )
 
   }
 
-  // 投票フェーズ
   if (phase === "voteStart") {
 
     return (
@@ -303,7 +441,7 @@ export default function Page() {
             cursor: "pointer"
           }}
           >
-          追放者選択画面へ
+          杩芥斁鑰呴伕鎶炵敾闈伕
         </button>
 
       </div>
@@ -312,7 +450,6 @@ export default function Page() {
 
   }
 
-  // 勝敗表示フェーズ
   if (phase === "result") {
 
     const bgImage =
@@ -378,11 +515,11 @@ export default function Page() {
         >
           ネタバラシ
         </button>
+        {renderRoleSummaryButton()}
       </div>
     )
   }
 
-  // ネタバラシフェーズ
   if (phase === "reveal") {
 
     const bgImage =
@@ -395,12 +532,15 @@ export default function Page() {
         style={{
           background: `${bgImage} center / ${theme === "mama" ? "contain" : "cover"} no-repeat`,
           color: "white",
-          height: "100vh",
+          minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
-          gap: 20
+          justifyContent: "flex-start",
+          gap: 20,
+          paddingTop: 90,
+          paddingBottom: 40,
+          overflowY: "auto"
         }}
       >
 
@@ -489,12 +629,12 @@ export default function Page() {
         >
           トップへ
         </button>
+        {renderRoleSummaryButton()}
 
       </div>
     )
   }
 
-  // 夜フェーズ
   if (phase === "night") {
 
     const player = players[currentPlayer - 1]
@@ -614,7 +754,7 @@ export default function Page() {
                       fontWeight: "bold",
                       marginBottom: 12,
                     }}>
-                    プレイヤー {seerToday[currentPlayer].target} は
+                    プレイヤー {seerToday[currentPlayer].target} は{" "}
                     {seerToday[currentPlayer].result === "white"
                       ? "人狼ではありません"
                       : "人狼です"}
@@ -864,7 +1004,7 @@ export default function Page() {
             }
 
             {(player.role?.id === "villager" || player.role?.id === "madman" || player.role?.id === "medium") && !showNextButton && (
-              <p>次のプレイヤーへ進むボタンが<br></br>表示されるまでお待ちください...</p>
+              <p>次のプレイヤーへ進むボタンが<br />表示されるまでお待ちください...</p>
             )}
 
             {showNextButton &&
@@ -936,11 +1076,11 @@ export default function Page() {
                 : "🔍 占い結果"
           }
         />
+        {renderRoleSummaryButton()}
       </div>
     )
   }
 
-    // 追放者決定フェーズ
   if (phase === "vote") {
 
     return (
@@ -959,13 +1099,16 @@ export default function Page() {
 
           color: "white",
 
-          height: "100vh",
+          minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "flex-start",
           gap: 20,
-          position: "relative"
+          position: "relative",
+          paddingTop: 140,
+          paddingBottom: 40,
+          overflowY: "auto"
         }}
       >
         <AliveCounter players={players} theme={theme} currentPlayer={currentPlayer} phase={phase} />
@@ -978,10 +1121,19 @@ export default function Page() {
             transform: "translateX(-50%)",
             fontSize: 34,
             textShadow: "0 3px 12px rgba(0,0,0,0.6)",
-            letterSpacing: 2
+            letterSpacing: 2,
+            textAlign: "center",
+            width: "100%",
+            lineHeight: 1.25
           }}
         >
-          {tieMode ? "同数プレイヤーを選択" : "追放者決定"}
+          {tieMode ? (
+            <>
+              同数プレイヤー
+              <br />
+              を選択
+            </>
+          ) : "追放者決定"}
         </h1>
 
         {!tieMode && (
@@ -1040,24 +1192,14 @@ export default function Page() {
                 >
                   <button
                     onClick={() => executePlayer(voteTarget)}
+                    className={theme === "mama" ? styles.blueButtonMama : styles.blueButton}
                     style={theme === "mama" ? {
+                      marginTop: 0,
                       padding: "12px 26px",
-                      fontSize: 18,
-                      borderRadius: 999,
-                      background: "#6b6b6b",
-                      border: "2px solid #505050",
-                      color: "white",
-                      cursor: "pointer",
-                      fontWeight: "bold",
-                      boxShadow: "0 3px 10px rgba(0,0,0,0.35)"
                     } : {
+                      marginTop: 0,
                       padding: "12px 26px",
                       fontSize: 18,
-                      borderRadius: 12,
-                      background: "#4fa3ff",
-                      border: "none",
-                      color: "white",
-                      cursor: "pointer",
                     }}
                   >
                     決定
@@ -1103,7 +1245,7 @@ export default function Page() {
 
         {tieMode && (
           <>
-            <p style={{ margin: 0, opacity: 0.8, fontSize: 15 }}>
+            <p style={{ margin: "32px 0 0", opacity: 0.8, fontSize: 15 }}>
               同数だったプレイヤーを選択してください（複数選択）
             </p>
 
@@ -1201,6 +1343,7 @@ export default function Page() {
             </div>
           </>
         )}
+        {renderRoleSummaryButton()}
 
       </div>
 
@@ -1208,11 +1351,11 @@ export default function Page() {
 
   }
 
-  // 朝フェーズ
   if (phase === "morning") {
 
     const isDiscussion = discussionReady && timerRunning
     const isPaused = discussionReady && !timerRunning && !discussionEnded
+    const isMamaMorningLayout = theme === "mama" && !discussionReady && !isPaused
 
     return (
 
@@ -1238,9 +1381,10 @@ export default function Page() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: isMamaMorningLayout ? "flex-start" : "center",
           gap: 20,
-          position: "relative"
+          position: "relative",
+          paddingTop: isMamaMorningLayout ? 140 : 0
         }}
       >
 
@@ -1271,7 +1415,10 @@ export default function Page() {
           {!timerRunning && day !== 0 && !isPaused && (
             <div
               style={{
-                marginTop: 120,
+                marginTop:
+                  isMamaMorningLayout
+                    ? 0
+                    : 120,
                 padding: "16px 28px",
                 borderRadius: 16,
                 background: "rgba(0,0,0,0.45)",
@@ -1290,11 +1437,13 @@ export default function Page() {
           <div
             style={{
               marginTop:
-                theme === "mama" && !discussionReady && !isPaused
-                  ? -88
+                isMamaMorningLayout
+                  ? day !== 0
+                    ? 20
+                    : 12
                   : 10,
               textAlign: "center",
-              ...(theme === "mama" && !discussionReady && !isPaused && {
+              ...(isMamaMorningLayout && !discussionReady && !isPaused && {
                 background: "rgba(0,0,0,0.45)",
                 backdropFilter: "blur(4px)",
                 borderRadius: 16,
@@ -1388,11 +1537,11 @@ export default function Page() {
             再開
           </button>
         )}
+        {renderRoleSummaryButton()}
       </div>
     )
   }
 
-  // 役職確認フェーズ
   if (phase === "roleCheck") {
 
     const player = players[currentPlayer - 1]
@@ -1572,11 +1721,11 @@ export default function Page() {
               : "🔍 占い結果"
           }
         />
+        {renderRoleSummaryButton()}
       </div>
     )
   }
 
-  // モード選択画面
   if (phase === "modeSelect") {
     return (
       <div
@@ -1643,13 +1792,29 @@ export default function Page() {
           >
             🌙 一夜人狼
           </button>
+
+          <button
+            onClick={() => router.push("/wordwolf")}
+            style={{
+              padding: "16px 0",
+              fontSize: 20,
+              fontWeight: "bold",
+              borderRadius: 14,
+              border: "none",
+              background: "linear-gradient(135deg, #6f58c9, #9b7bff)",
+              color: "white",
+              cursor: "pointer",
+              boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+            }}
+          >
+            🗣 言葉人狼
+          </button>
         </div>
 
       </div>
     )
   }
 
-  // トップページ
   return (
 
     <div
@@ -1775,16 +1940,7 @@ export default function Page() {
 
       <button
         onClick={startGame}
-        style={{
-          marginTop: 30,
-          padding: "14px 40px",
-          fontSize: 22,
-          background: "#ff6b6b",
-          color: "#fff",
-          border: "none",
-          borderRadius: 12,
-          cursor: "pointer"
-        }}
+        className={theme === "mama" ? styles.mainStartButtonMama : styles.mainStartButtonAi}
       >
         ゲーム開始
       </button>

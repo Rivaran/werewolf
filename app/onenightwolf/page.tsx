@@ -1,11 +1,12 @@
-"use client"
+﻿"use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { DndContext } from "@dnd-kit/core"
 import RoleCard from "@/components/RoleCard"
 import PlayerSlot from "@/components/PlayerSlot"
 import styles from "@/app/page.module.css"
-import { useOneNightState, buildRecommended } from "@/hooks/useOneNightState"
+import { useOneNightState } from "@/hooks/useOneNightState"
 
 const RECOMMENDED = [
   { players: 3, roles: "人狼×2、村人×1、占い師×1、怪盗×1" },
@@ -14,7 +15,13 @@ const RECOMMENDED = [
   { players: 6, roles: "人狼×2、村人×4、占い師×1、怪盗×1" },
 ]
 
-// 共通の背景スタイル
+const ROLE_SUMMARY_ORDER = [
+  { id: "werewolf", label: "人狼" },
+  { id: "seer", label: "占い師" },
+  { id: "robber", label: "怪盗" },
+  { id: "villager", label: "村人" },
+]
+
 function bgStyle(theme: string, img: string) {
   return {
     backgroundImage: `url(/image/${theme}/${img})`,
@@ -37,13 +44,134 @@ function bgStyle(theme: string, img: string) {
 export default function OneNightWolfPage() {
   const router = useRouter()
   const s = useOneNightState()
+  const [showRoleSummary, setShowRoleSummary] = useState(false)
 
-  // ===================== セットアップ =====================
+  const roleSummary = ROLE_SUMMARY_ORDER
+    .map(({ id, label }) => ({
+      label,
+      count: s.setupSlots.filter(player => player?.role.id === id).length,
+    }))
+    .filter(item => item.count > 0)
+
+  function renderRoleSummaryButton() {
+    if (roleSummary.length === 0 || s.phase === "setup") return null
+
+    return (
+      <>
+        <button
+          onClick={() => setShowRoleSummary(true)}
+          style={s.theme === "mama" ? {
+            position: "fixed",
+            left: 20,
+            bottom: 20,
+            zIndex: 1000,
+            padding: "12px 20px",
+            fontSize: 15,
+            borderRadius: 999,
+            border: "2px solid #95c47c",
+            background: "rgba(184,216,168,0.95)",
+            color: "#2f4a2a",
+            fontWeight: "bold",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+            cursor: "pointer",
+          } : {
+            position: "fixed",
+            left: 20,
+            bottom: 20,
+            zIndex: 1000,
+            padding: "12px 18px",
+            fontSize: 14,
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,0.35)",
+            background: "rgba(0,0,0,0.35)",
+            color: "white",
+            backdropFilter: "blur(4px)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+            cursor: "pointer",
+          }}
+        >
+          全体配役
+        </button>
+
+        {showRoleSummary && (
+          <div
+            onClick={() => setShowRoleSummary(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.55)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2000,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "min(88vw, 360px)",
+                background: "rgba(255,255,255,0.95)",
+                color: "#222",
+                borderRadius: 20,
+                padding: 24,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+              }}
+            >
+              <div style={{ fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 18 }}>
+                全体配役
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {roleSummary.map(({ label, count }) => (
+                  <div
+                    key={label}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 14px",
+                      borderRadius: 12,
+                      background: "rgba(0,0,0,0.06)",
+                      fontSize: 18,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    <span>{label}</span>
+                    <span>×{count}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
+                <button
+                  onClick={() => setShowRoleSummary(false)}
+                  className={s.theme === "mama" ? styles.modalActionButtonMama : undefined}
+                  style={s.theme === "mama"
+                    ? {}
+                    : {
+                        padding: "10px 24px",
+                        borderRadius: 10,
+                        border: "none",
+                        background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+                        color: "white",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                      }}
+                >
+                  閉じる
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    )
+  }
+
+
   if (s.phase === "setup") {
     return (
       <div style={{ padding: 20, display: "flex", flexDirection: "column", alignItems: "center" }}>
-
-        {/* 1段目 */}
         <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
           <button
             onClick={() => router.push("/")}
@@ -59,7 +187,6 @@ export default function OneNightWolfPage() {
           </button>
         </div>
 
-        {/* 2段目 */}
         <div style={{ width: "100%", display: "flex", justifyContent: "flex-end", gap: 10, marginBottom: 3 }}>
           <button
             onClick={() => s.setTheme("mama")}
@@ -77,6 +204,7 @@ export default function OneNightWolfPage() {
 
         <img
           src={`/image/${s.theme}/title_ichi.png`}
+          alt=""
           style={{ width: "90%", maxWidth: 400, maxHeight: 200, marginBottom: 3 }}
         />
 
@@ -109,12 +237,11 @@ export default function OneNightWolfPage() {
 
         <button
           onClick={s.startGame}
-          style={{ marginTop: 30, padding: "14px 40px", fontSize: 22, background: "#5b86e5", color: "#fff", border: "none", borderRadius: 12, cursor: "pointer" }}
+          className={s.theme === "mama" ? styles.oneNightStartButtonMama : styles.oneNightStartButtonAi}
         >
           ゲーム開始
         </button>
 
-        {/* おすすめモーダル */}
         {s.showRecommended && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
             <div style={{ background: "#fff", padding: 28, borderRadius: 16, width: 320, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", color: "#222" }}>
@@ -128,10 +255,10 @@ export default function OneNightWolfPage() {
               <div style={{ textAlign: "center", marginTop: 20 }}>
                 <button
                   onClick={() => s.setShowRecommended(false)}
-                  className={s.theme === "mama" ? styles.modalActionButtonMama : undefined}
+                  className={s.theme === "mama" ? styles.modalActionButtonMamaPurple : undefined}
                   style={s.theme === "mama"
                     ? {}
-                    : { padding: "10px 36px", fontSize: 16, borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", cursor: "pointer", fontWeight: "bold" }}
+                    : { padding: "10px 36px", fontSize: 16, borderRadius: 10, border: "none", background: "linear-gradient(135deg,#6bd4ff,#2b8cff)", color: "#fff", cursor: "pointer", fontWeight: "bold", boxShadow: "0 6px 16px rgba(0,0,0,0.35)" }}
                 >
                   閉じる
                 </button>
@@ -143,7 +270,6 @@ export default function OneNightWolfPage() {
     )
   }
 
-  // ===================== 夜フェーズ =====================
   if (s.phase === "night") {
     const player = s.originalPlayers[s.currentPlayer - 1]
     const roleId = s.currentNightRoleId
@@ -152,32 +278,33 @@ export default function OneNightWolfPage() {
 
     return (
       <div className={styles.screenBase} style={{ backgroundImage: `url(/image/${s.theme}/bg_night.png)`, backgroundSize: s.theme === "mama" ? "contain" : "cover" }}>
-
         <div style={{ position: "absolute", top: 60, left: "50%", transform: "translateX(-50%)", textAlign: "center" }}>
-          <h1 style={{ fontSize: 28, letterSpacing: 2, textShadow: "0 3px 12px rgba(0,0,0,0.6)" }}>夜時間</h1>
+          <h1 style={{ fontSize: 34, letterSpacing: 2, textShadow: "0 3px 12px rgba(0,0,0,0.6)" }}>夜時間</h1>
         </div>
 
         {!s.nightActionReady ? (
-          /* 行動前：役職を開く */
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-            <p style={{ fontSize: 20 }}>{s.currentPlayer}番のプレイヤーの番です</p>
-            <p style={{ fontSize: 15, opacity: 0.8 }}>他のプレイヤーは目を瞑ってください</p>
-            <button onClick={s.beginNightAction} className={styles.orangeButton}>画面タップ</button>
+          <div className={`${styles.flexCenterColumn} ${styles.gap16}`}>
+            <div className={s.theme === "mama" ? styles.playerBadgeMama : styles.playerBadge}>
+              プレイヤー {s.currentPlayer}
+            </div>
+            <button
+              onClick={s.beginNightAction}
+              className={s.theme === "mama" ? styles.orangeButtonMama : styles.orangeButton}
+            >
+              画面タップ
+            </button>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center", padding: "0 20px" }}>
+            <img src={player?.role.img} width={200} alt={player?.role.name} />
+            <p style={{ fontSize: 32, fontWeight: "bold", textShadow: "0 0 10px rgba(255,255,255,0.6)" }}>{player?.role.name}</p>
 
-            <img src={player?.role.img} width={80} alt={player?.role.name} />
-            <p style={{ fontSize: 22, fontWeight: "bold" }}>{player?.role.name}</p>
-
-            {/* 村人 */}
             {roleId === "villager" && (
               <p style={{ fontSize: 16, opacity: 0.85 }}>
-                {s.showNextButton ? "行動完了です" : "次のプレイヤーへ進むボタンが\n表示されるまでお待ちください..."}
+                {!s.showNextButton && <>次のプレイヤーへ進むボタンが<br />表示されるまでお待ちください...</>}
               </p>
             )}
 
-            {/* 人狼 */}
             {roleId === "werewolf" && (
               <>
                 <button
@@ -192,7 +319,6 @@ export default function OneNightWolfPage() {
               </>
             )}
 
-            {/* 怪盗：相手選択 */}
             {roleId === "robber" && s.robberTarget === null && (
               <>
                 <p style={{ fontSize: 16 }}>役職を交換したいプレイヤーを選んでください</p>
@@ -203,18 +329,17 @@ export default function OneNightWolfPage() {
                       onClick={() => s.handleRobberSelect(p.id)}
                       style={{ padding: "12px 20px", borderRadius: 10, border: "none", background: "rgba(255,255,255,0.75)", color: "#333", fontSize: 18, fontWeight: "bold", cursor: "pointer" }}
                     >
-                      {p.id}番
+                      プレイヤー{p.id}
                     </button>
                   ))}
                 </div>
               </>
             )}
 
-            {/* 怪盗：結果 */}
             {roleId === "robber" && s.robberNewRole !== null && !s.showNextButton && (
               <div style={{ background: "rgba(0,0,0,0.55)", borderRadius: 14, padding: "20px 28px", textAlign: "center" }}>
                 <p style={{ fontSize: 16, marginBottom: 10 }}>
-                  {s.robberTarget}番のプレイヤーと役職を交換しました
+                  プレイヤー{s.robberTarget}と役職を交換しました
                 </p>
                 <p style={{ fontSize: 20, fontWeight: "bold", marginTop: 8 }}>あなたの新しい役職：{s.robberNewRole.name}</p>
                 {s.robberNewRole.id === "werewolf" && (
@@ -222,17 +347,16 @@ export default function OneNightWolfPage() {
                 )}
                 <button
                   onClick={s.robberNewRole.id === "werewolf" ? s.confirmRobberResult : s.nextNightPlayer}
-                  className={s.theme === "mama" ? styles.modalActionButtonMama : undefined}
+                  className={s.theme === "mama" ? styles.modalActionButtonMama : styles.blueButton}
                   style={s.theme === "mama"
                     ? { marginTop: 16 }
-                    : { marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
+                    : { marginTop: 16, padding: "10px 32px", fontSize: 16 }}
                 >
                   {s.robberNewRole.id === "werewolf" ? "確認済" : "次のプレイヤーへ"}
                 </button>
               </div>
             )}
 
-            {/* 占い師：選択タイプ */}
             {roleId === "seer" && s.seerChoiceType === null && (
               <>
                 <p style={{ fontSize: 16 }}>占い方法を選んでください</p>
@@ -253,7 +377,6 @@ export default function OneNightWolfPage() {
               </>
             )}
 
-            {/* 占い師：プレイヤー選択 */}
             {roleId === "seer" && s.seerChoiceType === "player" && s.seerResult === null && (
               <>
                 <p style={{ fontSize: 16 }}>占うプレイヤーを選んでください</p>
@@ -264,34 +387,32 @@ export default function OneNightWolfPage() {
                       onClick={() => s.handleSeerPlayerSelect(p.id)}
                       style={{ padding: "12px 20px", borderRadius: 10, border: "none", background: "rgba(255,255,255,0.75)", color: "#333", fontSize: 18, fontWeight: "bold", cursor: "pointer" }}
                     >
-                      {p.id}番
+                      プレイヤー{p.id}
                     </button>
                   ))}
                 </div>
               </>
             )}
 
-            {/* 占い師：プレイヤー結果 */}
             {roleId === "seer" && s.seerResult !== null && !s.showNextButton && (
               <div style={{ background: "rgba(0,0,0,0.55)", borderRadius: 14, padding: "20px 28px", textAlign: "center" }}>
-                <p style={{ fontSize: 16, marginBottom: 10 }}>{s.seerTarget}番のプレイヤーの役職</p>
+                <p style={{ fontSize: 16, marginBottom: 10 }}>プレイヤー{s.seerTarget}の役職</p>
                 <div style={{ display: "flex", justifyContent: "center" }}>
                   <img src={s.seerResult.img} width={70} alt={s.seerResult.name} />
                 </div>
                 <p style={{ fontSize: 20, fontWeight: "bold", marginTop: 8 }}>{s.seerResult.name}</p>
                 <button
                   onClick={s.confirmSeerResult}
-                  className={s.theme === "mama" ? styles.modalActionButtonMama : undefined}
+                  className={s.theme === "mama" ? styles.modalActionButtonMama : styles.blueButton}
                   style={s.theme === "mama"
                     ? { marginTop: 16 }
-                    : { marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
+                    : { marginTop: 16, padding: "10px 32px", fontSize: 16 }}
                 >
                   確認済
                 </button>
               </div>
             )}
 
-            {/* 占い師：中央2枚結果 */}
             {roleId === "seer" && s.seerCenterResult !== null && !s.showNextButton && (
               <div style={{ background: "rgba(0,0,0,0.55)", borderRadius: 14, padding: "20px 28px", textAlign: "center" }}>
                 <p style={{ fontSize: 16, marginBottom: 10 }}>配役されなかった2枚の役職</p>
@@ -305,36 +426,33 @@ export default function OneNightWolfPage() {
                 </div>
                 <button
                   onClick={s.confirmSeerResult}
-                  className={s.theme === "mama" ? styles.modalActionButtonMama : undefined}
+                  className={s.theme === "mama" ? styles.modalActionButtonMama : styles.blueButton}
                   style={s.theme === "mama"
                     ? { marginTop: 16 }
-                    : { marginTop: 16, padding: "10px 32px", borderRadius: 10, border: "none", background: "#5b86e5", color: "#fff", fontSize: 16, cursor: "pointer", fontWeight: "bold" }}
+                    : { marginTop: 16, padding: "10px 32px", fontSize: 16 }}
                 >
                   確認済
                 </button>
               </div>
             )}
 
-            {/* 次のプレイヤーへ */}
             {s.showNextButton && (
-              <button onClick={s.nextNightPlayer} className={styles.blueButton}>
+              <button onClick={s.nextNightPlayer} className={s.theme === "mama" ? styles.blueButtonMama : styles.blueButton}>
                 {s.currentPlayer < s.players.length ? "次のプレイヤーへ" : "夜が明けます"}
               </button>
             )}
-
           </div>
         )}
 
-        {/* 人狼仲間モーダル */}
         {s.wolfModalOpen && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
             <div style={{ background: "#1a1a2e", border: "1px solid rgba(255,100,100,0.4)", borderRadius: 16, padding: 28, width: 300, color: "#fff", textAlign: "center" }}>
-              <p style={{ fontSize: 18, fontWeight: "bold", marginBottom: 16 }}>👥 仲間の人狼</p>
+              <p style={{ fontSize: 18, fontWeight: "bold", marginBottom: 16 }}>人狼の仲間</p>
               {wolfAllies.length === 0 ? (
                 <p style={{ opacity: 0.7 }}>あなたは一匹狼です</p>
               ) : (
                 wolfAllies.map(p => p && (
-                  <p key={p.id} style={{ fontSize: 18, marginBottom: 8 }}>{p.id}番のプレイヤー</p>
+                  <p key={p.id} style={{ fontSize: 18, marginBottom: 8 }}>プレイヤー{p.id}</p>
                 ))
               )}
               <button
@@ -349,20 +467,32 @@ export default function OneNightWolfPage() {
             </div>
           </div>
         )}
+        {renderRoleSummaryButton()}
       </div>
     )
   }
 
-  // ===================== 朝・議論 =====================
   if (s.phase === "morning" || s.phase === "discussion") {
     const isDiscussion = s.phase === "discussion"
+    const isMamaMorning = s.theme === "mama" && !isDiscussion
     return (
       <div style={{
         ...bgStyle(s.theme, isDiscussion ? "bg_day.png" : "bg_morning.png"),
-        backgroundColor: s.timerRunning ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.45)",
+        backgroundColor: isMamaMorning ? "transparent" : (s.timerRunning ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.45)"),
       }}>
         <div style={{ position: "absolute", top: 60, left: "50%", transform: "translateX(-50%)", textAlign: "center" }}>
-          <h1 style={{ fontSize: 34, textShadow: "0 3px 12px rgba(0,0,0,0.6)", letterSpacing: 2 }}>
+          <h1 style={{
+            fontSize: "clamp(28px, 8vw, 34px)",
+            padding: isMamaMorning ? "8px 18px" : undefined,
+            borderRadius: isMamaMorning ? 16 : undefined,
+            background: isMamaMorning ? "rgba(0,0,0,0.18)" : undefined,
+            boxShadow: isMamaMorning ? "0 6px 18px rgba(0,0,0,0.10)" : undefined,
+            textShadow: isMamaMorning
+              ? "0 2px 0 rgba(0,0,0,0.28), 0 0 18px rgba(0,0,0,0.22), 0 0 32px rgba(255,255,255,0.35)"
+              : "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 2,
+            whiteSpace: "nowrap",
+          }}>
             {isDiscussion ? "議論タイム" : "朝になりました"}
           </h1>
         </div>
@@ -395,21 +525,52 @@ export default function OneNightWolfPage() {
             )}
           </div>
         )}
+        {renderRoleSummaryButton()}
       </div>
     )
   }
 
-  // ===================== 投票開始 =====================
   if (s.phase === "voteStart") {
     return (
-      <div style={bgStyle(s.theme, "bg_vote.png")}>
-        <h1 style={{ fontSize: 34, letterSpacing: 3, textShadow: "0 3px 16px rgba(0,0,0,0.6)" }}>投票タイム</h1>
+      <div
+        style={{
+          backgroundImage: s.theme === "mama"
+            ? `url(/image/${s.theme}/bg_voteStart.png)`
+            : `url(/image/${s.theme}/bg_day.png)`,
+          backgroundSize: s.theme === "mama" ? "contain" : "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundBlendMode: "darken",
+          backgroundColor: "rgba(0,0,0,0.25)",
+          color: "white",
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20,
+          position: "relative",
+        }}
+      >
+        <h1
+          style={{
+            position: "absolute",
+            top: 60,
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: 34,
+            textShadow: "0 3px 12px rgba(0,0,0,0.6)",
+            letterSpacing: 2,
+          }}
+        >
+          投票タイム
+        </h1>
         <p style={{ fontSize: 18, opacity: 0.85 }}>処理中...</p>
+        {renderRoleSummaryButton()}
       </div>
     )
   }
 
-  // ===================== 投票 =====================
   if (s.phase === "vote") {
     return (
       <div style={{
@@ -428,10 +589,15 @@ export default function OneNightWolfPage() {
               key={p.id}
               onClick={() => s.toggleVoteTarget(p.id)}
               style={{
-                width: 160, padding: 12, fontSize: 18, borderRadius: 12,
+                width: 160,
+                padding: 12,
+                fontSize: 18,
+                borderRadius: 12,
                 border: s.voteTargets.includes(p.id) ? "3px solid #ff6b6b" : "1px solid rgba(255,255,255,0.25)",
                 background: s.voteTargets.includes(p.id) ? "rgba(255,107,107,0.7)" : "rgba(255,255,255,0.6)",
-                color: "#222", fontWeight: "bold", cursor: "pointer",
+                color: "#222",
+                fontWeight: "bold",
+                cursor: "pointer",
               }}
             >
               {p.id}番
@@ -450,22 +616,22 @@ export default function OneNightWolfPage() {
           )}
           <button
             onClick={s.declarePeace}
-            style={{ padding: "14px 32px", fontSize: 20, borderRadius: 14, border: "none", background: "linear-gradient(135deg,#a8e6cf,#3d9970)", color: "#fff", fontWeight: "bold", cursor: "pointer", boxShadow: "0 6px 16px rgba(0,0,0,0.35)" }}
+            style={{ display: s.voteTargets.length > 0 ? "none" : "block", padding: "14px 32px", fontSize: 20, borderRadius: 14, border: "none", background: "linear-gradient(135deg,#a8e6cf,#3d9970)", color: "#fff", fontWeight: "bold", cursor: "pointer", boxShadow: "0 6px 16px rgba(0,0,0,0.35)" }}
           >
             🕊 平和
           </button>
         </div>
+        {renderRoleSummaryButton()}
       </div>
     )
   }
 
-  // ===================== 勝利発表 =====================
   if (s.phase === "result") {
     const isVillage = s.winner === "village"
     const bgImg = isVillage ? "bg_win_village.png" : "bg_win_wolf.png"
     const winnerLabel =
       s.winner === "village" ? "村人陣営の勝利" :
-      s.winner === "wolf"    ? "人狼陣営の勝利" : "全員敗北"
+      s.winner === "wolf" ? "人狼陣営の勝利" : "全員敗北"
 
     return (
       <div style={{
@@ -502,7 +668,29 @@ export default function OneNightWolfPage() {
           </button>
           <button
             onClick={() => s.setPhase("setup")}
-            style={{ padding: "14px 0", fontSize: 18, fontWeight: "bold", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#6bd4ff,#2b8cff)", color: "#fff", cursor: "pointer" }}
+            style={s.theme === "mama"
+              ? {
+                  padding: "14px 0",
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  borderRadius: 12,
+                  border: "2px solid #505050",
+                  background: "#6b6b6b",
+                  color: "#fff",
+                  boxShadow: "0 3px 10px rgba(0,0,0,0.35)",
+                  cursor: "pointer",
+                }
+              : {
+                  padding: "14px 0",
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "linear-gradient(135deg,#6bd4ff,#2b8cff)",
+                  color: "#fff",
+                  boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+                  cursor: "pointer",
+                }}
           >
             もう一度
           </button>
@@ -513,11 +701,11 @@ export default function OneNightWolfPage() {
             トップへ
           </button>
         </div>
+        {renderRoleSummaryButton()}
       </div>
     )
   }
 
-  // ===================== ネタバラシ =====================
   if (s.phase === "reveal") {
     return (
       <div style={{ padding: 20, minHeight: "100vh", background: "#1a1a2e", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -563,7 +751,9 @@ export default function OneNightWolfPage() {
         <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
           <button
             onClick={() => s.setPhase("setup")}
-            style={{ padding: "14px 32px", fontSize: 18, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#6bd4ff,#2b8cff)", color: "#fff", fontWeight: "bold", cursor: "pointer" }}
+            style={s.theme === "mama"
+              ? { padding: "14px 32px", fontSize: 18, borderRadius: 12, border: "2px solid #505050", background: "#6b6b6b", color: "#fff", fontWeight: "bold", boxShadow: "0 3px 10px rgba(0,0,0,0.35)", cursor: "pointer" }
+              : { padding: "14px 32px", fontSize: 18, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#6bd4ff,#2b8cff)", color: "#fff", fontWeight: "bold", boxShadow: "0 6px 16px rgba(0,0,0,0.35)", cursor: "pointer" }}
           >
             もう一度
           </button>
@@ -574,9 +764,11 @@ export default function OneNightWolfPage() {
             トップへ
           </button>
         </div>
+        {renderRoleSummaryButton()}
       </div>
     )
   }
 
   return null
 }
+
