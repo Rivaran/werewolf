@@ -533,7 +533,7 @@ export default function WordWolfPage() {
 
         {sourceMode === "random" && (
           <div style={{ width: "min(100%, 420px)", marginTop: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(0,0,0,0.05)", fontSize: 15, lineHeight: 1.6 }}>
-            `data/wordwolfTopics.ts` にあるランダム用お題から配布します。
+            用意されたお題の中から、ランダムでキーワードを配布します。
           </div>
         )}
 
