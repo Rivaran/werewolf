@@ -44,4 +44,7 @@ export const WORDWOLF_GENRE_TOPICS: Record<WordWolfGenre, WordWolfPair[]> = {
 export const WORDWOLF_RANDOM_TOPICS: WordWolfPair[] = [
   { id: "sample-theme-park", words: ["ディズニー", "ユニバーサルスタジオジャパン"] },
   { id: "sample-fruit", words: ["リンゴ", "ナシ"] },
+  { id: "sample-fruit", words: ["リンゴ", "イチゴ"] },
+  { id: "sample-fruit", words: ["ディッシュ", "ウェットティッシュ"] },
+  { id: "sample-fruit", words: ["ネコ", "イヌ"] },
 ]

@@ -258,6 +258,34 @@
   box-shadow: 0 6px 16px rgba(46, 35, 88, 0.22);
 }
 
+.wordWolfStartButtonAi {
+  margin-top: 30px;
+  padding: 16px 44px;
+  font-size: 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(135deg, #7fd36b 0%, #44b98c 52%, #2f9a78 100%);
+  color: #f8fff8;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(41, 122, 95, 0.24);
+}
+
+.wordWolfStartButtonMama {
+  margin-top: 30px;
+  padding: 16px 44px;
+  font-size: 22px;
+  border-radius: 18px;
+  border: 2px solid #6faa60;
+  background: #8cc97a;
+  color: #24401f;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(65, 110, 56, 0.18);
+}
+
 /* 役職確認や夜の一番外のdiv */
 .screenBase {
   background-position: center;

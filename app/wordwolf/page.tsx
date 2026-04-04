@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import styles from "@/app/page.module.css"
 import {
@@ -35,6 +35,10 @@ function pickRandom<T>(items: T[]) {
 
 export default function WordWolfPage() {
   const router = useRouter()
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioResolveRef = useRef<(() => void) | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const discussionEndedRef = useRef(false)
 
   const [theme, setTheme] = useState<Theme>("mama")
   const [playerCount, setPlayerCount] = useState(4)
@@ -54,23 +58,37 @@ export default function WordWolfPage() {
   const [timeLeft, setTimeLeft] = useState(180)
   const [timerRunning, setTimerRunning] = useState(false)
 
-  useEffect(() => {
-    if (!timerRunning) return
+  function playAudio(src: string): Promise<void> {
+    return new Promise((resolve) => {
+      if (!audioRef.current) {
+        audioRef.current = new Audio()
+      }
 
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          setTimerRunning(false)
-          setPhase("voteStart")
-          return 0
+      const audio = audioRef.current
+
+      if (audioResolveRef.current) {
+        audioResolveRef.current()
+        audioResolveRef.current = null
+      }
+
+      audio.pause()
+      audio.currentTime = 0
+
+      const finish = () => {
+        if (audioResolveRef.current === finish) {
+          audioResolveRef.current = null
         }
-        return prev - 1
-      })
-    }, 1000)
+        resolve()
+      }
 
-    return () => clearInterval(timer)
-  }, [timerRunning])
+      audioResolveRef.current = finish
+      audio.onended = finish
+      audio.onerror = finish
+      audio.src = src
+      audio.play().catch(finish)
+      setTimeout(finish, 15000)
+    })
+  }
 
   function formatTime(seconds: number) {
     const minutes = Math.floor(seconds / 60)
@@ -108,7 +126,7 @@ export default function WordWolfPage() {
     return pickRandom(WORDWOLF_RANDOM_TOPICS)
   }
 
-  function startGame() {
+  async function startGame() {
     if (wolfCount <= 0 || wolfCount >= playerCount) {
       alert("人狼数は1人以上、プレイ人数未満にしてください")
       return
@@ -138,13 +156,20 @@ export default function WordWolfPage() {
     setExecutedPlayer(null)
     setTimeLeft(180)
     setTimerRunning(false)
+    discussionEndedRef.current = false
     setPhase("distribution")
+
+    await playAudio("/audio/[00-K]これから言葉人狼を開始します.wav")
+    await playAudio("/audio/[01]役職を配布しますので、皆さん目を瞑ってください.wav")
+    await playAudio("/audio/[11-1]1番の人は他のプレイヤーが目を瞑ったのを確認した後・・・.wav")
   }
 
-  function moveToNextPlayer() {
+  async function moveToNextPlayer() {
     if (currentPlayer < participants.length) {
-      setCurrentPlayer((prev) => prev + 1)
+      const next = currentPlayer + 1
+      setCurrentPlayer(next)
       setShowWord(false)
+      await playAudio(`/audio/[11-${next}]${next}番の人は他のプレイヤーが目を瞑ったのを確認した後・・・.wav`)
       return
     }
 
@@ -152,7 +177,50 @@ export default function WordWolfPage() {
     setTimeLeft(180)
     setTimerRunning(true)
     setPhase("discussion")
+    await playAudio("/audio/[04-2]議論時間は３分です。議論を開始してください.wav")
   }
+
+  async function endDiscussion() {
+    if (discussionEndedRef.current) return
+    discussionEndedRef.current = true
+
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+
+    setTimerRunning(false)
+    setPhase("voteStart")
+    await playAudio("/audio/[05]議論終了の時間となりました。投票に移ります.wav")
+    await playAudio("/audio/[06]5からカウントダウン.wav")
+    setPhase((prev) => (prev === "voteStart" ? "vote" : prev))
+  }
+
+  useEffect(() => {
+    if (!timerRunning) return
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) {
+            clearInterval(timerRef.current)
+            timerRef.current = null
+          }
+          setTimerRunning(false)
+          void endDiscussion()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+    }
+  }, [timerRunning])
 
   function currentParticipant() {
     return participants[currentPlayer - 1]
@@ -174,11 +242,6 @@ export default function WordWolfPage() {
   const selectedParticipant = selectedVoteTarget == null
     ? null
     : participants.find((participant) => participant.id === selectedVoteTarget) ?? null
-
-  const toggleLabelClass = theme === "mama" ? styles.toggleLabelMama : styles.toggleLabel
-  const toggleLabelActiveClass = theme === "mama" ? styles.toggleLabelMamaActive : styles.toggleLabelActive
-  const toggleBoxClass = theme === "mama" ? styles.toggleBoxMama : styles.toggleBox
-  const toggleBoxActiveClass = theme === "mama" ? styles.toggleBoxMamaActive : styles.toggleBoxActive
 
   if (phase === "setup") {
     return (
@@ -283,7 +346,7 @@ export default function WordWolfPage() {
         </div>
 
         <h2 className={styles.sectionTitle}>お題の決め方</h2>
-        <div style={{ width: "min(100%, 420px)", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ width: "min(100%, 420px)", display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
           {[
             { id: "genre", label: "ジャンル" },
             { id: "gm", label: "GM入力" },
@@ -295,13 +358,49 @@ export default function WordWolfPage() {
                 key={option.id}
                 type="button"
                 onClick={() => setSourceMode(option.id as SourceMode)}
-                className={`${toggleLabelClass} ${active ? toggleLabelActiveClass : ""}`}
-                style={{ border: "none", width: "100%", textAlign: "left" }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 16px",
+                  borderRadius: 999,
+                  border: active
+                    ? theme === "mama"
+                      ? "2px solid #95c47c"
+                      : "2px solid #4fa3ff"
+                    : "1px solid rgba(120,120,120,0.4)",
+                  background: active
+                    ? theme === "mama"
+                      ? "rgba(184,216,168,0.95)"
+                      : "rgba(79,163,255,0.12)"
+                    : "rgba(255,255,255,0.82)",
+                  color: "#222",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  minWidth: 120,
+                  justifyContent: "center",
+                  boxShadow: active ? "0 4px 12px rgba(0,0,0,0.12)" : "none",
+                }}
               >
-                <span className={`${toggleBoxClass} ${active ? toggleBoxActiveClass : ""}`}>
-                  {active ? "✓" : ""}
+                <span
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: "50%",
+                    border: active
+                      ? theme === "mama"
+                        ? "5px solid #6ea65b"
+                        : "5px solid #4fa3ff"
+                      : "2px solid #8f8f8f",
+                    background: "white",
+                    boxSizing: "border-box",
+                    flexShrink: 0,
+                  }}
+                >
                 </span>
-                <span style={{ fontSize: 18, fontWeight: "bold" }}>{option.label}</span>
+                <span style={{ fontSize: 18, fontWeight: "bold", whiteSpace: "nowrap" }}>
+                  {option.label}
+                </span>
               </button>
             )
           })}
@@ -348,7 +447,7 @@ export default function WordWolfPage() {
 
         <button
           onClick={startGame}
-          className={theme === "mama" ? styles.oneNightStartButtonMama : styles.oneNightStartButtonAi}
+          className={theme === "mama" ? styles.wordWolfStartButtonMama : styles.wordWolfStartButtonAi}
         >
           ゲーム開始
         </button>
@@ -460,10 +559,9 @@ export default function WordWolfPage() {
                 再開
               </button>
             )}
-            <button
-              onClick={() => {
-                setTimerRunning(false)
-                setPhase("voteStart")
+              <button
+                onClick={() => {
+                void endDiscussion()
               }}
               style={{ padding: "10px 24px", borderRadius: 10, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 16, cursor: "pointer" }}
             >
