@@ -9,16 +9,17 @@ import {
   WORDWOLF_RANDOM_TOPICS,
   type WordWolfGenre,
   type WordWolfPair,
+  type WordWolfWord,
 } from "@/data/wordwolfTopics"
 
 type Theme = "mama" | "ai"
 type SourceMode = "genre" | "gm" | "random"
-type WordWolfPhase = "setup" | "distribution" | "discussion" | "voteStart" | "vote" | "result" | "reveal"
+type WordWolfPhase = "setup" | "distribution" | "discussion" | "voteStart" | "vote" | "execution" | "result" | "reveal"
 type Winner = "villagers" | "werewolves" | null
 type Participant = {
   id: number
   role: "villager" | "werewolf"
-  word: string
+  word: WordWolfWord
   alive: boolean
 }
 
@@ -59,6 +60,8 @@ export default function WordWolfPage() {
   const [executedPlayer, setExecutedPlayer] = useState<number | null>(null)
   const [winner, setWinner] = useState<Winner>(null)
   const [day, setDay] = useState(1)
+  const [tieMode, setTieMode] = useState(false)
+  const [tieTargets, setTieTargets] = useState<number[]>([])
   const [timeLeft, setTimeLeft] = useState(180)
   const [timerRunning, setTimerRunning] = useState(false)
 
@@ -100,6 +103,24 @@ export default function WordWolfPage() {
     return `${minutes}:${String(secs).padStart(2, "0")}`
   }
 
+  function renderWord(word: WordWolfWord, size = 30) {
+    if (!word.reading) {
+      return word.text
+    }
+
+    return (
+      <ruby style={{ rubyAlign: "center" }}>
+        {word.text}
+        <rt style={{ fontSize: Math.max(12, Math.floor(size * 0.4)) }}>{word.reading}</rt>
+      </ruby>
+    )
+  }
+
+  async function announcePlayerTurn(playerNumber: number) {
+    await playAudio(`/audio/[00-C]${playerNumber}.wav`)
+    await playAudio("/audio/[11-K]番の人は他のプレイヤーが目を瞑ったのを確認してから、キーワードを確認してください.wav")
+  }
+
   function buildPair(): WordWolfPair | null {
     if (sourceMode === "genre") {
       return pickRandom(WORDWOLF_GENRE_TOPICS[selectedGenre])
@@ -118,7 +139,7 @@ export default function WordWolfPage() {
 
       return {
         id: "gm-input",
-        words: [gmVillagerWord.trim(), gmWerewolfWord.trim()],
+        words: [{ text: gmVillagerWord.trim() }, { text: gmWerewolfWord.trim() }],
       }
     }
 
@@ -161,14 +182,16 @@ export default function WordWolfPage() {
     setExecutedPlayer(null)
     setWinner(null)
     setDay(1)
+    setTieMode(false)
+    setTieTargets([])
     setTimeLeft(180)
     setTimerRunning(false)
     discussionEndedRef.current = false
     setPhase("distribution")
 
     await playAudio("/audio/[00-K]これから言葉人狼を開始します.wav")
-    await playAudio("/audio/[01]役職を配布しますので、皆さん目を瞑ってください.wav")
-    await playAudio("/audio/[11-1]1番の人は他のプレイヤーが目を瞑ったのを確認した後・・・.wav")
+    await playAudio("/audio/[01-K]キーワードを配布しますので、皆さん目を瞑ってください.wav")
+    await announcePlayerTurn(1)
   }
 
   async function moveToNextPlayer() {
@@ -176,7 +199,7 @@ export default function WordWolfPage() {
       const next = currentPlayer + 1
       setCurrentPlayer(next)
       setShowWord(false)
-      await playAudio(`/audio/[11-${next}]${next}番の人は他のプレイヤーが目を瞑ったのを確認した後・・・.wav`)
+      await announcePlayerTurn(next)
       return
     }
 
@@ -233,11 +256,16 @@ export default function WordWolfPage() {
     return participants[currentPlayer - 1]
   }
 
-  async function executeSelectedPlayer() {
-    if (!selectedParticipant) return
+  async function executePlayerById(playerId: number) {
+    const selectedParticipantById =
+      participants.find((participant) => participant.id === playerId && participant.alive) ?? null
+    if (!selectedParticipantById) return
+
+    const selectedId = selectedParticipantById.id
+    const selectedRole = selectedParticipantById.role
 
     const nextParticipants = participants.map((participant) =>
-      participant.id === selectedParticipant.id
+      participant.id === selectedId
         ? { ...participant, alive: false }
         : participant
     )
@@ -247,20 +275,35 @@ export default function WordWolfPage() {
     ).length
 
     setParticipants(nextParticipants)
-    setExecutedPlayer(selectedParticipant.id)
+    setExecutedPlayer(selectedId)
     setSelectedVoteTarget(null)
+    setTieMode(false)
+    setTieTargets([])
+    setPhase("execution")
 
-    await playAudio(`/audio/[07-${selectedParticipant.id}]${selectedParticipant.id}番のプレイヤーは追放されます。遺言をどうぞ.wav`)
+    void playAudio(`/audio/[07-${selectedId}]${selectedId}番のプレイヤーは追放されます。遺言をどうぞ.wav`)
+    setWinner(
+      selectedRole === "villager"
+        ? "werewolves"
+        : remainingWerewolves === 0
+          ? "villagers"
+          : null
+    )
+  }
 
-    if (selectedParticipant.role === "villager") {
-      setWinner("werewolves")
+  async function executeSelectedPlayer() {
+    if (!selectedParticipant) return
+    await executePlayerById(selectedParticipant.id)
+  }
+
+  async function confirmExecutionResult() {
+    if (winner === "werewolves") {
       setPhase("result")
       await playAudio("/audio/[09-1]人狼陣営の勝利です.wav")
       return
     }
 
-    if (remainingWerewolves === 0) {
-      setWinner("villagers")
+    if (winner === "villagers") {
       setPhase("result")
       await playAudio("/audio/[09-2]村人陣営の勝利です.wav")
       return
@@ -544,7 +587,7 @@ export default function WordWolfPage() {
                 boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
               }}
             >
-              {participant.word}
+              {renderWord(participant.word)}
             </div>
             <button
               onClick={moveToNextPlayer}
@@ -701,20 +744,36 @@ export default function WordWolfPage() {
           追放者決定
         </h1>
 
-        <h1>追放するプレイヤーを選択</h1>
+        <h1>{tieMode ? "同数プレイヤーを選択" : "追放するプレイヤーを選択"}</h1>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14 }}>
           {participants.filter((participant) => participant.alive).map((participant) => (
             <button
               key={participant.id}
-              onClick={() => setSelectedVoteTarget(participant.id)}
+              onClick={() => {
+                if (tieMode) {
+                  setTieTargets((prev) =>
+                    prev.includes(participant.id)
+                      ? prev.filter((id) => id !== participant.id)
+                      : [...prev, participant.id]
+                  )
+                  return
+                }
+                setSelectedVoteTarget(participant.id)
+              }}
               style={{
                 minWidth: 160,
                 padding: "14px 18px",
                 fontSize: 20,
                 borderRadius: 12,
-                border: selectedVoteTarget === participant.id ? "3px solid #ff6b6b" : "1px solid rgba(255,255,255,0.25)",
-                background: selectedVoteTarget === participant.id ? "rgba(255,107,107,0.72)" : "rgba(255,255,255,0.6)",
+                border:
+                  (tieMode ? tieTargets.includes(participant.id) : selectedVoteTarget === participant.id)
+                    ? "3px solid #ff6b6b"
+                    : "1px solid rgba(255,255,255,0.25)",
+                background:
+                  (tieMode ? tieTargets.includes(participant.id) : selectedVoteTarget === participant.id)
+                    ? "rgba(255,107,107,0.72)"
+                    : "rgba(255,255,255,0.6)",
                 color: "#222",
                 fontWeight: "bold",
                 cursor: "pointer",
@@ -725,7 +784,7 @@ export default function WordWolfPage() {
           ))}
         </div>
 
-        {selectedParticipant && (
+        {!tieMode && selectedParticipant && (
           <div style={{ textAlign: "center", marginTop: 10 }}>
             <p>プレイヤー {selectedParticipant.id} を追放しますか？</p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 14 }}>
@@ -762,6 +821,110 @@ export default function WordWolfPage() {
             </div>
           </div>
         )}
+
+        {!tieMode && selectedVoteTarget === null && (
+          <button
+            onClick={() => {
+              setTieMode(true)
+              setSelectedVoteTarget(null)
+              setTieTargets([])
+            }}
+            style={{
+              padding: "12px 22px",
+              fontSize: 16,
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.35)",
+              background: "rgba(255,255,255,0.15)",
+              color: "white",
+              cursor: "pointer",
+            }}
+          >
+            🎲 同数だった場合のランダム追放
+          </button>
+        )}
+
+        {tieMode && (
+          <div style={{ textAlign: "center" }}>
+            <p style={{ marginBottom: 14 }}>同数だったプレイヤーを選択してください（複数選択）</p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+              <button
+                disabled={tieTargets.length < 2}
+                onClick={() => {
+                  const picked = tieTargets[Math.floor(Math.random() * tieTargets.length)]
+                  setTieMode(false)
+                  setTieTargets([])
+                  void executePlayerById(picked)
+                }}
+                style={{
+                  padding: "10px 22px",
+                  fontSize: 16,
+                  borderRadius: 12,
+                  border: "none",
+                  background: tieTargets.length < 2 ? "rgba(255,255,255,0.2)" : "rgba(255,214,102,0.92)",
+                  color: tieTargets.length < 2 ? "rgba(255,255,255,0.7)" : "#5a4300",
+                  fontWeight: "bold",
+                  cursor: tieTargets.length < 2 ? "default" : "pointer",
+                }}
+              >
+                🎲 ランダム追放実行
+              </button>
+              <button
+                onClick={() => {
+                  setTieMode(false)
+                  setTieTargets([])
+                }}
+                style={{
+                  padding: "10px 22px",
+                  fontSize: 16,
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.35)",
+                  background: "rgba(255,255,255,0.15)",
+                  color: "white",
+                  cursor: "pointer",
+                }}
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (phase === "execution") {
+    return (
+      <div style={{
+        backgroundImage: theme === "mama"
+          ? `url(/image/${theme}/bg_vote.png)`
+          : `url(/image/${theme}/bg_day.png)`,
+        backgroundSize: theme === "mama" ? "contain" : "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundBlendMode: "darken",
+        backgroundColor: "rgba(0,0,0,0.35)",
+        color: "white",
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 20,
+        padding: "0 20px",
+        textAlign: "center",
+      }}>
+        <h1 style={{ fontSize: 40, letterSpacing: 2, textShadow: "0 4px 16px rgba(0,0,0,0.6)" }}>
+          追放しました
+        </h1>
+        <p style={{ fontSize: 22, fontWeight: "bold" }}>
+          プレイヤー {executedPlayer}
+        </p>
+        <button
+          onClick={() => { void confirmExecutionResult() }}
+          className={theme === "mama" ? styles.wordWolfStartButtonMama : styles.wordWolfStartButtonAi}
+        >
+          結果確認
+        </button>
       </div>
     )
   }
@@ -769,7 +932,10 @@ export default function WordWolfPage() {
   if (phase === "result") {
     return (
       <div style={{
-        backgroundImage: `url(/image/${theme}/bg_vote.png)`,
+        backgroundImage:
+          winner === "villagers"
+            ? `url(/image/${theme}/bg_win_village.png)`
+            : `url(/image/${theme}/bg_win_wolf.png)`,
         backgroundSize: theme === "mama" ? "contain" : "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -879,7 +1045,7 @@ export default function WordWolfPage() {
                   {participant.alive ? " / 生存" : " / 追放"}
                 </div>
                 <div style={{ fontSize: 22, fontWeight: "bold", color: "#fff4a8" }}>
-                  お題：{participant.word}
+                  お題：{renderWord(participant.word, 22)}
                 </div>
               </div>
             </div>
@@ -903,45 +1069,5 @@ export default function WordWolfPage() {
       </div>
     )
   }
-
-  return (
-    <div style={{
-      backgroundImage: `url(/image/${theme}/bg_vote.png)`,
-      backgroundSize: theme === "mama" ? "contain" : "cover",
-      backgroundPosition: "center",
-      backgroundRepeat: "no-repeat",
-      backgroundBlendMode: "darken",
-      backgroundColor: "rgba(0,0,0,0.35)",
-      color: "white",
-      height: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 20,
-      padding: "0 20px",
-      textAlign: "center",
-    }}>
-      <h1 style={{ fontSize: 40, letterSpacing: 2, textShadow: "0 4px 16px rgba(0,0,0,0.6)" }}>
-        追放しました
-      </h1>
-      <p style={{ fontSize: 22, fontWeight: "bold" }}>
-        プレイヤー {executedPlayer}
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, width: 240 }}>
-        <button
-          onClick={() => setPhase("setup")}
-          className={theme === "mama" ? styles.oneNightStartButtonMama : styles.oneNightStartButtonAi}
-        >
-          もう一度
-        </button>
-        <button
-          onClick={() => router.push("/")}
-          style={{ padding: "12px 0", fontSize: 16, borderRadius: 12, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", cursor: "pointer" }}
-        >
-          トップへ
-        </button>
-      </div>
-    </div>
-  )
+  return null
 }
