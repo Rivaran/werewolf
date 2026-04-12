@@ -395,7 +395,12 @@ export default function OneNightWolfPage() {
             )}
 
             {roleId === "seer" && s.seerResult !== null && !s.showNextButton && (
-              <div style={{ background: "rgba(0,0,0,0.55)", borderRadius: 14, padding: "20px 28px", textAlign: "center" }}>
+              <div style={{
+                background: s.theme === "mama" ? "rgba(0,0,0,0.55)" : "transparent",
+                borderRadius: 14,
+                padding: s.theme === "mama" ? "20px 28px" : "0",
+                textAlign: "center"
+              }}>
                 <p style={{ fontSize: 16, marginBottom: 10 }}>プレイヤー{s.seerTarget}の役職</p>
                 <div style={{ display: "flex", justifyContent: "center" }}>
                   <img src={s.seerResult.img} width={70} alt={s.seerResult.name} />
@@ -414,7 +419,12 @@ export default function OneNightWolfPage() {
             )}
 
             {roleId === "seer" && s.seerCenterResult !== null && !s.showNextButton && (
-              <div style={{ background: "rgba(0,0,0,0.55)", borderRadius: 14, padding: "20px 28px", textAlign: "center" }}>
+              <div style={{
+                background: s.theme === "mama" ? "rgba(0,0,0,0.55)" : "transparent",
+                borderRadius: 14,
+                padding: s.theme === "mama" ? "20px 28px" : "0",
+                textAlign: "center"
+              }}>
                 <p style={{ fontSize: 16, marginBottom: 10 }}>配役されなかった2枚の役職</p>
                 <div style={{ display: "flex", gap: 24, justifyContent: "center" }}>
                   {s.seerCenterResult.map((role, i) => (

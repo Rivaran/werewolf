@@ -305,6 +305,8 @@
   gap: 20;
   position: relative;
   padding-top: 80px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* 中央揃えしたいときのdiv */
