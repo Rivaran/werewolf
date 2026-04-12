@@ -371,7 +371,7 @@ export default function WordWolfPage() {
 
         {showTitleImage && (
           <img
-            src={`/image/${theme}/title_kotobawolf.png`}
+            src={theme === "ai" ? `/image/${theme}/title_word.png` : `/image/${theme}/title_kotobawolf.png`}
             alt="言葉人狼タイトル"
             onError={() => setShowTitleImage(false)}
             style={{ width: "90%", maxWidth: 400, maxHeight: 200, marginBottom: 8 }}
@@ -457,14 +457,10 @@ export default function WordWolfPage() {
                   padding: "10px 16px",
                   borderRadius: 999,
                   border: active
-                    ? theme === "mama"
-                      ? "2px solid #95c47c"
-                      : "2px solid #4fa3ff"
+                    ? "2px solid #95c47c"
                     : "1px solid rgba(120,120,120,0.4)",
                   background: active
-                    ? theme === "mama"
-                      ? "rgba(184,216,168,0.95)"
-                      : "rgba(79,163,255,0.12)"
+                    ? "rgba(184,216,168,0.95)"
                     : "rgba(255,255,255,0.82)",
                   color: "#222",
                   fontWeight: "bold",
@@ -480,9 +476,7 @@ export default function WordWolfPage() {
                     height: 18,
                     borderRadius: "50%",
                     border: active
-                      ? theme === "mama"
-                        ? "5px solid #6ea65b"
-                        : "5px solid #4fa3ff"
+                      ? "5px solid #6ea65b"
                       : "2px solid #8f8f8f",
                     background: "white",
                     boxSizing: "border-box",
