@@ -987,7 +987,12 @@ export default function WordWolfPage() {
   if (phase === "reveal") {
     return (
       <div style={{
-        backgroundImage: `url(/image/${theme}/bg_vote.png)`,
+        backgroundImage:
+          theme === "ai"
+            ? winner === "villagers"
+              ? `url(/image/${theme}/bg_win_village.png)`
+              : `url(/image/${theme}/bg_win_wolf.png)`
+            : `url(/image/${theme}/bg_vote.png)`,
         backgroundSize: theme === "mama" ? "contain" : "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
