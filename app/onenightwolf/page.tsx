@@ -275,6 +275,12 @@ export default function OneNightWolfPage() {
     const roleId = s.currentNightRoleId
     const otherPlayers = s.originalPlayers.filter((_, i) => i !== s.currentPlayer - 1)
     const wolfAllies = s.originalPlayers.filter((p, i) => i !== s.currentPlayer - 1 && p?.role.id === "werewolf")
+    const readyContentPaddingTop =
+      roleId === "villager"
+        ? 112
+        : roleId === "seer"
+          ? 68
+          : 92
 
     return (
       <div
@@ -315,7 +321,7 @@ export default function OneNightWolfPage() {
               alignItems: "center",
               gap: 10,
               textAlign: "center",
-              padding: "92px 20px 20px",
+              padding: `${readyContentPaddingTop}px 20px 20px`,
               width: "100%",
               boxSizing: "border-box",
             }}
