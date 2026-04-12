@@ -281,8 +281,10 @@ export default function OneNightWolfPage() {
         : roleId === "seer"
           ? 52
           : roleId === "robber"
-            ? 72
-          : 92
+            ? 60
+          : roleId === "werewolf"
+            ? 76
+            : 92
 
     return (
       <div
