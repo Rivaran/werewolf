@@ -724,24 +724,44 @@ export default function Page() {
             )}
 
             {player.role.id === "medium" && (
-              <button
-                onClick={() => setModalType("medium")}
-                style={{
-                  marginTop: 12,
-                  marginBottom: 4,
-                  fontSize: 20,
-                  color: "rgba(255,255,255,0.7)",
-                  background: "transparent",
-                  border: "none",
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                }}
-              >
-                👁 霊視結果一覧
-                {Object.keys(mediumResults).length === 0 && (
-                  <span style={{ fontSize: 13, opacity: 0.6, marginLeft: 6 }}>（まだなし）</span>
-                )}
-              </button>
+              <>
+                {Object.keys(mediumResults).length > 0 && (() => {
+                  const latestTarget = Math.max(...Object.keys(mediumResults).map(Number))
+                  const latestResult = mediumResults[latestTarget]
+                  return (
+                    <p
+                      style={{
+                        marginTop: 12,
+                        fontSize: 22,
+                        fontWeight: "bold",
+                        marginBottom: 8,
+                      }}
+                    >
+                      プレイヤー {latestTarget} は{" "}
+                      {latestResult === "black" ? "人狼でした" : "人狼ではありません"}
+                    </p>
+                  )
+                })()}
+
+                <button
+                  onClick={() => setModalType("medium")}
+                  style={{
+                    marginTop: 12,
+                    marginBottom: 4,
+                    fontSize: 20,
+                    color: "rgba(255,255,255,0.7)",
+                    background: "transparent",
+                    border: "none",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
+                >
+                  👁 霊視結果一覧
+                  {Object.keys(mediumResults).length === 0 && (
+                    <span style={{ fontSize: 13, opacity: 0.6, marginLeft: 6 }}>（まだなし）</span>
+                  )}
+                </button>
+              </>
             )}
 
             {player.role?.id === "seer" && (
