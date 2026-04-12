@@ -296,7 +296,7 @@ export default function OneNightWolfPage() {
         </div>
 
         {!s.nightActionReady ? (
-          <div className={`${styles.flexCenterColumn} ${styles.gap16}`} style={{ marginTop: 120 }}>
+          <div className={`${styles.flexCenterColumn} ${styles.gap16}`} style={{ marginTop: 170 }}>
             <div className={s.theme === "mama" ? styles.playerBadgeMama : styles.playerBadge}>
               プレイヤー {s.currentPlayer}
             </div>
@@ -315,7 +315,7 @@ export default function OneNightWolfPage() {
               alignItems: "center",
               gap: 10,
               textAlign: "center",
-              padding: "78px 20px 20px",
+              padding: "112px 20px 20px",
               width: "100%",
               boxSizing: "border-box",
             }}
