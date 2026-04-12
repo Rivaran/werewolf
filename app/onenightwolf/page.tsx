@@ -370,13 +370,13 @@ export default function OneNightWolfPage() {
                   <p style={{ fontSize: 14, opacity: 0.75, marginTop: 6 }}>※仲間の確認はできません</p>
                 )}
                 <button
-                  onClick={s.robberNewRole.id === "werewolf" ? s.confirmRobberResult : s.nextNightPlayer}
+                  onClick={s.nextNightPlayer}
                   className={s.theme === "mama" ? styles.modalActionButtonMama : styles.blueButton}
                   style={s.theme === "mama"
-                    ? { marginTop: 16 }
-                    : { marginTop: 16, padding: "10px 32px", fontSize: 16 }}
+                    ? { marginTop: 16, padding: "14px 40px", fontSize: 18 }
+                    : { marginTop: 16, padding: "14px 40px", fontSize: 18 }}
                 >
-                  {s.robberNewRole.id === "werewolf" ? "確認済" : "次のプレイヤーへ"}
+                  {s.currentPlayer < s.players.length ? "次のプレイヤーへ" : "夜が明けます"}
                 </button>
               </div>
             )}
