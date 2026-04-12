@@ -315,7 +315,7 @@ export default function OneNightWolfPage() {
               alignItems: "center",
               gap: 10,
               textAlign: "center",
-              padding: "112px 20px 20px",
+              padding: "92px 20px 20px",
               width: "100%",
               boxSizing: "border-box",
             }}
