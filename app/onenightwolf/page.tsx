@@ -277,13 +277,26 @@ export default function OneNightWolfPage() {
     const wolfAllies = s.originalPlayers.filter((p, i) => i !== s.currentPlayer - 1 && p?.role.id === "werewolf")
 
     return (
-      <div className={styles.screenBase} style={{ backgroundImage: `url(/image/${s.theme}/bg_night.png)`, backgroundSize: s.theme === "mama" ? "contain" : "cover" }}>
-        <div style={{ position: "absolute", top: 60, left: "50%", transform: "translateX(-50%)", textAlign: "center" }}>
+      <div
+        className={styles.screenBase}
+        style={{
+          backgroundImage: `url(/image/${s.theme}/bg_night.png)`,
+          backgroundSize: s.theme === "mama" ? "contain" : "cover",
+          minHeight: "100vh",
+          height: "auto",
+          justifyContent: "flex-start",
+          paddingTop: 44,
+          paddingBottom: 28,
+          overflowY: "auto",
+          overflowX: "hidden",
+        }}
+      >
+        <div style={{ position: "absolute", top: 28, left: "50%", transform: "translateX(-50%)", textAlign: "center" }}>
           <h1 style={{ fontSize: 34, letterSpacing: 2, textShadow: "0 3px 12px rgba(0,0,0,0.6)" }}>夜時間</h1>
         </div>
 
         {!s.nightActionReady ? (
-          <div className={`${styles.flexCenterColumn} ${styles.gap16}`}>
+          <div className={`${styles.flexCenterColumn} ${styles.gap16}`} style={{ marginTop: 120 }}>
             <div className={s.theme === "mama" ? styles.playerBadgeMama : styles.playerBadge}>
               プレイヤー {s.currentPlayer}
             </div>
@@ -295,7 +308,18 @@ export default function OneNightWolfPage() {
             </button>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center", padding: "0 20px" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 16,
+              textAlign: "center",
+              padding: "96px 20px 24px",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
             <img src={player?.role.img} width={200} alt={player?.role.name} />
             <p style={{ fontSize: 32, fontWeight: "bold", textShadow: "0 0 10px rgba(255,255,255,0.6)" }}>{player?.role.name}</p>
 
