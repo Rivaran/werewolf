@@ -402,13 +402,13 @@ export default function OneNightWolfPage() {
                 </div>
                 <p style={{ fontSize: 20, fontWeight: "bold", marginTop: 8 }}>{s.seerResult.name}</p>
                 <button
-                  onClick={s.confirmSeerResult}
+                  onClick={s.nextNightPlayer}
                   className={s.theme === "mama" ? styles.modalActionButtonMama : styles.blueButton}
                   style={s.theme === "mama"
                     ? { marginTop: 16 }
                     : { marginTop: 16, padding: "10px 32px", fontSize: 16 }}
                 >
-                  確認済
+                  {s.currentPlayer < s.players.length ? "次のプレイヤーへ" : "夜が明けます"}
                 </button>
               </div>
             )}
@@ -425,13 +425,13 @@ export default function OneNightWolfPage() {
                   ))}
                 </div>
                 <button
-                  onClick={s.confirmSeerResult}
+                  onClick={s.nextNightPlayer}
                   className={s.theme === "mama" ? styles.modalActionButtonMama : styles.blueButton}
                   style={s.theme === "mama"
                     ? { marginTop: 16 }
                     : { marginTop: 16, padding: "10px 32px", fontSize: 16 }}
                 >
-                  確認済
+                  {s.currentPlayer < s.players.length ? "次のプレイヤーへ" : "夜が明けます"}
                 </button>
               </div>
             )}
