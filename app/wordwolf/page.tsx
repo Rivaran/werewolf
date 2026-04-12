@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import styles from "@/app/page.module.css"
+import { useWakeLock } from "@/hooks/useWakeLock"
 import {
   WORDWOLF_GENRES,
   WORDWOLF_GENRE_TOPICS,
@@ -64,6 +65,8 @@ export default function WordWolfPage() {
   const [tieTargets, setTieTargets] = useState<number[]>([])
   const [timeLeft, setTimeLeft] = useState(180)
   const [timerRunning, setTimerRunning] = useState(false)
+
+  useWakeLock(phase !== "setup")
 
   function playAudio(src: string): Promise<void> {
     return new Promise((resolve) => {

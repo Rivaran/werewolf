@@ -11,6 +11,7 @@ import RoleCard from "@/components/RoleCard"
 import PlayerSlot from "@/components/PlayerSlot"
 import styles from "./page.module.css"
 import { useGameState } from "@/hooks/useGameState"
+import { useWakeLock } from "@/hooks/useWakeLock"
 
 const ROLE_SUMMARY_ORDER = [
   { id: "werewolf", label: "人狼" },
@@ -124,6 +125,8 @@ export default function Page() {
     getVisiblePlayers,
     canShowNightButton,
   } = useGameState()
+
+  useWakeLock(phase !== "modeSelect" && phase !== "setup")
 
   const roleSummary = formatRoleSummary(players)
 

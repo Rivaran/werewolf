@@ -7,6 +7,7 @@ import RoleCard from "@/components/RoleCard"
 import PlayerSlot from "@/components/PlayerSlot"
 import styles from "@/app/page.module.css"
 import { useOneNightState } from "@/hooks/useOneNightState"
+import { useWakeLock } from "@/hooks/useWakeLock"
 
 const RECOMMENDED = [
   { players: 3, roles: "人狼×2、村人×1、占い師×1、怪盗×1" },
@@ -45,6 +46,8 @@ export default function OneNightWolfPage() {
   const router = useRouter()
   const s = useOneNightState()
   const [showRoleSummary, setShowRoleSummary] = useState(false)
+
+  useWakeLock(s.phase !== "setup")
 
   const roleSummary = ROLE_SUMMARY_ORDER
     .map(({ id, label }) => ({
