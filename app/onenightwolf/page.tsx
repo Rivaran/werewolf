@@ -313,9 +313,9 @@ export default function OneNightWolfPage() {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 16,
+              gap: 10,
               textAlign: "center",
-              padding: "96px 20px 24px",
+              padding: "78px 20px 20px",
               width: "100%",
               boxSizing: "border-box",
             }}
@@ -419,55 +419,59 @@ export default function OneNightWolfPage() {
             )}
 
             {roleId === "seer" && s.seerResult !== null && !s.showNextButton && (
-              <div style={{
-                background: s.theme === "mama" ? "rgba(0,0,0,0.55)" : "transparent",
-                borderRadius: 14,
-                padding: s.theme === "mama" ? "20px 28px" : "0",
-                textAlign: "center"
-              }}>
-                <p style={{ fontSize: 16, marginBottom: 10 }}>プレイヤー{s.seerTarget}の役職</p>
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <img src={s.seerResult.img} width={70} alt={s.seerResult.name} />
+              <>
+                <div style={{
+                  background: s.theme === "mama" ? "rgba(0,0,0,0.55)" : "transparent",
+                  borderRadius: 14,
+                  padding: s.theme === "mama" ? "18px 28px 14px" : "0",
+                  textAlign: "center"
+                }}>
+                  <p style={{ fontSize: 16, marginBottom: 10 }}>プレイヤー{s.seerTarget}の役職</p>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <img src={s.seerResult.img} width={70} alt={s.seerResult.name} />
+                  </div>
+                  <p style={{ fontSize: 20, fontWeight: "bold", marginTop: 8 }}>{s.seerResult.name}</p>
                 </div>
-                <p style={{ fontSize: 20, fontWeight: "bold", marginTop: 8 }}>{s.seerResult.name}</p>
                 <button
                   onClick={s.nextNightPlayer}
-                  className={s.theme === "mama" ? styles.modalActionButtonMama : styles.blueButton}
+                  className={s.theme === "mama" ? styles.blueButtonMama : styles.blueButton}
                   style={s.theme === "mama"
-                    ? { marginTop: 16 }
-                    : { marginTop: 16, padding: "10px 32px", fontSize: 16 }}
+                    ? { marginTop: 8, padding: "14px 40px", fontSize: 18 }
+                    : { marginTop: 8, padding: "14px 40px", fontSize: 18 }}
                 >
                   {s.currentPlayer < s.players.length ? "次のプレイヤーへ" : "夜が明けます"}
                 </button>
-              </div>
+              </>
             )}
 
             {roleId === "seer" && s.seerCenterResult !== null && !s.showNextButton && (
-              <div style={{
-                background: s.theme === "mama" ? "rgba(0,0,0,0.55)" : "transparent",
-                borderRadius: 14,
-                padding: s.theme === "mama" ? "20px 28px" : "0",
-                textAlign: "center"
-              }}>
-                <p style={{ fontSize: 16, marginBottom: 10 }}>配役されなかった2枚の役職</p>
-                <div style={{ display: "flex", gap: 24, justifyContent: "center" }}>
-                  {s.seerCenterResult.map((role, i) => (
-                    <div key={i} style={{ textAlign: "center" }}>
-                      <img src={role.img} width={60} alt={role.name} />
-                      <p style={{ fontSize: 17, fontWeight: "bold", marginTop: 6 }}>{role.name}</p>
-                    </div>
-                  ))}
+              <>
+                <div style={{
+                  background: s.theme === "mama" ? "rgba(0,0,0,0.55)" : "transparent",
+                  borderRadius: 14,
+                  padding: s.theme === "mama" ? "18px 28px 14px" : "0",
+                  textAlign: "center"
+                }}>
+                  <p style={{ fontSize: 16, marginBottom: 10 }}>配役されなかった2枚の役職</p>
+                  <div style={{ display: "flex", gap: 24, justifyContent: "center" }}>
+                    {s.seerCenterResult.map((role, i) => (
+                      <div key={i} style={{ textAlign: "center" }}>
+                        <img src={role.img} width={60} alt={role.name} />
+                        <p style={{ fontSize: 17, fontWeight: "bold", marginTop: 6 }}>{role.name}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <button
                   onClick={s.nextNightPlayer}
-                  className={s.theme === "mama" ? styles.modalActionButtonMama : styles.blueButton}
+                  className={s.theme === "mama" ? styles.blueButtonMama : styles.blueButton}
                   style={s.theme === "mama"
-                    ? { marginTop: 16 }
-                    : { marginTop: 16, padding: "10px 32px", fontSize: 16 }}
+                    ? { marginTop: 8, padding: "14px 40px", fontSize: 18 }
+                    : { marginTop: 8, padding: "14px 40px", fontSize: 18 }}
                 >
                   {s.currentPlayer < s.players.length ? "次のプレイヤーへ" : "夜が明けます"}
                 </button>
-              </div>
+              </>
             )}
 
             {s.showNextButton && (
