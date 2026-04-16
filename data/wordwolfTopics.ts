@@ -3,6 +3,7 @@ export type WordWolfGenre = "sports" | "food" | "vehicle" | "animal" | "anime"
 export type WordWolfWord = {
   text: string
   reading?: string
+  aliases?: string[]
 }
 
 export type WordWolfPair = {

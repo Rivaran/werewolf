@@ -85,11 +85,8 @@ export default function WordWolfPage() {
   const router = useRouter()
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const audioResolveRef = useRef<(() => void) | null>(null)
-  const audioTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const discussionEndedRef = useRef(false)
-  const phaseRef = useRef<WordWolfPhase>("setup")
-  const voteStartSequenceRef = useRef(0)
 
   const [theme, setTheme] = useState<Theme>("mama")
   const [playerCount, setPlayerCount] = useState(4)
@@ -121,15 +118,12 @@ export default function WordWolfPage() {
   const [timerRunning, setTimerRunning] = useState(false)
   const [villagerWord, setVillagerWord] = useState<WordWolfWord | null>(null)
   const [werewolfWord, setWerewolfWord] = useState<WordWolfWord | null>(null)
+  const [foxWord, setFoxWord] = useState<WordWolfWord | null>(null)
   const [comebackRole, setComebackRole] = useState<Role | null>(null)
   const [comebackVillagerGuess, setComebackVillagerGuess] = useState("")
   const [comebackWerewolfGuess, setComebackWerewolfGuess] = useState("")
 
   useWakeLock(phase !== "setup")
-
-  useEffect(() => {
-    phaseRef.current = phase
-  }, [phase])
 
   const foxCount = foxEnabled ? 1 : 0
   const selectedParticipant =
@@ -157,19 +151,10 @@ export default function WordWolfPage() {
         audioResolveRef.current = null
       }
 
-      if (audioTimeoutRef.current) {
-        clearTimeout(audioTimeoutRef.current)
-        audioTimeoutRef.current = null
-      }
-
       audio.pause()
       audio.currentTime = 0
 
       const finish = () => {
-        if (audioTimeoutRef.current) {
-          clearTimeout(audioTimeoutRef.current)
-          audioTimeoutRef.current = null
-        }
         if (audioResolveRef.current === finish) {
           audioResolveRef.current = null
         }
@@ -181,7 +166,7 @@ export default function WordWolfPage() {
       audio.onerror = finish
       audio.src = src
       audio.play().catch(finish)
-      audioTimeoutRef.current = setTimeout(finish, 15000)
+      setTimeout(finish, 15000)
     })
   }
 
@@ -233,6 +218,7 @@ export default function WordWolfPage() {
     setTimerRunning(false)
     setVillagerWord(null)
     setWerewolfWord(null)
+    setFoxWord(null)
     setComebackRole(null)
     setComebackVillagerGuess("")
     setComebackWerewolfGuess("")
@@ -341,38 +327,12 @@ export default function WordWolfPage() {
   }
 
   async function finalizeExecutionOutcome() {
-    const resolvedRole =
-      executedPlayer == null
-        ? null
-        : participants.find((participant) => participant.id === executedPlayer)?.role ?? executedRole
-    const remainingWerewolves = participants.filter(
-      (participant) => participant.alive && participant.role === "werewolf"
-    ).length
-    const remainingFoxes = participants.filter(
-      (participant) => participant.alive && participant.role === "fox"
-    ).length
-    const resolvedWinner: Winner =
-      remainingFoxes > 0
-        ? "fox"
-        : resolvedRole === "villager"
-          ? "werewolves"
-          : remainingWerewolves === 0
-            ? "villagers"
-            : null
-
-    setWinner(resolvedWinner)
-
-    if (resolvedWinner === "fox") {
-      await showWinnerResult("fox")
-      return
-    }
-
-    if (resolvedWinner === "werewolves") {
+    if (winner === "werewolves") {
       await showWinnerResult("werewolves")
       return
     }
 
-    if (resolvedWinner === "villagers") {
+    if (winner === "villagers") {
       await showWinnerResult("villagers")
       return
     }
@@ -396,6 +356,20 @@ export default function WordWolfPage() {
     await playAudio("/audio/[14-W-2]村人陣営のワード予想してください.wav")
   }
 
+  async function confirmExecutionResult() {
+    if (executedRole === "fox" && foxComebackEnabled) {
+      await openComebackPhase("fox")
+      return
+    }
+
+    if (executedRole === "werewolf" && werewolfComebackEnabled) {
+      await openComebackPhase("werewolf")
+      return
+    }
+
+    await finalizeExecutionOutcome()
+  }
+
   async function submitComebackGuess() {
     if (!villagerWord || !werewolfWord || !comebackRole) return
 
@@ -407,10 +381,6 @@ export default function WordWolfPage() {
         await showWinnerResult("fox")
         return
       }
-
-      setComebackRole(null)
-      await startDiscussionRound(day + 1)
-      return
     }
 
     if (comebackRole === "werewolf") {
@@ -463,6 +433,7 @@ export default function WordWolfPage() {
     setParticipants(nextParticipants)
     setVillagerWord(nextVillagerWord)
     setWerewolfWord(nextWerewolfWord)
+    setFoxWord(built.foxWord)
     setCurrentPlayer(1)
     setShowWord(false)
     setExecutedPlayer(null)
@@ -500,8 +471,6 @@ export default function WordWolfPage() {
   async function endDiscussion() {
     if (discussionEndedRef.current) return
     discussionEndedRef.current = true
-    const sequenceId = voteStartSequenceRef.current + 1
-    voteStartSequenceRef.current = sequenceId
 
     if (timerRef.current) {
       clearInterval(timerRef.current)
@@ -511,9 +480,7 @@ export default function WordWolfPage() {
     setTimerRunning(false)
     setPhase("voteStart")
     await playAudio("/audio/[05]議論終了の時間となりました。投票に移ります.wav")
-    if (voteStartSequenceRef.current !== sequenceId || phaseRef.current !== "voteStart") return
     await playAudio("/audio/[06]5からカウントダウン.wav")
-    if (voteStartSequenceRef.current !== sequenceId || phaseRef.current !== "voteStart") return
     setPhase("vote")
   }
 
@@ -1060,22 +1027,7 @@ export default function WordWolfPage() {
       <div style={{ backgroundImage: theme === "mama" ? `url(/image/${theme}/bg_vote.png)` : `url(/image/${theme}/bg_day.png)`, backgroundSize: theme === "mama" ? "contain" : "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundBlendMode: "darken", backgroundColor: "rgba(0,0,0,0.35)", color: "white", height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, padding: "0 20px", textAlign: "center", position: "relative" }}>
         <h1 style={{ fontSize: 40, letterSpacing: 2, textShadow: "0 4px 16px rgba(0,0,0,0.6)" }}>追放しました</h1>
         <p style={{ fontSize: 22, fontWeight: "bold" }}>プレイヤー{executedPlayer}</p>
-        <button
-          onClick={() => {
-            if (executedRole === "fox") {
-              void openComebackPhase("fox")
-              return
-            }
-
-            if (executedRole === "werewolf" && werewolfComebackEnabled) {
-              void openComebackPhase("werewolf")
-              return
-            }
-
-            void finalizeExecutionOutcome()
-          }}
-          className={theme === "mama" ? styles.wordWolfStartButtonMama : styles.wordWolfStartButtonAi}
-        >
+        <button onClick={() => void confirmExecutionResult()} className={theme === "mama" ? styles.wordWolfStartButtonMama : styles.wordWolfStartButtonAi}>
           結果確認
         </button>
         {summaryButton}
