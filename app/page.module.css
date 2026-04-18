@@ -34,6 +34,25 @@
   letter-spacing: 1px;
 }
 
+.setupTopButton {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #333;
+  -webkit-text-fill-color: #333;
+  color-scheme: light;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.lightControl {
+  background: #fff;
+  color: #333;
+  -webkit-text-fill-color: #333;
+  color-scheme: light;
+}
+
 /* イラストボタン(未選択) */
 .illustrationButton {
   padding: 6px 14px;
@@ -41,13 +60,44 @@
   border: 1px solid #ccc;
   cursor: pointer;
   background: #fff;
+  color: #333;
+  -webkit-text-fill-color: #333;
+  color-scheme: light;
   font-weight: normal;
 }
 
 /* イラストボタン(選択中) */
 .illustrationButtonActive {
   background: #ffd966;
+  color: #333;
+  -webkit-text-fill-color: #333;
   font-weight: bold;
+}
+
+.titleImageWrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3px;
+}
+
+.titleImageWrapMama {
+  border-radius: 20px;
+  padding: 8px 14px;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.titleImageElement {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .titleImageWrapMama {
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  }
 }
 
 /* 設定画面のトグル */

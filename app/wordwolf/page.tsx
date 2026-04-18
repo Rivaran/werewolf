@@ -586,6 +586,9 @@ export default function WordWolfPage() {
     borderRadius: 8,
     border: "1px solid #ccc",
     background: "#fff",
+    color: "#333",
+    WebkitTextFillColor: "#333",
+    colorScheme: "light",
     cursor: "pointer",
     fontSize: 14,
   }
@@ -658,7 +661,7 @@ export default function WordWolfPage() {
 
   if (phase === "setup") {
     return (
-      <div style={{ padding: 20, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+      <div style={{ padding: 20, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", colorScheme: "light" }}>
         <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
           <button onClick={() => router.push("/")} style={setupButtonStyle}>
             ←戻る
@@ -690,12 +693,15 @@ export default function WordWolfPage() {
         </div>
 
         {showTitleImage ? (
-          <img
-            src={theme === "ai" ? `/image/${theme}/title_word.png` : `/image/${theme}/title_kotobawolf.png`}
-            alt="言葉人狼タイトル"
-            onError={() => setShowTitleImage(false)}
-            style={{ width: "90%", maxWidth: 400, maxHeight: 200, marginBottom: 8 }}
-          />
+          <div className={`${styles.titleImageWrap} ${theme === "mama" ? styles.titleImageWrapMama : ""}`} style={{ marginBottom: 8 }}>
+            <img
+              src={theme === "ai" ? `/image/${theme}/title_word.png` : `/image/${theme}/title_kotobawolf.png`}
+              alt="言葉人狼タイトル"
+              onError={() => setShowTitleImage(false)}
+              className={styles.titleImageElement}
+              style={{ maxWidth: 400, maxHeight: 200 }}
+            />
+          </div>
         ) : (
           <h1 style={{ fontSize: 38, margin: "8px 0 16px", letterSpacing: 2 }}>言葉人狼</h1>
         )}
@@ -704,6 +710,7 @@ export default function WordWolfPage() {
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 18 }}>
             プレイ人数
             <select
+              className={styles.lightControl}
               value={playerCount}
               onChange={(event) => {
                 const nextPlayerCount = Number(event.target.value)
@@ -713,7 +720,7 @@ export default function WordWolfPage() {
                   setWolfCount(maxWolfCount)
                 }
               }}
-              style={{ padding: "8px 10px", borderRadius: 8, border: "2px solid #888", background: "#fff", fontSize: 16, cursor: "pointer" }}
+              style={{ padding: "8px 10px", borderRadius: 8, border: "2px solid #888", fontSize: 16, cursor: "pointer" }}
             >
               {[3, 4, 5, 6, 7, 8].map((count) => (
                 <option key={count} value={count}>{count}</option>
@@ -724,9 +731,10 @@ export default function WordWolfPage() {
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 18 }}>
             人狼数
             <select
+              className={styles.lightControl}
               value={wolfCount}
               onChange={(event) => setWolfCount(Number(event.target.value))}
-              style={{ padding: "8px 10px", borderRadius: 8, border: "2px solid #888", background: "#fff", fontSize: 16, cursor: "pointer" }}
+              style={{ padding: "8px 10px", borderRadius: 8, border: "2px solid #888", fontSize: 16, cursor: "pointer" }}
             >
               {Array.from({ length: Math.max(1, playerCount - (foxEnabled ? 2 : 1)) }, (_, index) => index + 1).map((count) => (
                 <option key={count} value={count}>{count}</option>

@@ -174,17 +174,17 @@ export default function OneNightWolfPage() {
 
   if (s.phase === "setup") {
     return (
-      <div style={{ padding: 20, display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ padding: 20, display: "flex", flexDirection: "column", alignItems: "center", colorScheme: "light" }}>
         <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
           <button
             onClick={() => router.push("/")}
-            style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontSize: 14 }}
+            className={styles.setupTopButton}
           >
             ← 戻る
           </button>
           <button
             onClick={() => s.setShowRecommended(true)}
-            style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #ccc", background: "#fff", cursor: "pointer" }}
+            className={styles.setupTopButton}
           >
             おすすめ役職配置
           </button>
@@ -205,16 +205,20 @@ export default function OneNightWolfPage() {
           </button>
         </div>
 
-        <img
-          src={`/image/${s.theme}/title_ichi.png`}
-          alt=""
-          style={{ width: "90%", maxWidth: 400, maxHeight: 200, marginBottom: 3 }}
-        />
+        <div className={`${styles.titleImageWrap} ${s.theme === "mama" ? styles.titleImageWrapMama : ""}`}>
+          <img
+            src={`/image/${s.theme}/title_ichi.png`}
+            alt=""
+            className={styles.titleImageElement}
+            style={{ maxWidth: 400, maxHeight: 200 }}
+          />
+        </div>
 
         <div style={{ marginBottom: 3 }}>
           人数
           <select
-            style={{ padding: "6px 10px", borderRadius: 8, border: "2px solid #888", background: "#fff", fontSize: 16, cursor: "pointer" }}
+            className={styles.lightControl}
+            style={{ padding: "6px 10px", borderRadius: 8, border: "2px solid #888", fontSize: 16, cursor: "pointer" }}
             value={s.playerCount}
             onChange={e => s.setPlayerCount(Number(e.target.value))}
           >

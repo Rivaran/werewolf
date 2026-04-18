@@ -1847,7 +1847,8 @@ export default function Page() {
         padding: 20,
         display: "flex",
         flexDirection: "column",
-        alignItems: "center"
+        alignItems: "center",
+        colorScheme: "light",
       }}
     >
 
@@ -1855,16 +1856,15 @@ export default function Page() {
       <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
         <button
           onClick={() => setPhase("modeSelect")}
-          style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontSize: 14 }}
+          className={styles.setupTopButton}
         >
           ← 戻る
         </button>
 
         <button
           onClick={() => setShowSettings(true)}
-          style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontWeight: "normal", opacity: 0.9 }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "#f5f5f5" }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "#fff" }}
+          className={styles.setupTopButton}
+          style={{ fontWeight: "normal", opacity: 0.9 }}
         >
           ルール設定
         </button>
@@ -1887,24 +1887,25 @@ export default function Page() {
         </button>
       </div>
 
-      <img
-        src={`/image/${theme}/title.png`}
-        style={{
-          width: "100%",
-          maxWidth: 400,
-          maxHeight: theme === "ai" ? 160 : 120,
-          marginBottom: 3
-        }}
-      />
+      <div className={`${styles.titleImageWrap} ${theme === "mama" ? styles.titleImageWrapMama : ""}`}>
+        <img
+          src={`/image/${theme}/title.png`}
+          alt=""
+          className={styles.titleImageElement}
+          style={{
+            maxHeight: theme === "ai" ? 160 : 120,
+          }}
+        />
+      </div>
 
       <div style={{ marginBottom: 3 }}>
         人数
         <select
+          className={styles.lightControl}
           style={{
             padding: "6px 10px",
             borderRadius: 8,
             border: "2px solid #888",
-            background: "#fff",
             fontSize: 16,
             cursor: "pointer"
           }}
