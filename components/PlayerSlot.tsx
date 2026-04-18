@@ -13,6 +13,16 @@ export default function PlayerSlot({ id, role, theme }: Props) {
     id: "slot-" + id,
   })
 
+  const emptyTextStyle = {
+    color: "#8a8a8a",
+    WebkitTextFillColor: "#8a8a8a",
+  } as const
+
+  const filledTextStyle = {
+    color: "#f5f5f5",
+    WebkitTextFillColor: "#f5f5f5",
+  } as const
+
   return (
     <div
       ref={setNodeRef}
@@ -25,17 +35,16 @@ export default function PlayerSlot({ id, role, theme }: Props) {
         alignItems: "center",
         justifyContent: role ? "flex-start" : "center",
         padding: role ? 0 : 32,
-        color: "#f5f5f5",
-        WebkitTextFillColor: "#f5f5f5",
+        ...(role ? filledTextStyle : emptyTextStyle),
         colorScheme: "light",
       }}
     >
-      <div style={role ? { color: "#f5f5f5", WebkitTextFillColor: "#f5f5f5" } : undefined}>配役 {id}</div>
+      <div style={role ? filledTextStyle : emptyTextStyle}>配役 {id}</div>
 
       {role && (
         <>
           <img src={role.img} width={theme === "ai" ? 56 : 70} alt={role.name} />
-          <div style={{ color: "#f5f5f5", WebkitTextFillColor: "#f5f5f5" }}>{role.name}</div>
+          <div style={filledTextStyle}>{role.name}</div>
         </>
       )}
     </div>

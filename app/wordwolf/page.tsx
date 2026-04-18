@@ -324,6 +324,8 @@ export default function WordWolfPage() {
       await playAudio("/audio/[09-2]村人陣営の勝利です.wav")
     } else if (targetWinner === "werewolves") {
       await playAudio("/audio/[09-1]人狼陣営の勝利です.wav")
+    } else if (targetWinner === "fox") {
+      await playAudio("/audio/[09-3]キツネの勝利です.wav")
     }
   }
 
@@ -1126,7 +1128,7 @@ export default function WordWolfPage() {
         <h1 style={{ fontSize: 40, letterSpacing: 2, textShadow: "0 4px 16px rgba(0,0,0,0.6)" }}>
           {winner === "villagers" ? "村人陣営の勝利" : winner === "werewolves" ? "人狼陣営の勝利" : "キツネ陣営の勝利"}
         </h1>
-        <p style={{ fontSize: 22, fontWeight: "bold" }}>追放：{executedPlayer}番</p>
+        {winner !== "fox" && <p style={{ fontSize: 22, fontWeight: "bold" }}>追放：{executedPlayer}番</p>}
         <div style={{ display: "flex", flexDirection: "column", gap: 12, width: 240 }}>
           <button onClick={() => setPhase("reveal")} style={{ padding: "12px 0", fontSize: 16, borderRadius: 12, border: "none", background: "rgba(255,255,255,0.2)", color: "#fff", fontWeight: "bold", cursor: "pointer" }}>
             🔍 ネタバラシ
