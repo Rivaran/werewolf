@@ -43,14 +43,14 @@ type PairBuildResult = {
 
 const COMMON_WORD_ALIASES: Record<string, string[]> = {
   アメリカンフットボール: ["アメフト"],
-  ユニバーサルスタジオジャパン: ["ユニバ", "usj"],
+  ユニバーサルスタジオジャパン: ["ユニバ", "usj", "USJ"],
   ポケットモンスター: ["ポケモン"],
   僕のヒーローアカデミア: ["ヒロアカ"],
   名探偵コナン: ["コナン"],
   クレヨンしんちゃん: ["しんちゃん"],
   ドラゴンボール: ["ドラゴンボールz"],
   "ハイキュー!!": ["ハイキュー"],
-  "SPY×FAMILY": ["スパイファミリー", "spyfamily"],
+  "SPY×FAMILY": ["スパイファミリー", "spyfamily", "SPYFAMILY","SPYFamiry","SPY Famiry"],
   炎炎ノ消防隊: ["えんえんのしょうぼうたい"],
   青の祓魔師: ["あおのえくそしすと", "青のエクソシスト"],
   斉木楠雄のΨ難: ["さいきくすおのさいなん"],
@@ -968,7 +968,7 @@ export default function WordWolfPage() {
             onClick={() => setShowSettings(false)}
           >
             <div
-              style={{ width: "min(100%, 360px)", borderRadius: 20, background: "white", padding: 24, boxShadow: "0 20px 48px rgba(0,0,0,0.28)" }}
+              style={{ width: "min(100%, 360px)", borderRadius: 20, background: "white", color: "#222", WebkitTextFillColor: "#222", colorScheme: "light", padding: 24, boxShadow: "0 20px 48px rgba(0,0,0,0.28)" }}
               onClick={(event) => event.stopPropagation()}
             >
               <div style={{ fontSize: 28, fontWeight: "bold", textAlign: "center", marginBottom: 18 }}>設定</div>
