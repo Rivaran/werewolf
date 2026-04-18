@@ -185,6 +185,12 @@ export default function WordWolfPage() {
     selectedVoteTarget == null
       ? null
       : participants.find((participant) => participant.id === selectedVoteTarget && participant.alive) ?? null
+  const selectedGenreLabel =
+    WORDWOLF_GENRES.find((genre) => genre.id === selectedGenre)?.label ?? selectedGenre
+  const sourceModeLabel =
+    sourceMode === "genre" ? `ジャンル: ${selectedGenreLabel}` :
+    sourceMode === "gm" ? "GM入力" :
+    "ランダム"
   const roleSummaryCounts = participants.reduce(
     (acc, participant) => {
       acc[participant.role] += 1
@@ -708,6 +714,10 @@ export default function WordWolfPage() {
             onClick={(event) => event.stopPropagation()}
           >
             <div style={{ fontSize: 28, fontWeight: "bold", textAlign: "center", marginBottom: 20 }}>全体配役</div>
+            <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 12, background: "rgba(0,0,0,0.06)", fontSize: 16, lineHeight: 1.5 }}>
+              <div style={{ fontWeight: "bold", marginBottom: 4 }}>お題の決め方</div>
+              <div>{sourceModeLabel}</div>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 20, lineHeight: 1.6 }}>
               <div>人狼 ×{roleSummaryCounts.werewolf}</div>
               {roleSummaryCounts.fox > 0 && <div>キツネ ×{roleSummaryCounts.fox}</div>}
