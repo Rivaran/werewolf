@@ -19,8 +19,8 @@ export default function PlayerSlot({ id, role, theme }: Props) {
   } as const
 
   const filledTextStyle = {
-    color: "#f5f5f5",
-    WebkitTextFillColor: "#f5f5f5",
+    color: "#444",
+    WebkitTextFillColor: "#444",
   } as const
 
   return (
