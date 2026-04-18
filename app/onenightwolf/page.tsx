@@ -278,8 +278,9 @@ export default function OneNightWolfPage() {
     const roleId = s.currentNightRoleId
     const otherPlayers = s.originalPlayers.filter((_, i) => i !== s.currentPlayer - 1)
     const wolfAllies = s.originalPlayers.filter((p, i) => i !== s.currentPlayer - 1 && p?.role.id === "werewolf")
+    const mamaNightOffset = s.theme === "mama" ? 28 : 0
     const readyContentPaddingTop =
-      roleId === "villager"
+      (roleId === "villager"
         ? 112
         : roleId === "seer"
           ? 52
@@ -287,7 +288,7 @@ export default function OneNightWolfPage() {
             ? 60
           : roleId === "werewolf"
             ? 76
-            : 92
+            : 92) + mamaNightOffset
 
     return (
       <div
@@ -298,18 +299,18 @@ export default function OneNightWolfPage() {
           minHeight: "100vh",
           height: "auto",
           justifyContent: "flex-start",
-          paddingTop: 44,
+          paddingTop: 44 + (s.theme === "mama" ? 10 : 0),
           paddingBottom: 28,
           overflowY: "auto",
           overflowX: "hidden",
         }}
       >
-        <div style={{ position: "absolute", top: 28, left: "50%", transform: "translateX(-50%)", textAlign: "center" }}>
+        <div style={{ position: "absolute", top: s.theme === "mama" ? 42 : 28, left: "50%", transform: "translateX(-50%)", textAlign: "center" }}>
           <h1 style={{ fontSize: 34, letterSpacing: 2, textShadow: "0 3px 12px rgba(0,0,0,0.6)" }}>夜時間</h1>
         </div>
 
         {!s.nightActionReady ? (
-          <div className={`${styles.flexCenterColumn} ${styles.gap16}`} style={{ marginTop: 170 }}>
+          <div className={`${styles.flexCenterColumn} ${styles.gap16}`} style={{ marginTop: 170 + mamaNightOffset }}>
             <div className={s.theme === "mama" ? styles.playerBadgeMama : styles.playerBadge}>
               プレイヤー {s.currentPlayer}
             </div>

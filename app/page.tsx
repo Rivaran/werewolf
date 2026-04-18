@@ -1269,7 +1269,9 @@ export default function Page() {
         {tieMode && (
           <>
             <p style={{ margin: "32px 0 0", opacity: 0.8, fontSize: 15 }}>
-              同数だったプレイヤーを選択してください（複数選択）
+              同数だったプレイヤーを
+              <br />
+              選択してください（複数選択）
             </p>
 
             <div
