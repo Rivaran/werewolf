@@ -24,6 +24,7 @@ type WordWolfPhase =
   | "vote"
   | "execution"
   | "comeback"
+  | "comebackReview"
   | "result"
   | "reveal"
 type Winner = "villagers" | "werewolves" | "fox" | null
@@ -38,6 +39,25 @@ type Participant = {
 type PairBuildResult = {
   pair: WordWolfPair
   foxWord: WordWolfWord | null
+}
+
+const COMMON_WORD_ALIASES: Record<string, string[]> = {
+  アメリカンフットボール: ["アメフト"],
+  ユニバーサルスタジオジャパン: ["ユニバ", "usj"],
+  ポケットモンスター: ["ポケモン"],
+  僕のヒーローアカデミア: ["ヒロアカ"],
+  名探偵コナン: ["コナン"],
+  クレヨンしんちゃん: ["しんちゃん"],
+  ドラゴンボール: ["ドラゴンボールz"],
+  "ハイキュー!!": ["ハイキュー"],
+  "SPY×FAMILY": ["スパイファミリー", "spyfamily"],
+  炎炎ノ消防隊: ["えんえんのしょうぼうたい"],
+  青の祓魔師: ["あおのえくそしすと", "青のエクソシスト"],
+  斉木楠雄のΨ難: ["さいきくすおのさいなん"],
+  桜蘭高校ホスト部: ["おうらんこうこうホストぶ", "ホスト部"],
+  "会長はメイド様!": ["かいちょうはメイドさま", "メイド様"],
+  黒子のバスケ: ["くろこのバスケ", "黒バス"],
+  東京喰種: ["とうきょうグール", "東京グール"],
 }
 
 function shuffle<T>(items: T[]) {
@@ -61,13 +81,31 @@ function normalizeAnswer(value: string) {
     .replace(/[\s\u3000'"`’“”「」『』（）()【】\[\]{}〈〉《》.,!?！？:：;；/\\~〜\-‐‑‒–—―ーｰ・･]/g, "")
 }
 
-function isWordMatch(input: string, word: WordWolfWord) {
-  const normalizedInput = normalizeAnswer(input)
-  const candidates = [word.text, word.reading, ...(word.aliases ?? [])].filter(
+function getComparableForms(value: string) {
+  const normalized = normalizeAnswer(value)
+  const forms = new Set([normalized])
+
+  if (normalized.startsWith("お") || normalized.startsWith("ご")) {
+    forms.add(normalized.slice(1))
+  }
+
+  return [...forms].filter(Boolean)
+}
+
+function getWordCandidates(word: WordWolfWord) {
+  return [word.text, word.reading, ...(word.aliases ?? []), ...(COMMON_WORD_ALIASES[word.text] ?? [])].filter(
     (candidate): candidate is string => Boolean(candidate)
   )
+}
 
-  return candidates.some((candidate) => normalizeAnswer(candidate) === normalizedInput)
+function isWordMatch(input: string, word: WordWolfWord) {
+  const inputForms = getComparableForms(input)
+  const candidates = getWordCandidates(word)
+
+  return candidates.some((candidate) => {
+    const candidateForms = getComparableForms(candidate)
+    return candidateForms.some((candidateForm) => inputForms.includes(candidateForm))
+  })
 }
 
 function getRoleLabel(role: Role) {
@@ -90,6 +128,7 @@ export default function WordWolfPage() {
   const discussionEndedRef = useRef(false)
   const phaseRef = useRef<WordWolfPhase>("setup")
   const voteStartSequenceRef = useRef(0)
+  const comebackAudioSequenceRef = useRef(0)
 
   const [theme, setTheme] = useState<Theme>("mama")
   const [playerCount, setPlayerCount] = useState(4)
@@ -130,6 +169,16 @@ export default function WordWolfPage() {
   useEffect(() => {
     phaseRef.current = phase
   }, [phase])
+
+  useEffect(() => {
+    if (phase !== "comebackReview" || !comebackRole) return
+
+    void playAudio(
+      comebackRole === "fox"
+        ? "/audio/[14-K-3]キツネの予想したワードはこちらです.wav"
+        : "/audio/[14-W-3]人狼の予想したワードはこちらです.wav"
+    )
+  }, [phase, comebackRole])
 
   const foxCount = foxEnabled ? 1 : 0
   const selectedParticipant =
@@ -329,6 +378,12 @@ export default function WordWolfPage() {
     }
   }
 
+  async function showComebackReview() {
+    if (!comebackRole) return
+
+    setPhase("comebackReview")
+  }
+
   async function startDiscussionRound(nextDay: number) {
     setDay(nextDay)
     setTimeLeft(nextDay === 1 ? 180 : 120)
@@ -383,6 +438,7 @@ export default function WordWolfPage() {
   }
 
   async function openComebackPhase(role: Role) {
+    const sequenceId = ++comebackAudioSequenceRef.current
     setComebackRole(role)
     setComebackVillagerGuess("")
     setComebackWerewolfGuess("")
@@ -390,16 +446,25 @@ export default function WordWolfPage() {
 
     if (role === "fox") {
       await playAudio("/audio/[14-K-1]キツネのあなたには逆転チャンスがあります.wav")
+      if (comebackAudioSequenceRef.current !== sequenceId || phaseRef.current !== "comeback") return
       await playAudio("/audio/[14-K-2]村人陣営のワードと人狼陣営のワードを予想してください.wav")
       return
     }
 
     await playAudio("/audio/[14-W-1]人狼のあなたには逆転チャンスがあります.wav")
+    if (comebackAudioSequenceRef.current !== sequenceId || phaseRef.current !== "comeback") return
     await playAudio("/audio/[14-W-2]村人陣営のワード予想してください.wav")
   }
 
   async function submitComebackGuess() {
     if (!villagerWord || !werewolfWord || !comebackRole) return
+    comebackAudioSequenceRef.current += 1
+    await showComebackReview()
+  }
+
+  async function resolveComebackGuess() {
+    if (!villagerWord || !werewolfWord || !comebackRole) return
+    comebackAudioSequenceRef.current += 1
 
     if (comebackRole === "fox") {
       const villagerCorrect = isWordMatch(comebackVillagerGuess, villagerWord)
@@ -410,19 +475,19 @@ export default function WordWolfPage() {
         return
       }
 
+      await playAudio("/audio/[14-K-4]キツネの予想は外れました.wav")
       setComebackRole(null)
       await startDiscussionRound(day + 1)
       return
     }
 
-    if (comebackRole === "werewolf") {
-      const villagerCorrect = isWordMatch(comebackVillagerGuess, villagerWord)
-      if (villagerCorrect) {
-        await showWinnerResult("werewolves")
-        return
-      }
+    const villagerCorrect = isWordMatch(comebackVillagerGuess, villagerWord)
+    if (villagerCorrect) {
+      await showWinnerResult("werewolves")
+      return
     }
 
+    await playAudio("/audio/[14-W-4]人狼の予想は外れました.wav")
     setComebackRole(null)
     await finalizeExecutionOutcome()
   }
@@ -1116,6 +1181,31 @@ export default function WordWolfPage() {
         </div>
         <button onClick={() => void submitComebackGuess()} className={theme === "mama" ? styles.wordWolfStartButtonMama : styles.wordWolfStartButtonAi}>
           判定する
+        </button>
+        {summaryButton}
+      </div>
+    )
+  }
+
+  if (phase === "comebackReview") {
+    return (
+      <div style={{ backgroundImage: theme === "mama" ? `url(/image/${theme}/bg_vote.png)` : `url(/image/${theme}/bg_day.png)`, backgroundSize: theme === "mama" ? "contain" : "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundBlendMode: "darken", backgroundColor: "rgba(0,0,0,0.35)", color: "white", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "40px 20px", textAlign: "center", position: "relative" }}>
+        <h1 style={{ fontSize: 36, letterSpacing: 2, textShadow: "0 4px 16px rgba(0,0,0,0.6)" }}>予想ワード確認</h1>
+        <p style={{ fontSize: 22, fontWeight: "bold" }}>{comebackRole === "fox" ? "キツネの予想" : "人狼の予想"}</p>
+        <div style={{ width: "min(100%, 420px)", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>
+            <div style={{ fontSize: 15, opacity: 0.8, marginBottom: 6 }}>村人陣営のワード予想</div>
+            <div style={{ fontSize: 24, fontWeight: "bold" }}>{comebackVillagerGuess || "未入力"}</div>
+          </div>
+          {comebackRole === "fox" && (
+            <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>
+              <div style={{ fontSize: 15, opacity: 0.8, marginBottom: 6 }}>人狼陣営のワード予想</div>
+              <div style={{ fontSize: 24, fontWeight: "bold" }}>{comebackWerewolfGuess || "未入力"}</div>
+            </div>
+          )}
+        </div>
+        <button onClick={() => void resolveComebackGuess()} className={theme === "mama" ? styles.wordWolfStartButtonMama : styles.wordWolfStartButtonAi}>
+          結果確認
         </button>
         {summaryButton}
       </div>
