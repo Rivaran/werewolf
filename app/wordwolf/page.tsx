@@ -772,7 +772,7 @@ export default function WordWolfPage() {
         {showTitleImage ? (
           <div className={`${styles.titleImageWrap} ${theme === "mama" ? styles.titleImageWrapMama : ""}`} style={{ marginBottom: 8 }}>
             <img
-              src={theme === "ai" ? `/image/${theme}/title_word.png` : `/image/${theme}/title_kotobawolf.png`}
+              src={`/image/${theme}/title_word.png`}
               alt="言葉人狼タイトル"
               onError={() => setShowTitleImage(false)}
               className={styles.titleImageElement}
