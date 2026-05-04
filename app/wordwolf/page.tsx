@@ -133,7 +133,7 @@ export default function WordWolfPage() {
   const [theme, setTheme] = useState<Theme>("mama")
   const [playerCount, setPlayerCount] = useState(4)
   const [wolfCount, setWolfCount] = useState(1)
-  const [foxEnabled, setFoxEnabled] = useState(false)
+  const [foxEnabled, setFoxEnabled] = useState(true)
   const [sourceMode, setSourceMode] = useState<SourceMode>("genre")
   const [selectedGenre, setSelectedGenre] = useState<WordWolfGenre>("sports")
   const [gmVillagerWord, setGmVillagerWord] = useState("")
