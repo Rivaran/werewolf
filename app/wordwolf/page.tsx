@@ -264,6 +264,10 @@ export default function WordWolfPage() {
   }
 
   function getResultBackground(targetWinner: Winner) {
+    if (targetWinner === "fox" && theme === "mama") {
+      return `/image/${theme}/bg_win_fox.png`
+    }
+
     return targetWinner === "werewolves"
       ? `/image/${theme}/bg_win_wolf.png`
       : `/image/${theme}/bg_win_village.png`
