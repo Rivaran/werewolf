@@ -39,6 +39,7 @@ export default function Page() {
 
   const router = useRouter()
   const [showRoleSummary, setShowRoleSummary] = useState(false)
+  const [showRuleHelp, setShowRuleHelp] = useState(false)
 
   const {
     winner,
@@ -1861,13 +1862,22 @@ export default function Page() {
           ← 戻る
         </button>
 
-        <button
-          onClick={() => setShowSettings(true)}
-          className={styles.setupTopButton}
-          style={{ fontWeight: "normal", opacity: 0.9 }}
-        >
-          ルール設定
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => setShowRuleHelp(true)}
+            className={styles.setupTopButton}
+          >
+            ルール説明
+          </button>
+
+          <button
+            onClick={() => setShowSettings(true)}
+            className={styles.setupTopButton}
+            style={{ fontWeight: "normal", opacity: 0.9 }}
+          >
+            ルール設定
+          </button>
+        </div>
       </div>
 
       {/* 2段目：イラスト切替 */}
@@ -1970,6 +1980,59 @@ export default function Page() {
       >
         ゲーム開始
       </button>
+
+      {showRuleHelp && (
+        <div
+          onClick={() => setShowRuleHelp(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+            zIndex: 9999
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              background: "#fff",
+              color: "#222",
+              WebkitTextFillColor: "#222",
+              colorScheme: "light",
+              padding: 24,
+              borderRadius: 16,
+              width: "min(100%, 380px)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+              lineHeight: 1.7
+            }}
+          >
+            <div style={{ fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 14 }}>
+              人狼ゲームのルール
+            </div>
+            <p style={{ margin: "0 0 10px" }}>
+              村人陣営は、昼の話し合いで人狼を見つけて追放することを目指します。
+            </p>
+            <p style={{ margin: "0 0 10px" }}>
+              人狼陣営は、夜に村人を襲いながら正体を隠し、村人と同数以上になることを目指します。
+            </p>
+            <p style={{ margin: 0 }}>
+              占い師、騎士、霊能者、狂人などの役職は、それぞれの能力を使って陣営の勝利を助けます。
+            </p>
+            <button
+              onClick={() => setShowRuleHelp(false)}
+              className={theme === "mama" ? styles.modalActionButtonMamaPurple : undefined}
+              style={theme === "mama"
+                ? { width: "100%", marginTop: 20 }
+                : { width: "100%", marginTop: 20, padding: "10px 24px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#6bd4ff,#2b8cff)", color: "#fff", cursor: "pointer", fontWeight: "bold" }}
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 設定画面のモーダル */}
       {showSettings && (

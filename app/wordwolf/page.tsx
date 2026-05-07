@@ -141,6 +141,7 @@ export default function WordWolfPage() {
   const [gmFoxWord, setGmFoxWord] = useState("")
   const [showTitleImage, setShowTitleImage] = useState(true)
   const [showSettings, setShowSettings] = useState(false)
+  const [showRuleHelp, setShowRuleHelp] = useState(false)
   const [showRoleSummary, setShowRoleSummary] = useState(false)
   const [foxComebackEnabled, setFoxComebackEnabled] = useState(true)
   const [werewolfComebackEnabled, setWerewolfComebackEnabled] = useState(false)
@@ -747,9 +748,14 @@ export default function WordWolfPage() {
           <button onClick={() => router.push("/")} style={setupButtonStyle}>
             ←戻る
           </button>
-          <button onClick={() => setShowSettings(true)} style={setupButtonStyle}>
-            設定
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setShowRuleHelp(true)} style={setupButtonStyle}>
+              ルール説明
+            </button>
+            <button onClick={() => setShowSettings(true)} style={setupButtonStyle}>
+              設定
+            </button>
+          </div>
         </div>
 
         <div style={{ width: "100%", display: "flex", justifyContent: "flex-end", gap: 10, marginBottom: 3 }}>
@@ -966,6 +972,39 @@ export default function WordWolfPage() {
           ゲーム開始
         </button>
 
+        {showRuleHelp && (
+          <div
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 30 }}
+            onClick={() => setShowRuleHelp(false)}
+          >
+            <div
+              style={{ width: "min(100%, 380px)", borderRadius: 20, background: "white", color: "#222", WebkitTextFillColor: "#222", colorScheme: "light", padding: 24, boxShadow: "0 20px 48px rgba(0,0,0,0.28)", lineHeight: 1.7 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div style={{ fontSize: 28, fontWeight: "bold", textAlign: "center", marginBottom: 18 }}>言葉人狼のルール</div>
+              <p style={{ margin: "0 0 10px" }}>
+                似ているけれど少し違うお題を配られた少数派を、会話の中から探すゲームです。
+              </p>
+              <p style={{ margin: "0 0 10px" }}>
+                村人は同じお題、人狼は別のお題を持っています。自分のお題を直接言いすぎないように話し合い、怪しい人に投票します。
+              </p>
+              <p style={{ margin: "0 0 10px" }}>
+                キツネ入りでは、村人とも人狼とも違う第三のお題を持つキツネが登場します。キツネはどちらの陣営にも紛れ込めるように話し、最後まで追放されないことを目指します。
+              </p>
+              <p style={{ margin: 0 }}>
+                人狼を追放できれば村人陣営の勝利、人狼が逃げ切れば人狼陣営の勝利です。キツネが生き残っている場合は、キツネ陣営の勝利になります。
+              </p>
+              <button
+                onClick={() => setShowRuleHelp(false)}
+                className={theme === "mama" ? styles.modalActionButtonMama : styles.blueButton}
+                style={{ width: 180, maxWidth: "100%", display: "block", margin: "20px auto 0" }}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        )}
+
         {showSettings && (
           <div
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 30 }}
@@ -986,8 +1025,8 @@ export default function WordWolfPage() {
               </label>
               <button
                 onClick={() => setShowSettings(false)}
-                className={theme === "mama" ? styles.greenButtonMama : styles.blueButton}
-                style={{ width: "100%" }}
+                className={theme === "mama" ? styles.modalActionButtonMama : styles.blueButton}
+                style={{ width: 180, maxWidth: "100%", display: "block", margin: "20px auto 0" }}
               >
                 閉じる
               </button>

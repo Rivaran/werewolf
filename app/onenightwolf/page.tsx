@@ -9,13 +9,6 @@ import styles from "@/app/page.module.css"
 import { useOneNightState } from "@/hooks/useOneNightState"
 import { useWakeLock } from "@/hooks/useWakeLock"
 
-const RECOMMENDED = [
-  { players: 3, roles: "人狼×2、村人×1、占い師×1、怪盗×1" },
-  { players: 4, roles: "人狼×2、村人×2、占い師×1、怪盗×1" },
-  { players: 5, roles: "人狼×2、村人×3、占い師×1、怪盗×1" },
-  { players: 6, roles: "人狼×2、村人×4、占い師×1、怪盗×1" },
-]
-
 const ROLE_SUMMARY_ORDER = [
   { id: "werewolf", label: "人狼" },
   { id: "seer", label: "占い師" },
@@ -46,6 +39,7 @@ export default function OneNightWolfPage() {
   const router = useRouter()
   const s = useOneNightState()
   const [showRoleSummary, setShowRoleSummary] = useState(false)
+  const [showRuleHelp, setShowRuleHelp] = useState(false)
 
   useWakeLock(s.phase !== "setup")
 
@@ -183,10 +177,10 @@ export default function OneNightWolfPage() {
             ← 戻る
           </button>
           <button
-            onClick={() => s.setShowRecommended(true)}
+            onClick={() => setShowRuleHelp(true)}
             className={styles.setupTopButton}
           >
-            おすすめ役職配置
+            ルール説明
           </button>
         </div>
 
@@ -249,27 +243,37 @@ export default function OneNightWolfPage() {
           ゲーム開始
         </button>
 
-        {s.showRecommended && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
-            <div style={{ background: "#fff", padding: 28, borderRadius: 16, width: 320, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", color: "#222" }}>
-              <div style={{ fontSize: 18, fontWeight: "bold", textAlign: "center", marginBottom: 16 }}>◉ オススメな役職配置数</div>
-              {RECOMMENDED.map(({ players, roles }) => (
-                <div key={players} style={{ marginBottom: 12 }}>
-                  <div style={{ fontWeight: "bold", marginBottom: 2 }}>{players}人で遊ぶ場合</div>
-                  <div style={{ fontSize: 14, color: "#444", paddingLeft: 8 }}>{roles}</div>
-                </div>
-              ))}
-              <div style={{ textAlign: "center", marginTop: 20 }}>
-                <button
-                  onClick={() => s.setShowRecommended(false)}
-                  className={s.theme === "mama" ? styles.modalActionButtonMamaPurple : undefined}
-                  style={s.theme === "mama"
-                    ? {}
-                    : { padding: "10px 36px", fontSize: 16, borderRadius: 10, border: "none", background: "linear-gradient(135deg,#6bd4ff,#2b8cff)", color: "#fff", cursor: "pointer", fontWeight: "bold", boxShadow: "0 6px 16px rgba(0,0,0,0.35)" }}
-                >
-                  閉じる
-                </button>
-              </div>
+        {showRuleHelp && (
+          <div
+            onClick={() => setShowRuleHelp(false)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", padding: 20, zIndex: 9999 }}
+          >
+            <div
+              onClick={(event) => event.stopPropagation()}
+              style={{ background: "#fff", padding: 24, borderRadius: 16, width: "min(100%, 380px)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)", color: "#222", WebkitTextFillColor: "#222", colorScheme: "light", lineHeight: 1.7 }}
+            >
+              <div style={{ fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 14 }}>一夜人狼のルール</div>
+              <p style={{ margin: "0 0 10px" }}>
+                1回の夜と1回の投票だけで決着する、短時間の人狼ゲームです。
+              </p>
+              <p style={{ margin: "0 0 10px" }}>
+                人狼は正体を隠し、村人陣営は会話と役職能力を手がかりに人狼を探します。
+              </p>
+              <p style={{ margin: "0 0 10px" }}>
+                怪盗は夜に他のプレイヤー1人と役職を交換します。交換後の役職で勝敗が決まるので、元の役職ではなく「いま自分が何陣営か」を考えて話すのが大切です。
+              </p>
+              <p style={{ margin: 0 }}>
+                投票で人狼を処刑できれば村人陣営の勝利、人狼以外を処刑してしまうと人狼陣営の勝利です。平和村では誰も処刑しない選択も重要です。
+              </p>
+              <button
+                onClick={() => setShowRuleHelp(false)}
+                className={s.theme === "mama" ? styles.modalActionButtonMamaPurple : undefined}
+                style={s.theme === "mama"
+                  ? { width: "100%", marginTop: 20 }
+                  : { width: "100%", marginTop: 20, padding: "10px 24px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#6bd4ff,#2b8cff)", color: "#fff", cursor: "pointer", fontWeight: "bold" }}
+              >
+                閉じる
+              </button>
             </div>
           </div>
         )}

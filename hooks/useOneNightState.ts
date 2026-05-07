@@ -48,7 +48,6 @@ export function useOneNightState() {
   const [playerCount, setPlayerCountRaw] = useState(4)
   const slotCount = playerCount + 2
   const [setupSlots, setSetupSlots] = useState<(Player | null)[]>(() => buildRecommended(4, "mama"))
-  const [showRecommended, setShowRecommended] = useState(false)
 
   // =========== GAME STATE ===========
 
@@ -452,7 +451,6 @@ export function useOneNightState() {
     playerCount, setPlayerCount,
     slotCount,
     setupSlots, setSetupSlots,
-    showRecommended, setShowRecommended,
     roles, sensors, handleDragEnd,
 
     // game
